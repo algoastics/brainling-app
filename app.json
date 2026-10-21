@@ -48,7 +48,8 @@
             "usesCleartextTraffic": false
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "scheme": "brainling",
     "experiments": {
