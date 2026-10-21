@@ -68,7 +68,13 @@
         }
       ],
       "expo-sharing",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      [
+        "./plugins/withGradleJvmArgs",
+        {
+          "jvmArgs": "-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
+        }
+      ]
     ],
     "scheme": "brainling",
     "experiments": {
