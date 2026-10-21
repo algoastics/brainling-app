@@ -1,33 +1,39 @@
-import BrainlingCore, { type DayCounts, type DebugState } from 'brainling-core';
+import BrainlingCore, { type DebugState } from 'brainling-core';
 import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 
 import { AppBar, Button, Card, ListRow, Screen, Text } from '@/components/ui';
+import { useServiceStatus, useTodayCounts } from '@/detection';
 import { space } from '@/theme';
 
 /** Dev-only spike screen: service status, today's counts and the last detected node (no text). */
 function DetectionDebugScreen() {
-  const [enabled, setEnabled] = useState(false);
-  const [counts, setCounts] = useState<DayCounts | null>(null);
+  const { enabled, refresh: refreshStatus } = useServiceStatus();
+  const { counts, refresh: refreshCounts } = useTodayCounts();
   const [debug, setDebug] = useState<DebugState | null>(null);
 
+  const refreshDebug = useCallback(() => setDebug(BrainlingCore.getDebugState()), []);
   const refresh = useCallback(() => {
-    setEnabled(BrainlingCore.isServiceEnabled());
-    setCounts(BrainlingCore.getTodayCounts());
-    setDebug(BrainlingCore.getDebugState());
-  }, []);
+    refreshStatus();
+    refreshCounts();
+    refreshDebug();
+  }, [refreshStatus, refreshCounts, refreshDebug]);
 
+  // Debug state isn't pushed by native: re-read it on each count change and on foreground.
   useEffect(() => {
-    const countSub = BrainlingCore.addListener('onCountChange', setCounts);
-    const appStateSub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
-    const initial = requestAnimationFrame(refresh);
+    const countSub = BrainlingCore.addListener('onCountChange', refreshDebug);
+    const appStateSub = AppState.addEventListener(
+      'change',
+      (s) => s === 'active' && refreshDebug(),
+    );
+    const initial = requestAnimationFrame(refreshDebug);
     return () => {
       countSub.remove();
       appStateSub.remove();
       cancelAnimationFrame(initial);
     };
-  }, [refresh]);
+  }, [refreshDebug]);
 
   const last = debug?.last;
 
@@ -35,7 +41,10 @@ function DetectionDebugScreen() {
     <Screen>
       <AppBar title="Detection debug" onBack={() => router.back()} />
       <Card>
-        <ListRow title="Accessibility service" value={enabled ? 'Enabled' : 'Off'} />
+        <ListRow
+          title="Accessibility service"
+          value={enabled == null ? '—' : enabled ? 'Enabled' : 'Off'}
+        />
         <ListRow title="Service connected" value={debug?.serviceConnected ? 'Yes' : 'No'} />
         <Button
           kind="secondary"
