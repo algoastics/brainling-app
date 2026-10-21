@@ -28,5 +28,28 @@
     "streak_other": "{{count}} day streak",
     "streakFrozen_one": "{{count}} day streak, frozen",
     "streakFrozen_other": "{{count}} day streak, frozen"
+  },
+  "mascot": {
+    "label": "Brainling is {{state}}: {{line}}",
+    "state": {
+      "glowing": "glowing",
+      "happy": "happy",
+      "meh": "meh",
+      "fried": "fried",
+      "zombie": "a zombie",
+      "sleeping": "sleeping",
+      "recovering": "recovering",
+      "ghost": "a ghost"
+    },
+    "line": {
+      "glowing": "Big brain energy today.",
+      "happy": "We’re doing great.",
+      "meh": "One more? …said every reel ever.",
+      "fried": "I feel… crispy.",
+      "zombie": "Braaains… (need sleep).",
+      "sleeping": "Shh.",
+      "recovering": "Fresh start. Go easy on me.",
+      "ghost": "I can’t feel your reels."
+    }
   }
 }

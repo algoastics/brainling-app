@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { Mascot } from '@/components/mascot';
 import {
   AppBar,
   AppChip,
@@ -45,6 +46,16 @@ const SCHEMES = [
   { value: 'dark', label: 'Dark' },
 ] as const;
 const SAMPLE_BUDGET = 30;
+const MASCOT_STATES = [
+  'glowing',
+  'happy',
+  'meh',
+  'fried',
+  'zombie',
+  'sleeping',
+  'recovering',
+  'ghost',
+] as const;
 
 function Section({
   id,
@@ -160,6 +171,14 @@ function Catalogue({
             <StreakPill days={45} />
             <StreakPill days={120} />
             <StreakPill days={8} frozen />
+          </View>
+        </Section>
+
+        <Section id="MASCOT" title="Mascot">
+          <View style={styles.row}>
+            {MASCOT_STATES.map((s) => (
+              <Mascot key={s} state={s} size={88} />
+            ))}
           </View>
         </Section>
 
