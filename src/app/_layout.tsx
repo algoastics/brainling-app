@@ -1,11 +1,23 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 
+import { BrandSplash } from '@/components/brand';
+import { getStorage } from '@/storage';
 import { ThemeProvider, useBrainlingFonts, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+function openStorage(): boolean {
+  try {
+    getStorage();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function RootStack() {
   const { colors, scheme } = useTheme();
@@ -21,17 +33,35 @@ function RootStack() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useBrainlingFonts();
+  const [storageReady, setStorageReady] = useState(openStorage);
+  const [introDone, setIntroDone] = useState(false);
   const ready = fontsLoaded || fontError !== null;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  const finishIntro = useCallback(() => setIntroDone(true), []);
+  const retryStorage = useCallback(() => setStorageReady(openStorage()), []);
+
   if (!ready) return null;
 
   return (
     <ThemeProvider>
-      <RootStack />
+      <View style={{ flex: 1 }}>
+        {storageReady ? <RootStack /> : null}
+        {!storageReady ? (
+          <BrandSplash
+            error={{
+              message: 'Something went wrong — restart',
+              retryLabel: 'Retry',
+              onRetry: retryStorage,
+            }}
+          />
+        ) : !introDone ? (
+          <BrandSplash onIntroFinished={finishIntro} />
+        ) : null}
+      </View>
     </ThemeProvider>
   );
 }

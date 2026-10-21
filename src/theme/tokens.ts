@@ -50,6 +50,7 @@ export const palette = {
   night800: '#1A1533',
   night700: '#241E42',
   night600: '#332C55',
+  outline: '#22183F',
   gold: '#FFD45C',
   gold700: '#C9971C',
 } as const;
