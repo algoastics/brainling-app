@@ -42,6 +42,16 @@
           "dark": {
             "image": "./assets/splash-icon.png",
             "backgroundColor": "#2A1C7A"
+          },
+          "android": {
+            "image": "./assets/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#6B4EFF",
+            "dark": {
+              "image": "./assets/splash-icon.png",
+              "backgroundColor": "#2A1C7A"
+            }
           }
         }
       ],
@@ -104,6 +114,7 @@
       "url": "https://u.expo.dev/f31b14ef-91b2-4826-815e-d246d60ad432",
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
-    }
+    },
+    "backgroundColor": "#6B4EFF"
   }
 }
