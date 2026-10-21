@@ -60,7 +60,8 @@
           "color": "#6B4EFF"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@sentry/react-native"
     ],
     "scheme": "brainling",
     "experiments": {

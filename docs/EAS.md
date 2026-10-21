@@ -20,3 +20,16 @@ Project: `@algoasticssoftwarecompany/brainling` (projectId in `app.json`). Build
   `.env*` files are git-ignored and gitleaks blocks committing secrets.
 - Signing credentials are managed remotely by EAS (`credentialsSource: remote`); no keystore is
   ever committed.
+
+## Variables expected per environment (names only; values live in EAS)
+
+| Name | Environments | Visibility | Used by |
+|---|---|---|---|
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | preview, production | plaintext (public SDK key) | M8 billing |
+| `EXPO_PUBLIC_SENTRY_DSN` | preview, production | plaintext (DSN is public) | M11 crash reporting |
+| `SENTRY_ORG`, `SENTRY_PROJECT` | production | plaintext | Sentry config plugin / source-map upload |
+| `SENTRY_AUTH_TOKEN` | production | **secret** | source-map upload during EAS Build |
+| `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST` | preview, production | plaintext (project key, EU host) | M11 analytics |
+
+`development` and `preview` set `SENTRY_DISABLE_AUTO_UPLOAD=true` in `eas.json`, so those builds
+never need the Sentry token.
