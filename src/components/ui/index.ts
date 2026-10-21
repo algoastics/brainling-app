@@ -8,3 +8,6 @@ export * from './Segmented';
 export * from './Chip';
 export * from './Card';
 export * from './ListRow';
+export * from './CounterRing';
+export * from './HealthBar';
+export * from './AppChip';
