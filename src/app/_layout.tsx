@@ -1,7 +1,11 @@
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
-import { ThemeProvider, useTheme } from '@/theme';
+import { ThemeProvider, useBrainlingFonts, useTheme } from '@/theme';
+
+SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
   const { colors, scheme } = useTheme();
@@ -16,6 +20,15 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useBrainlingFonts();
+  const ready = fontsLoaded || fontError !== null;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
+
   return (
     <ThemeProvider>
       <RootStack />
