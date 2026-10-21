@@ -18,3 +18,8 @@ export * from './AppBar';
 export * from './TabBar';
 export * from './ProgressDots';
 export * from './StepBar';
+export * from './types';
+export * from './BottomSheet';
+export * from './Dialog';
+export * from './Toast';
+export * from './Banner';
