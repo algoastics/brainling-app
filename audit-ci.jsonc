@@ -1,0 +1,7 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  // Fail on high and critical advisories. Every allowlisted advisory is justified, with a review
+  // date, in docs/security/audit-exceptions.md; remove entries as soon as a fixed version ships.
+  "high": true,
+  "allowlist": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+}
