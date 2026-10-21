@@ -1,0 +1,4 @@
+command -v gitleaks >/dev/null 2>&1 || { echo "gitleaks is required: brew install gitleaks"; exit 1; }
+gitleaks git --pre-commit --staged --redact --verbose
+npx lint-staged
+npm run typecheck
