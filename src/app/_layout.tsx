@@ -1,13 +1,12 @@
-import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { BrandSplash } from '@/components/brand';
 import { useT } from '@/i18n';
+import { RootStack } from '@/navigation/RootStack';
 import { getStorage } from '@/storage';
-import { ThemeProvider, useBrainlingFonts, useTheme } from '@/theme';
+import { ThemeProvider, useBrainlingFonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,20 +17,6 @@ function openStorage(): boolean {
   } catch {
     return false;
   }
-}
-
-function RootStack() {
-  const { colors, scheme } = useTheme();
-  return (
-    <>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="design-system" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="detection-debug" options={{ presentation: 'modal' }} />
-      </Stack>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-    </>
-  );
 }
 
 export default function RootLayout() {

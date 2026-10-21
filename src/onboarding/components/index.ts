@@ -9,3 +9,5 @@ export * from './StepCard';
 export * from './Title';
 export * from './useDesignScale';
 export * from './art';
+export * from './RollingNumber';
+export * from './Positioned';
