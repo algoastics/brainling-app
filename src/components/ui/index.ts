@@ -14,3 +14,7 @@ export * from './AppChip';
 export * from './CoinPill';
 export * from './StreakPill';
 export * from './ProTag';
+export * from './AppBar';
+export * from './TabBar';
+export * from './ProgressDots';
+export * from './StepBar';
