@@ -19,7 +19,14 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.algoastics.brainling",
-      "allowBackup": false
+      "allowBackup": false,
+      "permissions": ["android.permission.INTERNET", "android.permission.VIBRATE"],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
