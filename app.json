@@ -51,7 +51,15 @@
       ],
       "expo-asset",
       "expo-localization",
-      "expo-image"
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6B4EFF"
+        }
+      ]
     ],
     "scheme": "brainling",
     "experiments": {
@@ -67,6 +75,14 @@
       "eas": {
         "projectId": "f31b14ef-91b2-4826-815e-d246d60ad432"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f31b14ef-91b2-4826-815e-d246d60ad432",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
