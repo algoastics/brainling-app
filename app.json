@@ -18,7 +18,8 @@
         "backgroundColor": "#6B4EFF"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.algoastics.brainling"
+      "package": "com.algoastics.brainling",
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +36,16 @@
           "dark": {
             "image": "./assets/splash-icon.png",
             "backgroundColor": "#2A1C7A"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "usesCleartextTraffic": false
           }
         }
       ]
