@@ -25,6 +25,7 @@ function RootStack() {
     <>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="design-system" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </>
