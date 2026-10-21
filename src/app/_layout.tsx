@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { BrandSplash } from '@/components/brand';
 import { useT } from '@/i18n';
@@ -51,7 +51,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <View style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         {storageReady ? <RootStack /> : null}
         {!storageReady ? (
           <BrandSplash
@@ -64,7 +64,7 @@ export default function RootLayout() {
         ) : !introDone ? (
           <BrandSplash onIntroFinished={finishIntro} />
         ) : null}
-      </View>
+      </GestureHandlerRootView>
     </ThemeProvider>
   );
 }
