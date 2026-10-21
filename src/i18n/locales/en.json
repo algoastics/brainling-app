@@ -13,7 +13,8 @@
     "me": "Me"
   },
   "me": {
-    "designSystem": "Design system"
+    "designSystem": "Design system",
+    "detectionDebug": "Detection debug"
   },
   "common": {
     "back": "Back",

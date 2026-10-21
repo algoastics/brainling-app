@@ -11,11 +11,18 @@ export default function MeScreen() {
         {t('tabs.me')}
       </Text>
       {__DEV__ ? (
-        <Button
-          kind="secondary"
-          label={t('me.designSystem')}
-          onPress={() => router.push('/design-system')}
-        />
+        <>
+          <Button
+            kind="secondary"
+            label={t('me.designSystem')}
+            onPress={() => router.push('/design-system')}
+          />
+          <Button
+            kind="secondary"
+            label={t('me.detectionDebug')}
+            onPress={() => router.push('/detection-debug')}
+          />
+        </>
       ) : null}
     </Screen>
   );
