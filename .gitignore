@@ -51,3 +51,7 @@ credentials.json
 # build artefacts
 *.apk
 *.aab
+
+# local expo module build output
+modules/*/android/build/
+modules/*/android/.gradle/

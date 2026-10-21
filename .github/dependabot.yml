@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      # SDK-bound packages must move together via `npx expo install --fix` on an SDK upgrade.
+      expo-sdk:
+        patterns:
+          - expo
+          - expo-*
+          - '@expo/*'
+          - '@expo-google-fonts/*'
+          - jest-expo
+          - eslint-config-expo
+          - react
+          - react-dom
+          - react-native
+          - react-native-*
+          - '@types/react'
+      dev-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
+      include: scope

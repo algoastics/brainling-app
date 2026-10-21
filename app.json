@@ -1,25 +1,103 @@
 {
   "expo": {
-    "name": "brainling-app",
-    "slug": "brainling-app",
+    "name": "Brainling",
+    "slug": "brainling",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.algoastics.brainling"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#6B4EFF"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.algoastics.brainling",
+      "allowBackup": false,
+      "permissions": ["android.permission.INTERNET", "android.permission.VIBRATE"],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#6B4EFF",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#2A1C7A"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "usesCleartextTraffic": false
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-localization",
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6B4EFF"
+        }
+      ],
+      "expo-sharing",
+      "@sentry/react-native",
+      [
+        "./plugins/withGradleJvmArgs",
+        {
+          "jvmArgs": "-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
+        }
+      ]
+    ],
+    "scheme": "brainling",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "algoasticssoftwarecompany",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f31b14ef-91b2-4826-815e-d246d60ad432"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f31b14ef-91b2-4826-815e-d246d60ad432",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

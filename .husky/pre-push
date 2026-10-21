@@ -1,1 +1,1 @@
-npm test --if-present -- --ci --passWithNoTests
+npm test -- --ci
