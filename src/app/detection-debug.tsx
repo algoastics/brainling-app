@@ -6,13 +6,11 @@ import { AppState, StyleSheet, View } from 'react-native';
 import { AppBar, Button, Card, ListRow, Screen, Text } from '@/components/ui';
 import { space } from '@/theme';
 
-const POLL_MS = 1000;
-
 /** Dev-only spike screen: service status, today's counts and the last detected node (no text). */
 function DetectionDebugScreen() {
-  const [enabled, setEnabled] = useState(() => BrainlingCore.isServiceEnabled());
-  const [counts, setCounts] = useState<DayCounts>(() => BrainlingCore.getTodayCounts());
-  const [debug, setDebug] = useState<DebugState | null>(() => BrainlingCore.getDebugState());
+  const [enabled, setEnabled] = useState(false);
+  const [counts, setCounts] = useState<DayCounts | null>(null);
+  const [debug, setDebug] = useState<DebugState | null>(null);
 
   const refresh = useCallback(() => {
     setEnabled(BrainlingCore.isServiceEnabled());
@@ -23,11 +21,11 @@ function DetectionDebugScreen() {
   useEffect(() => {
     const countSub = BrainlingCore.addListener('onCountChange', setCounts);
     const appStateSub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
-    const timer = setInterval(refresh, POLL_MS);
+    const initial = requestAnimationFrame(refresh);
     return () => {
       countSub.remove();
       appStateSub.remove();
-      clearInterval(timer);
+      cancelAnimationFrame(initial);
     };
   }, [refresh]);
 
@@ -42,13 +40,14 @@ function DetectionDebugScreen() {
         <Button
           kind="secondary"
           label="Open accessibility settings"
-          onPress={() => BrainlingCore.openAccessibilitySettings()}
+          onPress={() => requestAnimationFrame(() => BrainlingCore.openAccessibilitySettings())}
         />
+        <Button kind="ghost" label="Refresh" onPress={refresh} />
       </Card>
       <Card>
-        <Text variant="heading.h3">Today · {counts.date}</Text>
-        <Text variant="display.lg">{counts.total}</Text>
-        {Object.entries(counts.apps).map(([app, n]) => (
+        <Text variant="heading.h3">Today · {counts?.date ?? '—'}</Text>
+        <Text variant="display.lg">{counts?.total ?? 0}</Text>
+        {Object.entries(counts?.apps ?? {}).map(([app, n]) => (
           <ListRow key={app} title={app} value={String(n)} />
         ))}
       </Card>
