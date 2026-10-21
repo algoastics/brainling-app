@@ -11,3 +11,6 @@ export * from './ListRow';
 export * from './CounterRing';
 export * from './HealthBar';
 export * from './AppChip';
+export * from './CoinPill';
+export * from './StreakPill';
+export * from './ProTag';
