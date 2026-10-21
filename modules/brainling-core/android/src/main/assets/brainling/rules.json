@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "dwellMs": 800,
+  "dedupeSize": 20,
+  "apps": [
+    {
+      "packageName": "com.instagram.android",
+      "key": "instagram",
+      "enabled": true,
+      "surfaceIds": ["clips_viewer_view_pager", "reel_viewer"]
+    },
+    {
+      "packageName": "com.google.android.youtube",
+      "key": "youtube",
+      "enabled": true,
+      "surfaceIds": ["reel_recycler", "reel_watch_player", "reel_player_page_container", "shorts_container"]
+    }
+  ]
+}
