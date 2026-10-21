@@ -38,6 +38,8 @@ const reanimated = {
   withSpring: identity,
   withDelay: (_delay: number, value: unknown) => value,
   withSequence: lastOf,
+  withRepeat: identity,
+  cancelAnimation: () => undefined,
   Easing: { bezier: () => identity },
   FadeIn: animation,
   FadeOut: animation,

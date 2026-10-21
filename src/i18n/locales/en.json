@@ -52,5 +52,11 @@
       "recovering": "Fresh start. Go easy on me.",
       "ghost": "I can’t feel your reels."
     }
+  },
+  "onboarding": {
+    "progress": "Step {{step}} of {{total}}",
+    "stepOf": "{{step}}/{{total}}",
+    "continue": "Continue",
+    "skip": "Skip"
   }
 }
