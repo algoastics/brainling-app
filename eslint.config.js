@@ -9,6 +9,12 @@ module.exports = defineConfig([
     ignores: ['dist/*', 'android/*', 'ios/*', '.expo/*', 'node_modules/*', 'expo-env.d.ts'],
   },
   {
+    files: ['**/*.plugin.js', 'plugins/**/*.js'],
+    languageOptions: {
+      globals: { __dirname: 'readonly', require: 'readonly', module: 'writable' },
+    },
+  },
+  {
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },

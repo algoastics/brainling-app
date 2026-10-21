@@ -22,7 +22,6 @@
       "allowBackup": false,
       "permissions": ["android.permission.INTERNET", "android.permission.VIBRATE"],
       "blockedPermissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
@@ -73,6 +72,13 @@
         "./plugins/withGradleJvmArgs",
         {
           "jvmArgs": "-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
+        }
+      ],
+      "./modules/brainling-core/app.plugin.js",
+      [
+        "./plugins/withReleaseBlockedPermissions",
+        {
+          "permissions": ["android.permission.SYSTEM_ALERT_WINDOW"]
         }
       ]
     ],
