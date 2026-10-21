@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router';
 
 import { TabBar } from '@/components/ui';
+import { useT } from '@/i18n';
 
 export default function TabsLayout() {
+  const t = useT();
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
@@ -18,9 +20,9 @@ export default function TabsLayout() {
         />
       )}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
-      <Tabs.Screen name="me" options={{ title: 'Me' }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
+      <Tabs.Screen name="stats" options={{ title: t('tabs.stats') }} />
+      <Tabs.Screen name="me" options={{ title: t('tabs.me') }} />
     </Tabs>
   );
 }

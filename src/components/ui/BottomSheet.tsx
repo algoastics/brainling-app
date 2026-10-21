@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
 
 import { Button } from './Button';
@@ -26,9 +27,10 @@ export function BottomSheet({
   body,
   actions = [],
   children,
-  dismissLabel = 'Close',
+  dismissLabel,
 }: BottomSheetProps) {
   const { colors } = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   return (
     <Modal
@@ -42,7 +44,7 @@ export function BottomSheet({
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={dismissLabel}
+          accessibilityLabel={dismissLabel ?? t('common.close')}
           onPress={onDismiss}
           style={[StyleSheet.absoluteFill, styles.scrim, { backgroundColor: colors.scrim }]}
         />

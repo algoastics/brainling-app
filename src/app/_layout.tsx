@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { BrandSplash } from '@/components/brand';
+import { useT } from '@/i18n';
 import { getStorage } from '@/storage';
 import { ThemeProvider, useBrainlingFonts, useTheme } from '@/theme';
 
@@ -33,6 +34,7 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  const t = useT();
   const [fontsLoaded, fontError] = useBrainlingFonts();
   const [storageReady, setStorageReady] = useState(openStorage);
   const [introDone, setIntroDone] = useState(false);
@@ -54,8 +56,8 @@ export default function RootLayout() {
         {!storageReady ? (
           <BrandSplash
             error={{
-              message: 'Something went wrong — restart',
-              retryLabel: 'Retry',
+              message: t('splash.storageError'),
+              retryLabel: t('splash.retry'),
               onRetry: retryStorage,
             }}
           />

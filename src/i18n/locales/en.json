@@ -1,0 +1,32 @@
+{
+  "app": {
+    "name": "Brainling",
+    "tagline": "Count less. Live more."
+  },
+  "splash": {
+    "storageError": "Something went wrong — restart",
+    "retry": "Retry"
+  },
+  "tabs": {
+    "home": "Home",
+    "stats": "Stats",
+    "me": "Me"
+  },
+  "me": {
+    "designSystem": "Design system"
+  },
+  "common": {
+    "back": "Back",
+    "close": "Close",
+    "proFeature": "Pro feature",
+    "pro": "PRO"
+  },
+  "a11y": {
+    "coins_one": "{{count}} coin",
+    "coins_other": "{{count}} coins",
+    "streak_one": "{{count}} day streak",
+    "streak_other": "{{count}} day streak",
+    "streakFrozen_one": "{{count}} day streak, frozen",
+    "streakFrozen_other": "{{count}} day streak, frozen"
+  }
+}

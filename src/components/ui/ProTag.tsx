@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { palette, radius, useTheme } from '@/theme';
 
 import { Text } from './Text';
@@ -7,10 +8,14 @@ import { Text } from './Text';
 /** PRO tag for Pro-only features (handoff §4); the feature itself routes to the paywall. */
 export function ProTag() {
   const { colors } = useTheme();
+  const t = useT();
   return (
-    <View accessibilityLabel="Pro feature" style={[styles.tag, { backgroundColor: colors.coin }]}>
+    <View
+      accessibilityLabel={t('common.proFeature')}
+      style={[styles.tag, { backgroundColor: colors.coin }]}
+    >
       <Text variant="caption" style={{ color: palette.ink900 }}>
-        PRO
+        {t('common.pro')}
       </Text>
     </View>
   );

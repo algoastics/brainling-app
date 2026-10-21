@@ -14,6 +14,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button, Text } from '@/components/ui';
+import { useT } from '@/i18n';
 import { motion, palette, space } from '@/theme';
 
 import { Logomark } from './Logomark';
@@ -40,6 +41,7 @@ export type BrandSplashProps = {
  * violet in both themes. A01: logomark springs 0.6 → 1.0, then the mascot blinks.
  */
 export function BrandSplash({ onIntroFinished, error }: BrandSplashProps) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(reduceMotion || error ? 1 : 0.6);
   const opacity = useSharedValue(reduceMotion && !error ? 0 : 1);
@@ -93,10 +95,10 @@ export function BrandSplash({ onIntroFinished, error }: BrandSplashProps) {
         <Logomark size={200} eyelid={eyelid} />
       </Animated.View>
       <Text variant="display.lg" accessibilityRole="header" style={styles.title}>
-        Brainling
+        {t('app.name')}
       </Text>
       <Text variant="body.lg" style={styles.tagline}>
-        Count less. Live more.
+        {t('app.tagline')}
       </Text>
       {error ? (
         <View style={styles.error} accessibilityLiveRegion="assertive">

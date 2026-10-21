@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
+import { useT } from '@/i18n';
 import { palette, radius, space, useTheme } from '@/theme';
 
 import { Text } from './Text';
@@ -49,11 +50,12 @@ function Flame({ tier }: { tier: StreakTier }) {
 /** C05 — StreakPill. A frozen streak shows the ice tone. */
 export function StreakPill({ days, frozen = false }: StreakPillProps) {
   const { colors } = useTheme();
+  const t = useT();
   const tier = streakTier(days);
   return (
     <View
       accessible
-      accessibilityLabel={`${days} day streak${frozen ? ', frozen' : ''}`}
+      accessibilityLabel={t(frozen ? 'a11y.streakFrozen' : 'a11y.streak', { count: days })}
       style={[styles.pill, { backgroundColor: frozen ? colors.infoSoft : colors.surface2 }]}
     >
       <Flame tier={tier} />

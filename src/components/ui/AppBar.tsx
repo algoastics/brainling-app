@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useT } from '@/i18n';
 import { layout, space, useTheme } from '@/theme';
 
 import { Text } from './Text';
@@ -13,15 +14,16 @@ export type AppBarProps = {
 };
 
 /** C09 — AppBar with optional back button and trailing slot. */
-export function AppBar({ title, onBack, backLabel = 'Back', right }: AppBarProps) {
+export function AppBar({ title, onBack, backLabel, right }: AppBarProps) {
   const { colors } = useTheme();
+  const t = useT();
   return (
     <View style={styles.bar}>
       <View style={styles.side}>
         {onBack ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={backLabel}
+            accessibilityLabel={backLabel ?? t('common.back')}
             onPress={onBack}
             style={styles.back}
           >
