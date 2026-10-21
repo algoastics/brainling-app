@@ -4,7 +4,7 @@
  * resolve to their target value immediately; components render with final styles.
  */
 import type { ComponentType } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 type Shared<T> = { value: T; get: () => T; set: (v: T) => void };
 
@@ -27,6 +27,7 @@ const reanimated = {
   __esModule: true,
   default: {
     View,
+    Text,
     createAnimatedComponent: <P extends object>(component: ComponentType<P>) => component,
   },
   createAnimatedComponent: <P extends object>(component: ComponentType<P>) => component,

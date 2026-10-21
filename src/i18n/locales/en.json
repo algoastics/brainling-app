@@ -78,6 +78,45 @@
         "body": "Duels, squads and a streak that only grows when you scroll less.",
         "art": "A glowing Brainling with a streak flame and a trophy"
       }
+    },
+    "quiz": {
+      "title": "Which apps do you scroll?",
+      "subtitle": "Tick the apps you scroll.",
+      "apps": {
+        "instagram": "Instagram",
+        "youtube": "YouTube"
+      },
+      "guessTitle": "Guess your daily reels",
+      "guessLabel": "Your guess of reels per day",
+      "guessValue_one": "{{count}} reel",
+      "guessValue_other": "{{count}} reels",
+      "guessMin": "0",
+      "guessMax": "500+",
+      "goalsTitle": "Why are you here?",
+      "goals": {
+        "sleep": "Sleep better",
+        "focus": "Study/work focus",
+        "family": "Be present with family",
+        "curious": "Just curious"
+      }
+    },
+    "budget": {
+      "title": "Set your daily reel budget",
+      "subtitle": "This number decides your Brainling’s health and streak.",
+      "perDay": "reels a day",
+      "value_one": "{{count}} reel a day",
+      "value_other": "{{count}} reels a day",
+      "decrease": "Fewer reels",
+      "increase": "More reels",
+      "estimate": "About 1 reel = 20–30 seconds. {{count}} reels ≈ {{minutes}} min (estimate).",
+      "proTitle": "Pro: a different limit for each app",
+      "proSubtitle": "Set later in Limits",
+      "proHint": "Shows what Pro adds"
+    },
+    "m22": {
+      "title": "Per-app limits are Pro",
+      "body": "Give TikTok 10 and YouTube 30 — each app its own budget.",
+      "notNow": "Not now"
     }
   }
 }

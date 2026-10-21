@@ -11,3 +11,4 @@ export * from './useDesignScale';
 export * from './art';
 export * from './RollingNumber';
 export * from './Positioned';
+export * from './GuessSlider';
