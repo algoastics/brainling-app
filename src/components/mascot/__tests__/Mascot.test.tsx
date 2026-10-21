@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { render, screen } from '@testing-library/react-native';
 
 import { mascotArt, type MascotArtState } from '../art';
-import { Mascot } from '../Mascot';
+import { Mascot, mascotAst } from '../Mascot';
 
 const STATES: MascotArtState[] = [
   'glowing',
@@ -19,6 +19,13 @@ describe('Mascot', () => {
   it('has design-kit art for every health state and ghost', () => {
     for (const state of STATES) {
       expect(mascotArt[state]).toMatch(/^<svg [^>]*viewBox="0 0 200 200"/);
+    }
+  });
+
+  it('parses each mascot once and reuses the AST', () => {
+    for (const state of STATES) {
+      expect(mascotAst(state)).not.toBeNull();
+      expect(mascotAst(state)).toBe(mascotAst(state));
     }
   });
 

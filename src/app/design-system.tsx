@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Mascot } from '@/components/mascot';
@@ -76,6 +76,60 @@ function Section({
   );
 }
 
+/** Static sections never depend on catalogue state, so they skip re-renders entirely. */
+const CoinsSection = memo(function CoinsSection() {
+  return (
+    <Section id="C05" title="Coins & streak">
+      <View style={styles.row}>
+        <CoinPill amount={240} />
+        <StreakPill days={0} />
+        <StreakPill days={3} />
+        <StreakPill days={12} />
+        <StreakPill days={45} />
+        <StreakPill days={120} />
+        <StreakPill days={8} frozen />
+      </View>
+    </Section>
+  );
+});
+
+const MascotSection = memo(function MascotSection() {
+  return (
+    <Section id="MASCOT" title="Mascot">
+      <View style={styles.row}>
+        {MASCOT_STATES.map((s) => (
+          <Mascot key={s} state={s} size={88} />
+        ))}
+      </View>
+    </Section>
+  );
+});
+
+const NavigationSection = memo(function NavigationSection() {
+  return (
+    <Section id="C09" title="Navigation">
+      <ProgressDots count={4} index={1} />
+      <StepBar steps={5} current={2} />
+    </Section>
+  );
+});
+
+/** True after the first frame is on screen, so heavy sections mount after the navigation push. */
+function useAfterFirstFrame() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, []);
+  return ready;
+}
+
 function Catalogue({
   scheme,
   onSchemeChange,
@@ -94,6 +148,7 @@ function Catalogue({
   const [toast, setToast] = useState(false);
   const h = health(count, SAMPLE_BUDGET);
   const state = stateForHealth(h);
+  const ready = useAfterFirstFrame();
 
   return (
     <View style={styles.fill}>
@@ -112,94 +167,82 @@ function Catalogue({
           </View>
         </Section>
 
-        <Section id="C02" title="Inputs & controls">
-          <TextField label="Name" value={name} onChangeText={setName} placeholder="Your name" />
-          <TextField label="Error" value="" onChangeText={setName} error="This field is required" />
-          <TextField label="Disabled" value="" onChangeText={setName} disabled />
-          <View style={styles.row}>
-            <Toggle value={on} onChange={setOn} accessibilityLabel="Sample toggle" />
-            <Chip label="Chip" selected={chip} onChange={setChip} />
-          </View>
-          <Checkbox label="Checkbox" value={checked} onChange={setChecked} />
-          <Radio label="Option A" value={radio === 'a'} onChange={() => setRadio('a')} />
-          <Radio label="Option B" value={radio === 'b'} onChange={() => setRadio('b')} />
-        </Section>
+        {ready ? (
+          <>
+            <Section id="C02" title="Inputs & controls">
+              <TextField label="Name" value={name} onChangeText={setName} placeholder="Your name" />
+              <TextField
+                label="Error"
+                value=""
+                onChangeText={setName}
+                error="This field is required"
+              />
+              <TextField label="Disabled" value="" onChangeText={setName} disabled />
+              <View style={styles.row}>
+                <Toggle value={on} onChange={setOn} accessibilityLabel="Sample toggle" />
+                <Chip label="Chip" selected={chip} onChange={setChip} />
+              </View>
+              <Checkbox label="Checkbox" value={checked} onChange={setChecked} />
+              <Radio label="Option A" value={radio === 'a'} onChange={() => setRadio('a')} />
+              <Radio label="Option B" value={radio === 'b'} onChange={() => setRadio('b')} />
+            </Section>
 
-        <Section id="C03" title="Cards & lists">
-          <Card elevated>
-            <Text variant="body.lg">Elevated card</Text>
-          </Card>
-          <Card tone="primary">
-            <Text>Tinted card</Text>
-          </Card>
-          <Card>
-            <ListRow
-              title="List row"
-              subtitle="Subtitle"
-              value="Value"
-              chevron
-              onPress={() => setSheet(true)}
-            />
-            <ListRow title="With toggle" toggle={{ value: on, onChange: setOn }} />
-            <ListRow title="Danger row" danger onPress={() => setDialog(true)} />
-          </Card>
-        </Section>
+            <Section id="C03" title="Cards & lists">
+              <Card elevated>
+                <Text variant="body.lg">Elevated card</Text>
+              </Card>
+              <Card tone="primary">
+                <Text>Tinted card</Text>
+              </Card>
+              <Card>
+                <ListRow
+                  title="List row"
+                  subtitle="Subtitle"
+                  value="Value"
+                  chevron
+                  onPress={() => setSheet(true)}
+                />
+                <ListRow title="With toggle" toggle={{ value: on, onChange: setOn }} />
+                <ListRow title="Danger row" danger onPress={() => setDialog(true)} />
+              </Card>
+            </Section>
 
-        <Section id="C04" title="Counters & meters">
-          <View style={styles.center}>
-            <CounterRing
-              count={count}
-              budget={SAMPLE_BUDGET}
-              state={state}
-              accessibilityLabel={`${count} of ${SAMPLE_BUDGET}`}
-            />
-          </View>
-          <View style={styles.row}>
-            <Button size="sm" label="+1" onPress={() => setCount((c) => c + 1)} />
-            <Button size="sm" kind="secondary" label="Reset" onPress={() => setCount(0)} />
-          </View>
-          <HealthBar health={h} state={state} accessibilityLabel={`Health ${h}, ${state}`} />
-          <AppChip app="App name" count={count} limit={SAMPLE_BUDGET} />
-        </Section>
+            <Section id="C04" title="Counters & meters">
+              <View style={styles.center}>
+                <CounterRing
+                  count={count}
+                  budget={SAMPLE_BUDGET}
+                  state={state}
+                  accessibilityLabel={`${count} of ${SAMPLE_BUDGET}`}
+                />
+              </View>
+              <View style={styles.row}>
+                <Button size="sm" label="+1" onPress={() => setCount((c) => c + 1)} />
+                <Button size="sm" kind="secondary" label="Reset" onPress={() => setCount(0)} />
+              </View>
+              <HealthBar health={h} state={state} accessibilityLabel={`Health ${h}, ${state}`} />
+              <AppChip app="App name" count={count} limit={SAMPLE_BUDGET} />
+            </Section>
 
-        <Section id="C05" title="Coins & streak">
-          <View style={styles.row}>
-            <CoinPill amount={240} />
-            <StreakPill days={0} />
-            <StreakPill days={3} />
-            <StreakPill days={12} />
-            <StreakPill days={45} />
-            <StreakPill days={120} />
-            <StreakPill days={8} frozen />
-          </View>
-        </Section>
+            <CoinsSection />
+            <MascotSection />
+            <NavigationSection />
 
-        <Section id="MASCOT" title="Mascot">
-          <View style={styles.row}>
-            {MASCOT_STATES.map((s) => (
-              <Mascot key={s} state={s} size={88} />
-            ))}
-          </View>
-        </Section>
-
-        <Section id="C09" title="Navigation">
-          <ProgressDots count={4} index={1} />
-          <StepBar steps={5} current={2} />
-        </Section>
-
-        <Section id="C10" title="Modals & toasts">
-          <Banner
-            tone="warn"
-            title="Banner"
-            body="Inline status message."
-            actions={[{ label: 'Action', onPress: () => setToast((t) => !t) }]}
-          />
-          <View style={styles.row}>
-            <Button size="sm" label="Sheet" onPress={() => setSheet(true)} />
-            <Button size="sm" label="Dialog" onPress={() => setDialog(true)} />
-            <Button size="sm" label="Toast" onPress={() => setToast((t) => !t)} />
-          </View>
-        </Section>
+            <Section id="C10" title="Modals & toasts">
+              <Banner
+                tone="warn"
+                title="Banner"
+                body="Inline status message."
+                actions={[{ label: 'Action', onPress: () => setToast((t) => !t) }]}
+              />
+              <View style={styles.row}>
+                <Button size="sm" label="Sheet" onPress={() => setSheet(true)} />
+                <Button size="sm" label="Dialog" onPress={() => setDialog(true)} />
+                <Button size="sm" label="Toast" onPress={() => setToast((t) => !t)} />
+              </View>
+            </Section>
+          </>
+        ) : null}
       </Screen>
       <Toast visible={toast} message="Toast message" tone="good" />
       <BottomSheet
