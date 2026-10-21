@@ -53,6 +53,17 @@
     "scheme": "brainling",
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "algoasticssoftwarecompany",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f31b14ef-91b2-4826-815e-d246d60ad432"
+      }
     }
   }
 }
