@@ -178,6 +178,39 @@
       "banking": "Some banking or payment apps ask you to pause Accessibility apps while you use them. If one asks, pause Brainling — we’ll remind you to turn it back on.",
       "successTitle": "Counting is ON",
       "successBody": "Your Brainling can feel reels now."
+    },
+    "notifications": {
+      "title": "Let Brainling tap you on the shoulder",
+      "subtitle": "Limit warnings, streak reminders and a heads-up if counting stops. Max 4 a day.",
+      "allow": "Allow notifications",
+      "defaultName": "Your Brainling",
+      "examplesLabel": "Example notifications: 12 reels left today, your streak is safe, counting stopped",
+      "when": {
+        "now": "Brainling · now",
+        "twoMin": "Brainling · 2m",
+        "oneHour": "Brainling · 1h"
+      },
+      "examples": {
+        "limit": {
+          "title": "12 reels left today",
+          "body": "{{name}} is getting crispy."
+        },
+        "streak": {
+          "title": "Your streak is safe",
+          "body": "5 days under budget. Keep going!"
+        },
+        "stopped": {
+          "title": "Counting stopped",
+          "body": "Tap to turn Brainling back on."
+        }
+      }
+    },
+    "battery": {
+      "title": "Keep counting in the background",
+      "body": "Some phones stop apps to save battery. Then your count stops too.",
+      "usage": "We use under ~1–2% battery a day (target)",
+      "allow": "Allow",
+      "allowHint": "Opens Android battery optimisation settings. Choose Brainling, then Don't optimise."
     }
   }
 }
