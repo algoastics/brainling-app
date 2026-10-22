@@ -55,3 +55,6 @@ credentials.json
 # local expo module build output
 modules/*/android/build/
 modules/*/android/.gradle/
+
+# detection ruleset signing keys (scripts/rules/sign-rules.mjs); never commit
+.secrets/

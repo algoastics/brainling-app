@@ -1,3 +1,4 @@
+const { Buffer } = require('buffer');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -10,12 +11,20 @@ const {
 const SERVICE_CLASS = 'com.algoastics.brainling.core.detection.BrainlingAccessibilityService';
 const XML_NAME = 'brainling_accessibility_service';
 const DESCRIPTION_KEY = 'brainling_accessibility_description';
-const RULES_PATH = path.join(__dirname, 'android/src/main/assets/brainling/rules.json');
+const SIGNED_RULES_PATH = path.join(
+  __dirname,
+  'android/src/main/assets/brainling/rules.signed.json',
+);
 
-/** Packages the service may observe: only apps enabled in the bundled ruleset. */
+/**
+ * Packages the service may observe: every package of the apps enabled in the bundled signed
+ * ruleset (the payload the app verifies at runtime). The service narrows this further at runtime
+ * when a remote ruleset disables an app.
+ */
 function enabledPackages() {
-  const rules = JSON.parse(fs.readFileSync(RULES_PATH, 'utf8'));
-  return rules.apps.filter((app) => app.enabled).map((app) => app.packageName);
+  const envelope = JSON.parse(fs.readFileSync(SIGNED_RULES_PATH, 'utf8'));
+  const rules = JSON.parse(Buffer.from(envelope.payload, 'base64').toString('utf8'));
+  return rules.apps.filter((app) => app.enabled).flatMap((app) => app.packageNames);
 }
 
 function serviceXml() {
@@ -85,7 +94,7 @@ const withServiceDeclaration = (config) =>
 module.exports = function withBrainlingCore(config, props = {}) {
   const description =
     props.serviceDescription ??
-    'Brainling counts the short videos you watch in Instagram Reels and YouTube Shorts. It reads only which screen is open, never what is on it, and nothing leaves your phone.';
+    'Brainling counts the short videos you watch in Instagram, YouTube, TikTok, Facebook and Snapchat. It reads only which screen is open, never what is on it, and nothing leaves your phone.';
   config = withServiceXml(config);
   config = withDescription(config, description);
   return withServiceDeclaration(config);

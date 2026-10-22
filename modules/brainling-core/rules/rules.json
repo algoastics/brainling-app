@@ -1,0 +1,80 @@
+{
+  "schema": 2,
+  "version": 3,
+  "issuedAt": "2026-10-22T00:00:00Z",
+  "expiresAt": "2027-10-22T00:00:00Z",
+  "dwellMs": 800,
+  "dedupeSize": 20,
+  "sessionGapMs": 600000,
+  "surfaceRetryDelaysMs": [150, 300, 600, 1000, 1600, 2500],
+  "apps": [
+    {
+      "key": "instagram",
+      "packageNames": ["com.instagram.android"],
+      "enabled": true,
+      "surfaceIds": ["clips_viewer_view_pager"],
+      "dmSignatureIds": ["sender_username_or_fullname", "sender_timestamp", "reply_bar_edittext"]
+    },
+    {
+      "key": "youtube",
+      "packageNames": [
+        "com.google.android.youtube",
+        "app.revanced.android.youtube",
+        "com.google.android.apps.youtube.kids"
+      ],
+      "enabled": true,
+      "surfaceIds": ["reel_player_page_container"]
+    },
+    {
+      "key": "tiktok",
+      "packageNames": [
+        "com.zhiliaoapp.musically",
+        "com.ss.android.ugc.trill",
+        "com.ss.android.ugc.aweme"
+      ],
+      "enabled": true,
+      "surfaceIds": ["player_view"]
+    },
+    {
+      "key": "tiktok_lite",
+      "packageNames": ["com.zhiliaoapp.musically.go", "com.tiktok.lite.go"],
+      "enabled": true,
+      "surfaceIds": ["simplayer_api_player_view"]
+    },
+    {
+      "key": "facebook",
+      "packageNames": ["com.facebook.katana"],
+      "enabled": true,
+      "contentDescriptions": [
+        "FbShortsComposerAttachmentComponentSpec_STICKER",
+        "FbShortsComposerAttachmentComponentSpec_GIF"
+      ],
+      "structure": {
+        "classNames": [
+          "androidx.recyclerview.widget.RecyclerView",
+          "androidx.viewpager2.widget.ViewPager2"
+        ],
+        "minWidthFraction": 0.95,
+        "minHeightFraction": 0.8,
+        "requireScrollable": true,
+        "descendant": {
+          "classNames": ["android.view.TextureView", "android.view.SurfaceView"],
+          "minWidthFraction": 0.9,
+          "minHeightFraction": 0.6
+        }
+      }
+    },
+    {
+      "key": "facebook_lite",
+      "packageNames": ["com.facebook.lite"],
+      "enabled": true,
+      "surfaceIds": ["video_view"]
+    },
+    {
+      "key": "snapchat",
+      "packageNames": ["com.snapchat.android"],
+      "enabled": true,
+      "surfaceIds": ["spotlight_container"]
+    }
+  ]
+}
