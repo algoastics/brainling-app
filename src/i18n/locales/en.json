@@ -211,6 +211,65 @@
       "usage": "We use under ~1–2% battery a day (target)",
       "allow": "Allow",
       "allowHint": "Opens Android battery optimisation settings. Choose Brainling, then Don't optimise."
+    },
+    "oem": {
+      "title": "One more step for your phone",
+      "subtitle": "{{maker}} phones are strict about background apps. Do these so counting never stops.",
+      "detected": "Detected: {{name}}",
+      "guideFor": "Guide for: {{name}}",
+      "vary": "Steps vary by OS version · help page has screenshots",
+      "open": "Open the setting",
+      "didIt": "I did it",
+      "failed": "Couldn’t open it. Settings → Apps → Brainling",
+      "previous": "Previous phone maker",
+      "next": "Next phone maker",
+      "position": "{{name}}, guide {{index}} of {{total}}",
+      "samsung": {
+        "name": "Samsung · One UI",
+        "maker": "Samsung",
+        "steps": [
+          "App info → Battery → Unrestricted",
+          "Battery → Background usage limits → Never sleeping apps → add Brainling",
+          "Turn off “Put unused apps to sleep”"
+        ]
+      },
+      "xiaomi": {
+        "name": "Xiaomi / Redmi / POCO · MIUI / HyperOS",
+        "maker": "Xiaomi",
+        "steps": [
+          "App info → Autostart ON",
+          "Battery saver → No restrictions",
+          "Recents: long-press Brainling card → Lock",
+          "Other permissions → pop-up windows while in background (only if needed)"
+        ]
+      },
+      "oppo": {
+        "name": "Oppo / realme · ColorOS / realme UI",
+        "maker": "Oppo",
+        "steps": [
+          "App info → Battery usage → Allow background activity",
+          "Allow auto launch",
+          "Recents → lock the Brainling card"
+        ]
+      },
+      "vivo": {
+        "name": "Vivo / iQOO · Funtouch / OriginOS",
+        "maker": "Vivo",
+        "steps": [
+          "Battery → Background power consumption → Brainling → Allow",
+          "i Manager → App manager → Autostart → ON"
+        ]
+      },
+      "oneplus": {
+        "name": "OnePlus · OxygenOS",
+        "maker": "OnePlus",
+        "steps": ["App info → Battery → Unrestricted / Don’t optimise", "Allow auto-launch"]
+      },
+      "pixel": {
+        "name": "Pixel / stock · Android",
+        "maker": "Pixel",
+        "steps": ["Battery → Unrestricted (the previous step is enough)"]
+      }
     }
   }
 }
