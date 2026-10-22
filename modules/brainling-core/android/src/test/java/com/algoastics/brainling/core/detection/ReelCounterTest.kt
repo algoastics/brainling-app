@@ -52,4 +52,20 @@ class ReelCounterTest {
     counter.observe("a", t)
     assertEquals("a", counter.observe("a", t + 1000))
   }
+
+  @Test
+  fun suppressedDmItemNeverCounts() {
+    counter.suppress("dm")
+    counter.observe("dm", 0)
+    assertNull(counter.observe("dm", 5000))
+    assertFalse(counter.hasPending())
+  }
+
+  @Test
+  fun restoredKeysAreTrimmedToTheWindow() {
+    val restored = ReelCounter(dwellMs = 800, dedupeSize = 2, restoredKeys = listOf("a", "b", "c"))
+    assertEquals(listOf("b", "c"), restored.recentKeys())
+    restored.observe("a", 0)
+    assertEquals("a", restored.observe("a", 800))
+  }
 }

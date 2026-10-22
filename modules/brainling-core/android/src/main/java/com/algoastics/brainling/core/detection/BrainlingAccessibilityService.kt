@@ -1,132 +1,228 @@
 package com.algoastics.brainling.core.detection
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.algoastics.brainling.core.BuildConfig
+import com.algoastics.brainling.core.data.CountRepository
+import com.algoastics.brainling.core.health.HealthMonitor
+import com.algoastics.brainling.core.rules.RuleSet
+import com.algoastics.brainling.core.rules.RulesManager
 import java.security.MessageDigest
-import java.security.SecureRandom
 
 /**
- * Counts reels in the apps enabled by the ruleset. Reads only view IDs, class names, bounds and
- * scroll positions; never reads, logs, stores or uploads screen text.
+ * Counts reels in the apps enabled by the active [RuleSet]. Reads only view ids, class names,
+ * bounds, scroll positions and exact component labels; never reads, logs, stores or uploads
+ * screen text. Every callback runs on the main thread; Room and prefs writes happen elsewhere.
  */
 class BrainlingAccessibilityService : AccessibilityService() {
   private val handler = Handler(Looper.getMainLooper())
-  private lateinit var rules: RuleSet
-  private lateinit var store: CountStore
-  private val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
+  private lateinit var counts: CountRepository
+  private lateinit var stateStore: DetectionStateStore
+  private lateinit var health: HealthMonitor
+  private var rulesManager: RulesManager? = null
+  private var rules: RuleSet? = null
   private val sessions = mutableMapOf<String, Session>()
   private val scheduled = mutableSetOf<String>()
+  private val rulesListener: (RuleSet) -> Unit = { updated -> handler.post { applyRules(updated) } }
 
-  private class Session(val counter: ReelCounter) {
-    var id = 0
+  /** Browsing state for one package; the persisted part lives in [DetectionStateStore]. */
+  private class Session(val counter: ReelCounter, snapshot: SessionSnapshot) {
+    var id = snapshot.sessionId
+    var pageIndex: Int? = snapshot.pageIndex
+    var lastSeenAtMs = snapshot.lastSeenAtMs
     var onSurface = false
+    var awaitingFirstIndex = false
     var surfaceHeight = 0
-    var pageIndex: Int? = null
-    var retriesLeft = 0
+    var retryStep = Int.MAX_VALUE
+
+    fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
   }
 
   override fun onServiceConnected() {
     super.onServiceConnected()
-    rules = RuleSet.parse(assets.open(RuleSet.ASSET_PATH).bufferedReader().use { it.readText() })
-    store = CountStore.get(this)
-    DetectionDebug.serviceConnected = true
-    debugLog("connected, rules v${rules.version}")
+    connected = true
+    counts = CountRepository.get(this)
+    stateStore = DetectionStateStore(this)
+    health = HealthMonitor.get(this)
+    health.onServiceConnected()
+    val manager = try {
+      RulesManager.get(this)
+    } catch (e: Exception) {
+      // The bundled ruleset failed verification: count nothing rather than trust it.
+      Log.w(TAG, "no valid ruleset: ${e.javaClass.simpleName}")
+      null
+    }
+    rulesManager = manager
+    manager?.addListener(rulesListener)
+    manager?.active?.let(::applyRules)
+  }
+
+  /** Activates [updated]: narrows the observed packages and resets counters if timing changed. */
+  private fun applyRules(updated: RuleSet) {
+    val previous = rules
+    rules = updated
+    if (previous == null || previous.countingDiffers(updated)) {
+      persistAll()
+      sessions.clear()
+    }
+    sessions.keys.retainAll(updated.enabledPackages)
+    serviceInfo?.let { info ->
+      info.packageNames = updated.enabledPackages.toTypedArray()
+      serviceInfo = info
+    }
+    debugLog("rules v${updated.version} packages=${updated.enabledPackages.size}")
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent) {
-    if (!::rules.isInitialized) return
-    val rule = rules.ruleFor(event.packageName) ?: return
-    val session = sessions.getOrPut(rule.packageName) {
-      Session(ReelCounter(rules.dwellMs, rules.dedupeSize))
-    }
+    val active = rules ?: return
+    val packageName = event.packageName?.toString() ?: return
+    val rule = active.ruleFor(packageName) ?: return
+    health.heartbeat()
+    val session = session(packageName, active)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-        if (session.onSurface) {
-          NodeInspector.pageIndex(event, session.surfaceHeight)?.let { session.pageIndex = it }
+        if (session.onSurface && NodeInspector.isSurfaceEvent(event, rule)) {
+          NodeInspector.pageIndex(event, session.surfaceHeight)?.let { onPageIndex(session, it) }
         }
       }
-      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> session.retriesLeft = SURFACE_RETRIES
+      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> session.retryStep = 0
     }
-    schedule(rule, THROTTLE_MS)
+    schedule(packageName, THROTTLE_MS)
   }
 
-  private fun schedule(rule: AppRule, delayMs: Long) {
-    if (!scheduled.add(rule.packageName)) return
+  private fun onPageIndex(session: Session, index: Int) {
+    if (session.awaitingFirstIndex) {
+      session.awaitingFirstIndex = false
+      if (SessionPolicy.feedRestarted(session.pageIndex, index)) session.id++
+    }
+    session.pageIndex = index
+  }
+
+  private fun session(packageName: String, active: RuleSet): Session =
+    sessions.getOrPut(packageName) {
+      val snapshot = stateStore.load(packageName)
+      Session(ReelCounter(active.dwellMs, active.dedupeSize, snapshot.recentKeys), snapshot)
+    }
+
+  private fun schedule(packageName: String, delayMs: Long) {
+    if (!scheduled.add(packageName)) return
     handler.postDelayed({
-      scheduled.remove(rule.packageName)
-      evaluate(rule)
+      scheduled.remove(packageName)
+      evaluate(packageName)
     }, delayMs)
   }
 
-  private fun evaluate(rule: AppRule) {
-    val session = sessions[rule.packageName] ?: return
-    val root = rootInActiveWindow
-    val surface = if (root?.packageName?.toString() == rule.packageName) {
-      NodeInspector.findSurface(root, rule)
-    } else {
-      null
-    }
+  private fun evaluate(packageName: String) {
+    val active = rules ?: return
+    val rule = active.ruleFor(packageName) ?: return
+    val session = sessions[packageName] ?: return
+    val root = rootInActiveWindow?.takeIf { it.packageName?.toString() == packageName }
     val now = SystemClock.elapsedRealtime()
+    val wallNow = System.currentTimeMillis()
+    if (root != null) DetectionDebug.maybeCapture(this, packageName, root)
+    val surface = root?.let { NodeInspector.findSurface(it, rule, packageName) }
 
     if (surface == null) {
       if (session.onSurface) {
         session.onSurface = false
-        session.id++
-        session.pageIndex = null
+        stateStore.save(packageName, session.snapshot())
       }
       session.counter.observe(null, now)
-      if (session.retriesLeft > 0) {
-        session.retriesLeft--
-        schedule(rule, RETRY_MS)
+      val delays = active.surfaceRetryDelaysMs
+      if (session.retryStep < delays.size) {
+        val delay = delays[session.retryStep]
+        session.retryStep++
+        schedule(packageName, delay)
       }
       return
     }
 
-    session.retriesLeft = 0
+    session.retryStep = Int.MAX_VALUE
+    if (!session.onSurface) enterSurface(session, active.sessionGapMs, wallNow)
     session.onSurface = true
+    session.lastSeenAtMs = wallNow
     session.surfaceHeight = surface.bounds.height()
-    val key = itemKey(rule.packageName, session.id, session.pageIndex)
-    val counted = session.counter.observe(key, now) != null
-    if (counted) store.increment(rule.key)
+
+    val key = itemKey(packageName, session.id, session.pageIndex)
+    val fromDm = root != null && NodeInspector.hasDmSignature(root, rule, packageName)
+    val counted = if (fromDm) {
+      session.counter.suppress(key)
+      session.counter.observe(null, now)
+      false
+    } else {
+      session.counter.observe(key, now) != null
+    }
+    if (counted) {
+      counts.record(rule.key)
+      stateStore.save(packageName, session.snapshot())
+    }
 
     DetectionDebug.record(
       DetectionInfo(
-        packageName = rule.packageName,
-        surfaceId = surface.surfaceId,
+        packageName = packageName,
+        surfaceId = surface.signal,
         className = surface.className,
         bounds = surface.bounds.toShortString(),
+        sessionId = session.id,
         itemIndex = session.pageIndex,
         keyPrefix = key.take(8),
         counted = counted,
-        atMs = System.currentTimeMillis(),
+        dmExcluded = fromDm,
+        atMs = wallNow,
       ),
     )
-    debugLog(
-      "surface=${surface.surfaceId} index=${session.pageIndex} key=${key.take(8)} counted=$counted",
-    )
-
-    if (session.counter.hasPending()) schedule(rule, rules.dwellMs + DWELL_SLACK_MS)
+    if (session.counter.hasPending()) schedule(packageName, active.dwellMs + DWELL_SLACK_MS)
   }
 
-  /** Salted hash of a structural identity (package, surface session, page index). */
+  /** Continues the previous browsing session after a short absence, else starts a new one. */
+  private fun enterSurface(session: Session, sessionGapMs: Long, wallNow: Long) {
+    if (SessionPolicy.continues(session.lastSeenAtMs, wallNow, sessionGapMs)) {
+      session.awaitingFirstIndex = true
+    } else {
+      session.id++
+      session.pageIndex = null
+      session.awaitingFirstIndex = false
+    }
+  }
+
+  /** Salted hash of a structural position (package, browsing session, page index). */
   private fun itemKey(packageName: String, sessionId: Int, pageIndex: Int?): String {
     val digest = MessageDigest.getInstance("SHA-256")
-    digest.update(salt)
+    digest.update(stateStore.salt)
     digest.update("$packageName|$sessionId|${pageIndex ?: "start"}".toByteArray())
-    return digest.digest().joinToString("") { "%02x".format(it) }.take(16)
+    return digest.digest().joinToString("") { "%02x".format(it) }.take(KEY_HEX_CHARS)
+  }
+
+  private fun persistAll() {
+    if (!::stateStore.isInitialized) return
+    sessions.forEach { (packageName, session) -> stateStore.save(packageName, session.snapshot()) }
   }
 
   override fun onInterrupt() = Unit
 
+  override fun onUnbind(intent: Intent?): Boolean {
+    shutdown()
+    return super.onUnbind(intent)
+  }
+
   override fun onDestroy() {
-    handler.removeCallbacksAndMessages(null)
-    DetectionDebug.serviceConnected = false
+    shutdown()
     super.onDestroy()
+  }
+
+  private fun shutdown() {
+    if (!connected) return
+    connected = false
+    handler.removeCallbacksAndMessages(null)
+    scheduled.clear()
+    rulesManager?.removeListener(rulesListener)
+    persistAll()
+    if (::health.isInitialized) health.onServiceStopped()
   }
 
   private fun debugLog(message: String) {
@@ -136,8 +232,11 @@ class BrainlingAccessibilityService : AccessibilityService() {
   companion object {
     private const val TAG = "BrainlingDetect"
     private const val THROTTLE_MS = 250L
-    private const val RETRY_MS = 300L
-    private const val SURFACE_RETRIES = 3
     private const val DWELL_SLACK_MS = 50L
+    private const val KEY_HEX_CHARS = 16
+
+    /** True while the service is bound in this process (read by the watchdog and debug tools). */
+    @Volatile var connected = false
+      private set
   }
 }
