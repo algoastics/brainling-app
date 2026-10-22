@@ -153,6 +153,31 @@
       "agree": "Agree & continue",
       "agreeHint": "Tick the box above first",
       "notNow": "Not now"
+    },
+    "restricted": {
+      "title": "Allow restricted settings first",
+      "subtitle": "Android 13+ blocks Accessibility for apps installed outside Google Play. Do this once:",
+      "steps": {
+        "appInfo": "Open App info for Brainling",
+        "menu": "Tap ⋮ (top right)",
+        "allow": "Tap “Allow restricted settings”",
+        "back": "Come back and turn on Accessibility"
+      },
+      "open": "Open App info",
+      "openHint": "Opens Brainling's App info in Android settings",
+      "done": "Done — turn on Accessibility"
+    },
+    "accessibility": {
+      "title": "Turn on Brainling in Accessibility",
+      "path": "Settings → Accessibility → Installed apps → Brainling → ON",
+      "open": "Open Accessibility settings",
+      "openHint": "Opens Android accessibility settings",
+      "help": "Need help?",
+      "stillOff": "Still off — try again",
+      "warning": "Android will show a scary warning. That’s normal for all Accessibility apps. We only do what’s listed on the previous screen.",
+      "banking": "Some banking or payment apps ask you to pause Accessibility apps while you use them. If one asks, pause Brainling — we’ll remind you to turn it back on.",
+      "successTitle": "Counting is ON",
+      "successBody": "Your Brainling can feel reels now."
     }
   }
 }
