@@ -86,7 +86,14 @@ function DetectionDebugScreen() {
             <ListRow title="Signal" subtitle={last.surfaceId ?? '—'} />
             <ListRow title="Class" subtitle={last.className ?? '—'} />
             <ListRow title="Bounds" subtitle={last.bounds ?? '—'} />
-            <ListRow title="Page index" value={last.itemIndex?.toString() ?? '—'} />
+            <ListRow
+              title="Page index"
+              value={
+                last.itemIndex == null
+                  ? '—'
+                  : `${last.itemIndex}${last.indexSource ? ` (${last.indexSource})` : ''}`
+              }
+            />
             <ListRow title="Key" value={last.keyPrefix ?? '—'} />
             <ListRow title="Session" value={String(last.sessionId)} />
             <ListRow title="Counted" value={last.counted ? 'Yes' : 'No'} />

@@ -8,6 +8,8 @@ data class DetectionInfo(
   val bounds: String?,
   val sessionId: Int,
   val itemIndex: Int?,
+  /** "pager" (adapter position from scroll events), "swipe" (counted settled swipes) or null. */
+  val indexSource: String? = null,
   val keyPrefix: String?,
   val counted: Boolean,
   val dmExcluded: Boolean,
@@ -20,6 +22,7 @@ data class DetectionInfo(
     "bounds" to bounds,
     "sessionId" to sessionId,
     "itemIndex" to itemIndex,
+    "indexSource" to indexSource,
     "keyPrefix" to keyPrefix,
     "counted" to counted,
     "dmExcluded" to dmExcluded,

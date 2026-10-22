@@ -42,6 +42,8 @@ export type DetectionInfo = {
   bounds: string | null;
   sessionId: number;
   itemIndex: number | null;
+  /** 'pager' = adapter position from scroll events, 'swipe' = counted settled swipes. */
+  indexSource?: 'pager' | 'swipe' | null;
   keyPrefix: string | null;
   counted: boolean;
   dmExcluded: boolean;

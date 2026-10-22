@@ -39,6 +39,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
     var awaitingFirstIndex = false
     var surfaceHeight = 0
     var retryStep = Int.MAX_VALUE
+    val pager = PagerTracker()
 
     fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
   }
@@ -86,8 +87,10 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val session = session(packageName, active)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-        if (session.onSurface && NodeInspector.isSurfaceEvent(event, rule)) {
-          NodeInspector.pageIndex(event, session.surfaceHeight)?.let { onPageIndex(session, it) }
+        if (session.onSurface && NodeInspector.isPagerEvent(event, rule)) {
+          val now = SystemClock.elapsedRealtime()
+          session.pager.onScroll(NodeInspector.scrollOf(event), session.surfaceHeight, now)
+            ?.let { onPageIndex(session, it) }
         }
       }
       AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> session.retryStep = 0
@@ -148,6 +151,14 @@ class BrainlingAccessibilityService : AccessibilityService() {
     session.lastSeenAtMs = wallNow
     session.surfaceHeight = surface.bounds.height()
 
+    // Mid-swipe the surface on screen is neither reel; wait for the pager to settle so a
+    // half-visible page never starts a dwell (and the old reel's dwell cannot complete).
+    if (session.pager.isSettling(now)) {
+      schedule(packageName, PagerTracker.SETTLE_MS)
+      return
+    }
+    session.pager.settle(session.pageIndex, session.surfaceHeight, now)?.let { onPageIndex(session, it) }
+
     val key = itemKey(packageName, session.id, session.pageIndex)
     val fromDm = root != null && NodeInspector.hasDmSignature(root, rule, packageName)
     val counted = if (fromDm) {
@@ -170,6 +181,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
         bounds = surface.bounds.toShortString(),
         sessionId = session.id,
         itemIndex = session.pageIndex,
+        indexSource = session.pager.source?.name?.lowercase(),
         keyPrefix = key.take(8),
         counted = counted,
         dmExcluded = fromDm,

@@ -35,6 +35,18 @@ data class AppRule(
    * direct message, so it is not counted. Empty = the app has no DM exclusion.
    */
   val dmSignatureIds: List<String>,
+  /**
+   * View ids of the paging container (RecyclerView/ViewPager) whose TYPE_VIEW_SCROLLED events
+   * carry the reel position. Needed when the surface id is a page child rather than the pager
+   * itself (YouTube, TikTok). Empty = scroll events must come from a [surfaceIds] view.
+   */
+  val pagerIds: List<String> = emptyList(),
+  /**
+   * Optional class filter for [pagerIds], for apps that reuse one id on nested pagers (TikTok's
+   * tab pagers and its vertical feed pager are all `viewpager`). Matched against the event's or
+   * the source node's class name.
+   */
+  val pagerClassNames: List<String> = emptyList(),
 ) {
   val hasSignal: Boolean
     get() = surfaceIds.isNotEmpty() || contentDescriptions.isNotEmpty() || structure != null
@@ -68,7 +80,9 @@ data class RuleSet(
     dwellMs != other.dwellMs || dedupeSize != other.dedupeSize
 
   companion object {
-    const val SCHEMA = 2
+    /** Schema written by sign-rules.mjs. 3 adds the optional pagerIds / pagerClassNames. */
+    const val SCHEMA = 3
+    val SUPPORTED_SCHEMAS = setOf(2, 3)
     private val KEY = Regex("^[a-z][a-z0-9_]{0,31}$")
     private val PACKAGE = Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$")
     private val VIEW_ID = Regex("^[A-Za-z0-9_]{1,100}$")
@@ -78,7 +92,7 @@ data class RuleSet(
     /** Parses and validates a ruleset payload; throws if it is malformed or out of range. */
     fun parse(json: String): RuleSet {
       val root = JSONObject(json)
-      require(root.getInt("schema") == SCHEMA) { "unsupported schema" }
+      require(root.getInt("schema") in SUPPORTED_SCHEMAS) { "unsupported schema" }
       val version = root.getInt("version")
       val dwellMs = root.getLong("dwellMs")
       val dedupeSize = root.getInt("dedupeSize")
@@ -113,13 +127,19 @@ data class RuleSet(
         contentDescriptions = optStrings(app, "contentDescriptions"),
         structure = app.optJSONObject("structure")?.let { parseStructure(it, 1) },
         dmSignatureIds = optStrings(app, "dmSignatureIds"),
+        pagerIds = optStrings(app, "pagerIds"),
+        pagerClassNames = optStrings(app, "pagerClassNames"),
       )
       require(KEY.matches(rule.key)) { "bad key" }
       require(rule.packageNames.isNotEmpty() && rule.packageNames.all { PACKAGE.matches(it) }) {
         "bad packageNames"
       }
-      val ids = rule.surfaceIds + rule.dmSignatureIds
+      val ids = rule.surfaceIds + rule.dmSignatureIds + rule.pagerIds
       require(ids.all { VIEW_ID.matches(it) }) { "bad view id" }
+      require(rule.pagerClassNames.all { CLASS_NAME.matches(it) }) { "bad pagerClassNames" }
+      require(rule.pagerClassNames.isEmpty() || rule.pagerIds.isNotEmpty()) {
+        "pagerClassNames without pagerIds"
+      }
       require(rule.contentDescriptions.all { it.length in 1..200 }) { "bad content description" }
       require(!rule.enabled || rule.hasSignal) { "enabled app without a detection signal" }
       return rule

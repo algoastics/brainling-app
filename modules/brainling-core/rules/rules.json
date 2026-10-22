@@ -1,6 +1,6 @@
 {
-  "schema": 2,
-  "version": 3,
+  "schema": 3,
+  "version": 4,
   "issuedAt": "2026-10-22T00:00:00Z",
   "expiresAt": "2027-10-22T00:00:00Z",
   "dwellMs": 800,
@@ -23,7 +23,8 @@
         "com.google.android.apps.youtube.kids"
       ],
       "enabled": true,
-      "surfaceIds": ["reel_player_page_container"]
+      "surfaceIds": ["reel_player_page_container"],
+      "pagerIds": ["reel_recycler"]
     },
     {
       "key": "tiktok",
@@ -33,7 +34,9 @@
         "com.ss.android.ugc.aweme"
       ],
       "enabled": true,
-      "surfaceIds": ["player_view"]
+      "surfaceIds": ["player_view"],
+      "pagerIds": ["viewpager"],
+      "pagerClassNames": ["androidx.viewpager.widget.ViewPager"]
     },
     {
       "key": "tiktok_lite",

@@ -1,6 +1,7 @@
 package com.algoastics.brainling.core.detection
 
 import android.graphics.Rect
+import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.algoastics.brainling.core.rules.AppRule
@@ -36,26 +37,25 @@ object NodeInspector {
       }
     }
 
-  /** True when a scroll event came from one of the rule's surface views (or the rule has none). */
-  fun isSurfaceEvent(event: AccessibilityEvent, rule: AppRule): Boolean {
-    if (rule.surfaceIds.isEmpty()) return true
-    val id = event.source?.viewIdResourceName ?: return false
-    val bare = id.substringAfter(":id/", "")
-    return bare.isNotEmpty() && bare in rule.surfaceIds
+  /** True when a scroll event describes the reel position (see [PagerMatch.matches]). */
+  fun isPagerEvent(event: AccessibilityEvent, rule: AppRule): Boolean {
+    val source = event.source
+    return PagerMatch.matches(
+      rule = rule,
+      viewId = source?.viewIdResourceName,
+      eventClass = event.className?.toString(),
+      sourceClass = source?.className?.toString(),
+    )
   }
 
-  /**
-   * Page index from a scroll event: the adapter position when the pager has settled on one item
-   * (fromIndex == toIndex), else derived from the scroll offset and the surface height.
-   */
-  fun pageIndex(event: AccessibilityEvent, surfaceHeight: Int): Int? {
-    if (event.fromIndex >= 0 && event.fromIndex == event.toIndex) return event.fromIndex
-    if (event.fromIndex >= 0 && event.toIndex < 0) return event.fromIndex
-    if (surfaceHeight > 0 && event.scrollY >= 0 && event.maxScrollY > 0) {
-      return Math.round(event.scrollY.toFloat() / surfaceHeight)
-    }
-    return null
-  }
+  /** The structural fields of a scroll event. */
+  fun scrollOf(event: AccessibilityEvent): PagerScroll = PagerScroll(
+    fromIndex = event.fromIndex,
+    toIndex = event.toIndex,
+    scrollY = event.scrollY,
+    maxScrollY = event.maxScrollY,
+    scrollDeltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0,
+  )
 
   private fun findById(
     root: AccessibilityNodeInfo,

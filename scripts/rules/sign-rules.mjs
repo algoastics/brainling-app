@@ -46,7 +46,7 @@ function publicKeyFromRaw(rawBase64) {
 
 /** Light structural checks; the app re-validates everything after verifying the signature. */
 function checkRules(rules) {
-  if (rules.schema !== 2) fail('schema must be 2');
+  if (![2, 3].includes(rules.schema)) fail('schema must be 2 or 3');
   if (!Number.isInteger(rules.version) || rules.version < 1)
     fail('version must be a positive integer');
   if (!ISO.test(rules.issuedAt) || !ISO.test(rules.expiresAt))
