@@ -25,7 +25,7 @@ Branch: `module/01-detection-native` (from `module/01-detection`). Native code l
 | Debug tools | `src/debug/.../DetectionDebug.kt`, `src/app/detection-debug.tsx` | Last detection + capture-layout (see below). Release twin in `src/release` is a no-op. |
 | Config plugin | `modules/brainling-core/app.plugin.js` | Service declaration + XML, `BRAINLING_RULES_URL` meta-data, strips foreground service. |
 
-## Ruleset format (schema 2)
+## Ruleset format (schema 3)
 
 Source: `modules/brainling-core/rules/rules.json`. Shipped: `android/src/main/assets/brainling/rules.signed.json`
 (`{"alg":"Ed25519","keyId","payload":<base64 JSON>,"signature"}`). Top level: `schema`, `version`,
@@ -36,20 +36,35 @@ Source: `modules/brainling-core/rules/rules.json`. Shipped: `android/src/main/as
 optional `descendant`, max depth 4). Optional `dmSignatureIds[]`: when all are visible the reel was
 opened from a DM and is not counted.
 
+Schema 3 (parser accepts 2 and 3) adds optional `pagerIds[]` and `pagerClassNames[]`: the paging
+container whose `TYPE_VIEW_SCROLLED` events carry the reel position, for apps whose surface id is a
+page child rather than the pager (YouTube `reel_recycler`, TikTok `viewpager`).
+`pagerClassNames` disambiguates reused ids (TikTok has three `viewpager`s; only the vertical feed
+is `androidx.viewpager.widget.ViewPager`) and is matched against the event or source class. Without
+`pagerIds`, scroll events must come from a `surfaceIds` view (Instagram) or from anywhere when the
+app has no surface ids (Facebook).
+
+Item keys are a salted hash of (package, session, page index). The index comes from the pager
+event's adapter position (`fromIndex == toIndex`), else `scrollY / surface height`
+(`detection/PagerTracker.kt`). Evaluations are skipped while the pager is still scrolling (200 ms
+settle), so a half-visible page never starts a dwell. If a pager emits scroll events without any
+position, each settled swipe of at least half a page steps a synthetic index (debug screen shows
+`(swipe)`); autoplay loops scroll nothing and keep the key.
+
 View ids are tried qualified with the observed package first, then every package of the family
 (so ReVanced builds that keep YouTube's resource package still match).
 
 | Key | Packages | Signal |
 |---|---|---|
 | `instagram` | `com.instagram.android` | `clips_viewer_view_pager`; DM signature `sender_username_or_fullname` + `sender_timestamp` + `reply_bar_edittext` |
-| `youtube` | `com.google.android.youtube`, `app.revanced.android.youtube`, `com.google.android.apps.youtube.kids` | `reel_player_page_container` |
-| `tiktok` | `com.zhiliaoapp.musically`, `com.ss.android.ugc.trill`, `com.ss.android.ugc.aweme` | `player_view` |
+| `youtube` | `com.google.android.youtube`, `app.revanced.android.youtube`, `com.google.android.apps.youtube.kids` | `reel_player_page_container`; pager `reel_recycler` |
+| `tiktok` | `com.zhiliaoapp.musically`, `com.ss.android.ugc.trill`, `com.ss.android.ugc.aweme` | `player_view`; pager `viewpager` (class `androidx.viewpager.widget.ViewPager`) |
 | `tiktok_lite` | `com.zhiliaoapp.musically.go`, `com.tiktok.lite.go` | `simplayer_api_player_view` |
 | `facebook` | `com.facebook.katana` | `FbShortsComposerAttachmentComponentSpec_STICKER` / `_GIF`; fallback: full-window scrollable RecyclerView/ViewPager2 containing a ≥60 % TextureView/SurfaceView |
 | `facebook_lite` | `com.facebook.lite` | `video_view` |
 | `snapchat` | `com.snapchat.android` | `spotlight_container` |
 
-All are enabled in ruleset v3. The service XML `packageNames` is generated from the enabled apps of
+All are enabled in ruleset v4. The service XML `packageNames` is generated from the enabled apps of
 the **signed** bundled payload at prebuild, so the service only ever receives events from these
 packages. `isAccessibilityTool` is always `false` (Brainling is not an accessibility tool under
 Play policy); never change it.
