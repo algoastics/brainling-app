@@ -56,7 +56,6 @@
   "reenable": {
     "title": "Brainling stopped counting",
     "body": "Brainling's accessibility service was turned off, so reels aren't being counted. This sometimes happens when a banking or payment app asks you to turn accessibility off.",
-    "why": "Brainling uses Android's AccessibilityService only to detect when a reels or shorts feed is on screen and count items. It never reads your messages, passwords or typed text, and nothing leaves your phone.",
     "steps": "Tap the button, find Brainling under Installed apps, and turn it on.",
     "cta": "Open accessibility settings",
     "ctaHint": "Opens Android accessibility settings",

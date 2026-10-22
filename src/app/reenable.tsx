@@ -5,6 +5,12 @@ import { useCallback } from 'react';
 import { AppBar, Button, Card, Screen, Text } from '@/components/ui';
 import { useServiceStatus } from '@/detection';
 import { useT } from '@/i18n';
+import {
+  DISCLOSURE_PARAGRAPHS,
+  DISCLOSURE_POINTS,
+  disclosureParagraphKey,
+  disclosurePointKey,
+} from '@/onboarding/disclosure';
 
 function leave() {
   if (router.canGoBack()) router.back();
@@ -35,8 +41,15 @@ export default function ReenableScreen() {
         <>
           <Text variant="body.lg">{t('reenable.body')}</Text>
           <Card>
-            <Text>{t('reenable.why')}</Text>
+            {DISCLOSURE_POINTS.map((p) => (
+              <Text key={p.key}>{t(disclosurePointKey(p.key))}</Text>
+            ))}
           </Card>
+          {DISCLOSURE_PARAGRAPHS.map((k) => (
+            <Text key={k} variant="body.sm" color="ink2">
+              {t(disclosureParagraphKey(k))}
+            </Text>
+          ))}
           <Text color="ink2">{t('reenable.steps')}</Text>
           <Button
             label={t('reenable.cta')}

@@ -6,16 +6,16 @@ import { Mascot } from '@/components/mascot';
 import { Button, Checkbox, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import { Icon, MascotProp, OnboardingLayout, Title } from '@/onboarding/components';
+import {
+  DISCLOSURE_PARAGRAPHS,
+  DISCLOSURE_POINTS,
+  disclosureParagraphKey,
+  disclosurePointKey,
+} from '@/onboarding/disclosure';
 import { routeAfterDisclosure } from '@/onboarding/flow';
 import { useOnboardingStore } from '@/onboarding/store';
 import { useAppStore } from '@/state/appStore';
 import { radius, space, useTheme } from '@/theme';
-
-const POINTS = [
-  { key: 'counts', ok: true },
-  { key: 'lock', ok: true },
-  { key: 'never', ok: false },
-] as const;
 
 const Point = memo(function Point({ text, ok }: { text: string; ok: boolean }) {
   const { colors } = useTheme();
@@ -35,8 +35,6 @@ const Point = memo(function Point({ text, ok }: { text: string; ok: boolean }) {
     </View>
   );
 });
-
-const PARAGRAPHS = ['what', 'use', 'never', 'off'] as const;
 
 /**
  * S06 / S06-agreed — Play prominent disclosure for the AccessibilityService. Standalone screen in
@@ -84,14 +82,14 @@ export default function DisclosureScreen() {
         </View>
       </View>
       <View style={styles.points}>
-        {POINTS.map((p) => (
-          <Point key={p.key} ok={p.ok} text={t(`onboarding.disclosure.points.${p.key}`)} />
+        {DISCLOSURE_POINTS.map((p) => (
+          <Point key={p.key} ok={p.ok} text={t(disclosurePointKey(p.key))} />
         ))}
       </View>
       <View style={[styles.legal, { backgroundColor: colors.surface2 }]}>
-        {PARAGRAPHS.map((k) => (
+        {DISCLOSURE_PARAGRAPHS.map((k) => (
           <Text key={k} variant="body.sm" color="ink2" style={styles.legalText}>
-            {t(`onboarding.disclosure.body.${k}`)}
+            {t(disclosureParagraphKey(k))}
           </Text>
         ))}
       </View>
