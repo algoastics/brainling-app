@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="brainling_health_channel_name">Counting status</string>
+    <string name="brainling_health_channel_description">Tells you when reel counting stops because accessibility was turned off.</string>
+    <string name="brainling_reenable_title">Brainling stopped counting</string>
+    <string name="brainling_reenable_text">Accessibility was turned off for Brainling. Tap to turn it back on.</string>
+</resources>

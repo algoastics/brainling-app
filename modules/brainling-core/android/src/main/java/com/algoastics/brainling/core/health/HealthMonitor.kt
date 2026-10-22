@@ -44,7 +44,8 @@ data class HealthStatus(
 /**
  * Service health watchdog. Checked every 15 min by [HealthWorker], on app open and on service
  * connect/disconnect. Every state change is stored in Room (`health_events`) and sent to
- * listeners.
+ * listeners. Turning the service off posts a one-tap re-enable reminder ([ReenableNotifier]);
+ * the reminder is cleared once the service is running again.
  */
 class HealthMonitor private constructor(context: Context) {
   private val appContext = context.applicationContext
@@ -114,6 +115,8 @@ class HealthMonitor private constructor(context: Context) {
     if (previous != state.wire) {
       dao.insert(HealthEventEntity(atMs = now, state = state.wire, reason = reason))
       dao.deleteBefore(now - RETENTION_MS)
+      if (ReenableNotifier.shouldNotify(previous, state.wire)) ReenableNotifier.show(appContext)
+      if (state == ServiceState.OK) ReenableNotifier.cancel(appContext)
       listeners.forEach { it(status) }
     }
     return status
