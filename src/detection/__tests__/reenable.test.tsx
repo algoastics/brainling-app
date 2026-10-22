@@ -31,7 +31,7 @@ describe('reenable route', () => {
   it('shows the disclosure before the settings link and opens settings only on tap', async () => {
     mockCore.isServiceEnabled.mockResolvedValue(false);
     await render(<ReenableScreen />);
-    expect(await screen.findByText(/never reads your messages/)).toBeTruthy();
+    expect(await screen.findByText(/never reads your messages/i)).toBeTruthy();
     expect(mockCore.openAccessibilitySettings).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: 'Open accessibility settings' }));
     expect(mockCore.openAccessibilitySettings).toHaveBeenCalledTimes(1);
