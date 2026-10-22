@@ -105,6 +105,43 @@ class RuleSetTest {
   }
 
   @Test
+  fun youtubeAndTikTokNamePagersWhoseScrollsCarryThePosition() {
+    val youtube = requireNotNull(source.ruleFor("com.google.android.youtube"))
+    assertEquals(listOf("reel_recycler"), youtube.pagerIds)
+    assertTrue(youtube.pagerClassNames.isEmpty())
+    val tiktok = requireNotNull(source.ruleFor("com.zhiliaoapp.musically"))
+    assertEquals(listOf("viewpager"), tiktok.pagerIds)
+    assertEquals(listOf("androidx.viewpager.widget.ViewPager"), tiktok.pagerClassNames)
+    assertTrue(requireNotNull(source.ruleFor("com.instagram.android")).pagerIds.isEmpty())
+    assertEquals(3, JSONObject(sourceText).getInt("schema"))
+  }
+
+  @Test
+  fun schemaTwoPayloadsStillParseWithoutPagerFields() {
+    val rules = RuleSet.parse(
+      withApps("""{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"]}""", schema = 2),
+    )
+    assertTrue(requireNotNull(rules.ruleFor("com.a.b")).pagerIds.isEmpty())
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun rejectsMalformedPagerId() {
+    RuleSet.parse(
+      withApps("""{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"],"pagerIds":["a b"]}"""),
+    )
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun rejectsPagerClassNamesWithoutPagerIds() {
+    RuleSet.parse(
+      withApps(
+        """{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"],
+           "pagerClassNames":["androidx.viewpager.widget.ViewPager"]}""",
+      ),
+    )
+  }
+
+  @Test
   fun countingDiffersOnlyOnTimingChanges() {
     val same = RuleSet.parse(JSONObject(sourceText).put("version", 99).toString())
     val slower = RuleSet.parse(JSONObject(sourceText).put("dwellMs", 1200).toString())

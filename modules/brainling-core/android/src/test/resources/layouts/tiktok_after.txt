@@ -1,0 +1,399 @@
+# com.zhiliaoapp.musically nodes=398
+android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+  android.widget.LinearLayout id=- bounds=[0,0][1080,2340] visible
+    android.widget.FrameLayout id=android:id/content bounds=[0,0][1080,2340] visible
+      android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+        android.widget.LinearLayout id=com.zhiliaoapp.musically:id/a3o bounds=[0,0][1080,2340] visible
+          android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/v5f bounds=[0,0][1080,2340] visible
+          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/v5i bounds=[0,0][1080,2340] visible
+            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/em0 bounds=[0,0][1080,2340] visible
+              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/f2t bounds=[0,0][1080,2340] visible
+                android.view.View id=com.zhiliaoapp.musically:id/ot4 bounds=[0,0][1080,2340]
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ekh bounds=[0,0][1080,2340] visible
+            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/jjq bounds=[0,0][1080,2340] visible
+              X.05rH id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2340] visible scrollable
+                android.widget.TabHost id=com.zhiliaoapp.musically:id/ooa bounds=[0,0][1080,2340] visible
+                  android.widget.LinearLayout id=- bounds=[0,0][1080,2205] visible
+                    android.widget.FrameLayout id=android:id/tabcontent bounds=[0,0][0,0]
+                      android.view.View id=- bounds=[0,0][0,0]
+                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/y9d bounds=[0,0][1080,2205] visible
+                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/onu bounds=[0,0][1080,2205] visible
+                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/y9d bounds=[0,0][1080,2205] visible
+                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ir7 bounds=[0,0][1080,2205] visible
+                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/srr bounds=[0,0][1080,2205] visible
+                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/im9 bounds=[0,0][1080,2205] visible
+                          X.05rH id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2205] visible scrollable
+                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ibz bounds=[0,0][1080,2205] visible clickable
+                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wrl bounds=[0,0][1080,2205] visible
+                              android.view.ViewGroup id=com.zhiliaoapp.musically:id/g7_ bounds=[0,0][1080,2205] visible
+                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wrd bounds=[0,0][1080,2205] visible
+                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/u85 bounds=[0,0][1080,2205] visible
+                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/oem bounds=[0,0][1080,2205] visible
+                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/zpr bounds=[0,0][1080,0]
+                                      android.widget.FrameLayout id=- bounds=[0,0][1080,0]
+                                        android.widget.ImageView id=- bounds=[1057,0][1080,0]
+                                        android.widget.ImageView id=- bounds=[0,0][23,0]
+                                      android.view.View id=com.zhiliaoapp.musically:id/zpq bounds=[0,0][1080,0]
+                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i38 bounds=[0,0][1080,2205] visible
+                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/g8h bounds=[0,0][1080,2205] visible
+                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/viewpager_container bounds=[0,0][1080,2205] visible
+                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_pager_layout_wrapper bounds=[0,0][1080,2067] visible
+                                        androidx.viewpager.widget.ViewPager id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2067] visible scrollable
+                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,0][1080,-2017]
+                                            X.060A id=com.zhiliaoapp.musically:id/widget_container bounds=[0,0][1080,-2017]
+                                            android.view.View id=com.zhiliaoapp.musically:id/long_press_layout bounds=[0,0][1080,-2017] clickable
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/piy bounds=[0,0][1080,-2017]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i_h bounds=[0,0][1080,-2017]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/dqr bounds=[0,0][1080,-2017]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aah bounds=[0,0][1080,-2017]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_hot_swap_paywall_view bounds=[0,0][1080,-2017]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aa7 bounds=[0,0][1080,-2067]
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_container_area bounds=[0,0][1080,-2067]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container bounds=[0,0][1080,-2310]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/oxg bounds=[0,0][1080,-2310]
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_sticker_container_area bounds=[0,0][1080,-2066]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container_sticker bounds=[0,0][1080,-2309]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ljp bounds=[0,0][1080,-2560]
+                                                  android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/uy4 bounds=[0,0][1080,-2560]
+                                            android.view.ViewGroup id=com.zhiliaoapp.musically:id/i82 bounds=[0,0][1080,-3984]
+                                              android.widget.ImageView id=com.zhiliaoapp.musically:id/i83 bounds=[934,0][1080,-3984]
+                                            android.view.View id=com.zhiliaoapp.musically:id/wiz bounds=[0,0][1080,-4046]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/rff bounds=[0,0][1080,-3898]
+                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,0][1080,199] visible
+                                            X.060A id=com.zhiliaoapp.musically:id/widget_container bounds=[0,0][1080,199] visible
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/j5v bounds=[0,0][1080,0] clickable
+                                              X.060A id=com.zhiliaoapp.musically:id/cob bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/xn2 bounds=[42,0][877,0]
+                                              X.060A id=com.zhiliaoapp.musically:id/zuf bounds=[0,0][1080,0]
+                                                X.060A id=com.zhiliaoapp.musically:id/c7y bounds=[0,0][1080,-629]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aab bounds=[1080,0][1080,-2067]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/r_a bounds=[0,0][1080,-629]
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/r_d bounds=[0,0][1080,-629]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/mud bounds=[518,0][562,-1983] clickable
+                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/wu6 bounds=[518,0][562,-1983]
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wu5 bounds=[529,0][529,-1983]
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wtz bounds=[551,0][551,-1983]
+                                                android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljn bounds=[0,0][1080,0] clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[899,0][1080,-850] clickable
+                                                    android.widget.FrameLayout id=- bounds=[899,0][1080,-850] clickable
+                                                      android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/i_t bounds=[899,0][1080,-850] clickable
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/bmm bounds=[910,0][1080,-879] clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ipr bounds=[918,0][1071,-885]
+                                                            android.widget.ImageView id=com.zhiliaoapp.musically:id/user_avatar bounds=[932,0][1057,-899] clickable
+                                                          android.view.View id=com.zhiliaoapp.musically:id/user_avatar_layout_indicator bounds=[927,0][1062,-894]
+                                                        android.widget.Button id=com.zhiliaoapp.musically:id/iws bounds=[910,0][1080,-850] clickable
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/ix_ bounds=[956,0][1034,-869]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,0][1080,-681] clickable
+                                                    android.widget.Button id=com.zhiliaoapp.musically:id/g8m bounds=[900,0][1080,-681] clickable
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/g8a bounds=[900,0][1080,-724] clickable
+                                                        android.widget.ImageView id=com.zhiliaoapp.musically:id/g86 bounds=[932,0][1059,-724]
+                                                      android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/g8c bounds=[900,0][1080,-700]
+                                                        android.widget.Button id=com.zhiliaoapp.musically:id/g8b bounds=[900,0][1080,-700] clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,0][1080,-512] clickable
+                                                    android.widget.Button id=com.zhiliaoapp.musically:id/eq2 bounds=[900,0][1080,-512] clickable
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/eq3 bounds=[900,0][1080,-512]
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ek0 bounds=[900,0][1080,-555] clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/elh bounds=[911,0][1080,-555]
+                                                            android.widget.ImageView id=com.zhiliaoapp.musically:id/el_ bounds=[950,0][1040,-573]
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/ek4 bounds=[900,0][1080,-532]
+                                                          android.widget.Button id=com.zhiliaoapp.musically:id/ek3 bounds=[908,0][1071,-532] clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,0][1080,-343] clickable
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i9a bounds=[900,0][1080,-343] clickable
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/i9b bounds=[900,0][1080,-343]
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i88 bounds=[900,0][1080,-386]
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/i82 bounds=[932,0][1059,-386]
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/i8a bounds=[900,0][1080,-362]
+                                                          android.widget.TextView id=com.zhiliaoapp.musically:id/i8_ bounds=[900,0][1080,-362]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[0,0][1080,0] clickable
+                                                    android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/pop bounds=[0,0][1080,0]
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/q5i bounds=[754,0][1021,0]
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/pog bounds=[900,0][1080,0] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/por bounds=[900,0][1080,-34] clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm3 bounds=[900,0][1080,-34] clickable
+                                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm1 bounds=[942,0][1057,-34]
+                                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm4 bounds=[942,0][1057,-34]
+                                                                android.widget.ImageView id=com.zhiliaoapp.musically:id/plw bounds=[943,0][1056,-34]
+                                                      android.view.View id=com.zhiliaoapp.musically:id/poq bounds=[1080,0][1080,0]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,0][1080,-174] clickable
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/w_s bounds=[900,0][1080,-174] clickable longClickable
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/g8m bounds=[900,0][1080,-174] clickable
+                                                        android.view.ViewGroup id=com.zhiliaoapp.musically:id/w6w bounds=[900,0][1080,-236] clickable
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/w7i bounds=[951,0][1041,-236] clickable longClickable
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/w70 bounds=[900,0][1080,-177]
+                                                          android.widget.Button id=com.zhiliaoapp.musically:id/w6z bounds=[911,0][1080,-177] clickable longClickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_caption_layout bounds=[0,0][0,-629]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/bqr bounds=[0,0][1080,0]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/c7x bounds=[34,0][855,-629]
+                                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/es0 bounds=[34,0][855,-629]
+                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/bqq bounds=[34,0][855,0]
+                                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljj bounds=[34,0][855,0]
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/eyc bounds=[34,0][855,-618] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/eya bounds=[34,0][34,-618] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/eya bounds=[34,0][34,-618] clickable
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,0][855,-509] clickable
+                                                        android.widget.FrameLayout id=- bounds=[34,0][765,-509]
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/feed_multi_tag_layout bounds=[34,0][765,-509] clickable
+                                                            android.widget.FrameLayout id=- bounds=[34,0][765,-509] clickable
+                                                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/b5r bounds=[34,0][765,-509]
+                                                                android.widget.ImageView id=com.zhiliaoapp.musically:id/s0h bounds=[45,0][101,-551]
+                                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/f7l bounds=[118,0][742,-520]
+                                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/sey bounds=[118,0][625,-562]
+                                                                    android.widget.TextView id=com.zhiliaoapp.musically:id/sf2 bounds=[118,0][461,-562]
+                                                                    android.widget.TextView id=com.zhiliaoapp.musically:id/sez bounds=[472,0][484,-562]
+                                                                    android.widget.TextView id=com.zhiliaoapp.musically:id/sf0 bounds=[495,0][625,-562]
+                                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/sej bounds=[118,0][742,-520]
+                                                                    android.widget.TextView id=com.zhiliaoapp.musically:id/sei bounds=[118,0][742,-520]
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exm bounds=[34,0][766,-426] clickable
+                                                        android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,0][590,-426] clickable
+                                                          android.view.ViewGroup id=com.zhiliaoapp.musically:id/ict bounds=[34,0][590,-426]
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/uyv bounds=[34,0][590,-426] clickable
+                                                              android.widget.Button id=com.zhiliaoapp.musically:id/title bounds=[34,0][590,-426] clickable
+                                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/vgd bounds=[590,0][590,-458]
+                                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/yc9 bounds=[590,0][590,-458] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ey9 bounds=[590,0][766,-430] clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/eyb bounds=[601,0][766,-430] clickable
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/r94 bounds=[601,0][766,-430] clickable
+                                                              android.widget.ImageView id=com.zhiliaoapp.musically:id/maf bounds=[615,0][649,-441]
+                                                              android.widget.TextView id=com.zhiliaoapp.musically:id/tv_label bounds=[655,0][752,-430]
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,0][855,-150] clickable
+                                                        android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exo bounds=[34,0][855,-150]
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/g0g bounds=[34,0][855,-150]
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/g2w bounds=[34,0][855,-150] clickable
+                                                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/g1v bounds=[34,0][855,-150]
+                                                                X.09AL id=com.zhiliaoapp.musically:id/desc bounds=[34,0][855,-150] clickable
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/dl5 bounds=[34,0][855,-413]
+                                                              android.view.View id=- bounds=[34,0][855,-413]
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ci8 bounds=[751,0][855,-150]
+                                                          android.widget.LinearLayout id=- bounds=[34,0][855,-150]
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ew7 bounds=[34,0][855,-97] clickable
+                                                        android.widget.TextView id=- bounds=[34,0][463,-97]
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,0][582,-25] clickable
+                                                        android.widget.LinearLayout id=com.zhiliaoapp.musically:id/o7a bounds=[34,0][582,-25]
+                                                          android.widget.FrameLayout id=- bounds=[34,0][73,-25]
+                                                            android.widget.ImageView id=com.zhiliaoapp.musically:id/po2 bounds=[34,0][73,-27] clickable
+                                                          android.widget.FrameLayout id=- bounds=[73,0][582,-25]
+                                                            android.widget.Button id=com.zhiliaoapp.musically:id/ppp bounds=[84,0][582,-25] clickable
+                                                          android.widget.FrameLayout id=- bounds=[73,0][73,-51]
+                                                          android.widget.FrameLayout id=- bounds=[34,0][34,-51]
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exk bounds=[34,0][855,-5] clickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/videomusiccoverblock bounds=[813,0][1080,0] clickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ijv bounds=[0,0][0,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/r_b bounds=[0,0][1080,0]
+                                              android.view.ViewGroup id=com.zhiliaoapp.musically:id/i7n bounds=[413,0][666,-968]
+                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/i7k bounds=[666,0][666,-968]
+                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/uqd bounds=[413,0][413,-968]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/lji bounds=[0,0][1080,0]
+                                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljb bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exl bounds=[0,0][1080,0] clickable
+                                            android.view.View id=com.zhiliaoapp.musically:id/long_press_layout bounds=[0,0][1080,199] visible clickable
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/piy bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i_h bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/dqr bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/rfg bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aah bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_hot_swap_paywall_view bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_hot_swap_overlay_view bounds=[0,0][1080,0]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aa7 bounds=[0,0][1080,0]
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_container_area bounds=[0,0][1080,0]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/oxg bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_adapted_wrapper_container bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/player_view bounds=[0,0][1080,0]
+                                                  android.view.ViewGroup id=com.zhiliaoapp.musically:id/r_g bounds=[0,0][1080,0]
+                                                    X.05rH id=com.zhiliaoapp.musically:id/r_s bounds=[0,0][1080,0]
+                                                      android.view.ViewGroup id=com.zhiliaoapp.musically:id/r_k bounds=[0,0][1080,0]
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/r_g bounds=[0,0][1080,-487]
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/wva bounds=[0,0][1080,-487]
+                                                    android.widget.ImageView id=com.zhiliaoapp.musically:id/mv7 bounds=[0,0][1080,-1667]
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_sticker_container_area bounds=[0,0][1080,0]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container_sticker bounds=[0,0][1080,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ljp bounds=[0,0][1080,0]
+                                            android.view.ViewGroup id=com.zhiliaoapp.musically:id/i82 bounds=[0,0][1080,-1921]
+                                              android.widget.ImageView id=com.zhiliaoapp.musically:id/i83 bounds=[934,0][1080,-1921]
+                                            android.view.View id=com.zhiliaoapp.musically:id/wiz bounds=[0,0][1080,-1987]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/rff bounds=[0,0][1080,-1848]
+                                            android.view.View id=com.zhiliaoapp.musically:id/gradual_bottom bounds=[0,0][1080,0]
+                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,315][1080,2067] visible
+                                            X.060A id=com.zhiliaoapp.musically:id/widget_container bounds=[0,315][1080,2067] visible
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/j5v bounds=[0,0][1080,2067] visible clickable
+                                              X.060A id=com.zhiliaoapp.musically:id/cob bounds=[0,0][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/xn2 bounds=[42,1347][877,2067] visible
+                                              X.060A id=com.zhiliaoapp.musically:id/zuf bounds=[0,0][1080,2067] visible
+                                                X.060A id=com.zhiliaoapp.musically:id/c7y bounds=[0,0][1080,1848] visible
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aab bounds=[1035,0][1035,0]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/mud bounds=[518,0][562,84] visible clickable
+                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/wu6 bounds=[518,0][562,84] visible
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wu5 bounds=[529,0][529,84]
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/wtz bounds=[551,0][551,84]
+                                                android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljn bounds=[0,1001][1080,2067] visible clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[899,1001][1080,1217] visible clickable
+                                                    android.widget.FrameLayout id=- bounds=[899,1001][1080,1217] visible clickable
+                                                      android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/i_t bounds=[899,1024][1080,1217] visible clickable
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/bmm bounds=[910,1024][1080,1188] visible clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ipr bounds=[918,1029][1071,1182] visible
+                                                            android.widget.ImageView id=com.zhiliaoapp.musically:id/user_avatar bounds=[932,1043][1057,1168] visible clickable
+                                                          android.view.View id=com.zhiliaoapp.musically:id/user_avatar_layout_indicator bounds=[927,1038][1062,1173] visible
+                                                        android.widget.Button id=com.zhiliaoapp.musically:id/iws bounds=[910,1120][1080,1217] visible clickable
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/ix_ bounds=[956,1131][1034,1198] visible
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,1217][1080,1386] visible clickable
+                                                    android.widget.Button id=com.zhiliaoapp.musically:id/g8m bounds=[900,1217][1080,1386] visible clickable
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/g8a bounds=[900,1217][1080,1343] visible clickable
+                                                        android.widget.ImageView id=com.zhiliaoapp.musically:id/g86 bounds=[932,1217][1059,1343] visible
+                                                      android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/g8c bounds=[900,1343][1080,1367] visible
+                                                        android.widget.Button id=com.zhiliaoapp.musically:id/g8b bounds=[900,1343][1080,1367] visible clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,1386][1080,1555] visible clickable
+                                                    android.widget.Button id=com.zhiliaoapp.musically:id/eq2 bounds=[900,1386][1080,1555] visible clickable
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/eq3 bounds=[900,1386][1080,1555] visible
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ek0 bounds=[900,1386][1080,1512] visible clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/elh bounds=[911,1386][1080,1512] visible
+                                                            android.widget.ImageView id=com.zhiliaoapp.musically:id/el_ bounds=[950,1404][1040,1494] visible
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/ek4 bounds=[900,1512][1080,1535] visible
+                                                          android.widget.Button id=com.zhiliaoapp.musically:id/ek3 bounds=[908,1512][1071,1535] visible clickable
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,1555][1080,1724] visible clickable
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i9a bounds=[900,1555][1080,1724] visible clickable
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/i9b bounds=[900,1555][1080,1724] visible
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i88 bounds=[900,1555][1080,1681] visible
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/i82 bounds=[932,1555][1059,1681] visible
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/i8a bounds=[900,1681][1080,1705] visible
+                                                          android.widget.TextView id=com.zhiliaoapp.musically:id/i8_ bounds=[900,1681][1080,1705] visible
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[0,1800][1080,2067] visible clickable
+                                                    android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/pop bounds=[0,1800][1080,2067] visible
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/q5i bounds=[754,1800][1021,2067] visible
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/pog bounds=[900,1893][1080,2067] visible clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/por bounds=[900,1921][1080,2033] visible clickable
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm3 bounds=[900,1921][1080,2033] visible clickable
+                                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm1 bounds=[942,1921][1057,2033] visible
+                                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/pm4 bounds=[942,1921][1057,2033] visible
+                                                                android.widget.ImageView id=com.zhiliaoapp.musically:id/plw bounds=[943,1921][1056,2033] visible
+                                                      android.view.View id=com.zhiliaoapp.musically:id/poq bounds=[1080,1954][1080,2067]
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[900,1724][1080,1893] visible clickable
+                                                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/w_s bounds=[900,1724][1080,1893] visible clickable longClickable
+                                                      android.widget.Button id=com.zhiliaoapp.musically:id/g8m bounds=[900,1724][1080,1893] visible clickable
+                                                        android.view.ViewGroup id=com.zhiliaoapp.musically:id/w6w bounds=[900,1724][1080,1831] visible clickable
+                                                          android.widget.ImageView id=com.zhiliaoapp.musically:id/w7i bounds=[951,1741][1041,1831] visible clickable longClickable
+                                                        android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/w70 bounds=[900,1831][1080,1890] visible
+                                                          android.widget.Button id=com.zhiliaoapp.musically:id/w6z bounds=[911,1831][1080,1890] visible clickable longClickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_caption_layout bounds=[0,1848][0,1848]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/bqr bounds=[0,1848][1080,2067] visible
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/c7x bounds=[34,1848][855,1848]
+                                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/es0 bounds=[34,1848][855,1848]
+                                                  android.widget.LinearLayout id=com.zhiliaoapp.musically:id/bqq bounds=[34,1848][855,2067] visible
+                                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljj bounds=[34,1848][855,2067] visible
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/eyc bounds=[34,1859][855,1859] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/eya bounds=[34,1859][34,1859] clickable
+                                                        android.widget.FrameLayout id=com.zhiliaoapp.musically:id/eya bounds=[34,1859][34,1859] clickable
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,1859][855,1921] visible clickable
+                                                        android.view.ViewGroup id=com.zhiliaoapp.musically:id/ict bounds=[34,1859][381,1921] visible
+                                                          android.widget.LinearLayout id=com.zhiliaoapp.musically:id/uyv bounds=[34,1859][381,1921] visible clickable
+                                                            android.widget.Button id=com.zhiliaoapp.musically:id/title bounds=[34,1859][381,1921] visible clickable
+                                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/vgd bounds=[381,1890][381,1890]
+                                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/yc9 bounds=[381,1890][381,1890] clickable
+                                                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exj bounds=[34,1932][855,2042] visible clickable
+                                                        android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exo bounds=[34,1932][855,2042] visible
+                                                          android.widget.FrameLayout id=com.zhiliaoapp.musically:id/g0g bounds=[34,1932][855,2042] visible
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/g2w bounds=[34,1932][855,2042] visible clickable
+                                                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/g1v bounds=[34,1932][855,2042] visible
+                                                                X.09AL id=com.zhiliaoapp.musically:id/desc bounds=[34,1932][855,2042] visible clickable
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/dl5 bounds=[34,1932][855,1934] visible
+                                                              android.view.View id=- bounds=[34,1932][855,1934] visible
+                                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ci8 bounds=[855,2042][855,2042]
+                                                          android.widget.LinearLayout id=- bounds=[34,2042][855,2042]
+                                                      android.widget.LinearLayout id=com.zhiliaoapp.musically:id/exk bounds=[34,2062][855,2062] clickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/videomusiccoverblock bounds=[813,1800][1080,2067] visible clickable
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ijv bounds=[0,2067][0,2067]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/r_b bounds=[0,2067][1080,2067]
+                                              android.view.ViewGroup id=com.zhiliaoapp.musically:id/i7n bounds=[413,1099][666,1099]
+                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/i7k bounds=[666,1099][666,1099]
+                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/uqd bounds=[413,1099][413,1099]
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/lji bounds=[0,2064][1080,2067] visible
+                                                android.widget.FrameLayout id=- bounds=[23,2064][1057,2067] visible
+                                                  android.view.View id=com.zhiliaoapp.musically:id/bf4 bounds=[23,2064][1057,2067]
+                                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ljb bounds=[0,2067][1080,2067]
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/exl bounds=[0,2067][1080,2067] clickable
+                                            android.view.View id=com.zhiliaoapp.musically:id/long_press_layout bounds=[0,0][1080,2067] visible clickable
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/piy bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/i_h bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/dqr bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aah bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_hot_swap_paywall_view bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_hot_swap_overlay_view bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/rfg bounds=[0,0][1080,2067] visible
+                                              android.widget.RelativeLayout id=- bounds=[0,0][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/uu9 bounds=[0,0][1080,2067] visible
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/aa7 bounds=[0,0][1080,2067] visible
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_container_area bounds=[0,0][1080,2067] visible
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container bounds=[0,80][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_adapted_wrapper_container bounds=[0,80][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/player_view bounds=[0,80][1080,2067] visible
+                                                  android.view.SurfaceView id=- bounds=[0,80][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/oxg bounds=[0,80][1080,2067] visible
+                                                android.view.ViewGroup id=com.zhiliaoapp.musically:id/rp5 bounds=[0,80][1080,2067] visible
+                                                  android.widget.FrameLayout id=com.zhiliaoapp.musically:id/roh bounds=[0,80][1080,2067] visible
+                                            android.widget.LinearLayout id=com.zhiliaoapp.musically:id/video_sticker_container_area bounds=[0,0][1080,2067] visible
+                                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/video_visible_area_container_sticker bounds=[0,80][1080,2067] visible
+                                                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ljp bounds=[0,80][1080,2067] visible
+                                                  android.widget.RelativeLayout id=com.zhiliaoapp.musically:id/uy4 bounds=[0,80][1080,2067] visible
+                                            android.view.ViewGroup id=com.zhiliaoapp.musically:id/i82 bounds=[0,0][1080,146] visible
+                                              android.widget.ImageView id=com.zhiliaoapp.musically:id/i83 bounds=[934,0][1080,146] visible
+                                            android.view.View id=com.zhiliaoapp.musically:id/wiz bounds=[0,0][1080,80]
+                                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/rff bounds=[0,219][1080,219]
+                                            android.view.View id=com.zhiliaoapp.musically:id/gradual_bottom bounds=[0,1713][1080,2067] visible
+                                      android.view.View id=com.zhiliaoapp.musically:id/cnc bounds=[0,2067][1080,2205] visible
+                                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/cj_ bounds=[0,2205][1080,2205]
+                                      android.view.View id=com.zhiliaoapp.musically:id/cj9 bounds=[0,2205][1080,2205]
+                                      android.widget.FrameLayout id=- bounds=[0,2205][1080,2205]
+                                        android.widget.ImageView id=- bounds=[1057,2205][1080,2205]
+                                        android.widget.ImageView id=- bounds=[0,2205][23,2205]
+                              android.view.View id=com.zhiliaoapp.musically:id/wr8 bounds=[0,0][202,202] visible
+                              android.widget.LinearLayout id=com.zhiliaoapp.musically:id/ob4 bounds=[1047,275][1047,275]
+                                android.widget.FrameLayout id=- bounds=[1047,275][1047,275]
+                              android.view.View id=com.zhiliaoapp.musically:id/wr4 bounds=[0,2205][1080,2205]
+                          android.widget.LinearLayout id=com.zhiliaoapp.musically:id/zej bounds=[0,0][1080,2205] visible
+                            android.view.View id=com.zhiliaoapp.musically:id/xax bounds=[0,0][1080,80] visible
+                            android.widget.FrameLayout id=- bounds=[0,80][1080,243] visible
+                              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/uwq bounds=[0,80][1080,243] visible clickable
+                                android.widget.LinearLayout id=- bounds=[0,80][0,243]
+                                android.widget.FrameLayout id=- bounds=[23,80][922,243] visible
+                                  android.widget.HorizontalScrollView id=- bounds=[79,80][866,243] visible
+                                    android.widget.LinearLayout id=- bounds=[79,80][866,243] visible
+                                      X.0051 id=- bounds=[79,80][219,243] visible clickable
+                                        android.widget.LinearLayout id=- bounds=[79,80][219,243] visible
+                                          android.widget.TextView id=android:id/text1 bounds=[79,80][219,243] visible
+                                      X.0051 id=- bounds=[219,80][463,243] visible clickable
+                                        android.widget.LinearLayout id=- bounds=[219,80][463,243] visible
+                                          android.widget.TextView id=android:id/text1 bounds=[219,80][463,243] visible
+                                      X.0051 id=- bounds=[463,80][671,243] visible clickable
+                                        android.widget.FrameLayout id=- bounds=[463,80][671,243] visible
+                                          android.widget.LinearLayout id=- bounds=[463,80][671,243] visible
+                                            android.widget.TextView id=android:id/text1 bounds=[463,80][671,243] visible
+                                      X.0051 id=- bounds=[671,80][866,243] visible clickable
+                                        android.widget.LinearLayout id=- bounds=[671,80][866,243] visible
+                                          android.widget.TextView id=android:id/text1 bounds=[671,80][866,243] visible
+                                android.widget.ImageView id=com.zhiliaoapp.musically:id/k_g bounds=[922,82][1080,240] visible clickable
+                            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/q42 bounds=[0,316][1080,316]
+                          android.widget.ImageView id=com.zhiliaoapp.musically:id/title_shadow bounds=[0,0][1080,80] visible
+                    android.widget.FrameLayout id=com.zhiliaoapp.musically:id/azn bounds=[0,315][1080,315]
+                    android.view.View id=com.zhiliaoapp.musically:id/cnj bounds=[0,2066][1080,2067] visible
+                    android.widget.LinearLayout id=com.zhiliaoapp.musically:id/onp bounds=[0,2067][1080,2205] visible
+                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/onh bounds=[0,2067][216,2205] visible clickable
+                        android.widget.TextView id=- bounds=[0,2153][216,2190] visible
+                        android.widget.ImageView id=- bounds=[63,2073][153,2163] visible
+                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/ong bounds=[216,2067][432,2205] visible clickable
+                        android.widget.TextView id=- bounds=[216,2153][432,2190] visible
+                        android.widget.ImageView id=- bounds=[279,2073][369,2163] visible
+                      android.widget.Button id=com.zhiliaoapp.musically:id/ond bounds=[432,2067][648,2205] visible clickable
+                        android.widget.ImageView id=- bounds=[540,2136][540,2136] visible
+                        android.widget.ImageView id=- bounds=[472,2068][607,2203] visible
+                        android.widget.ImageView id=- bounds=[472,2068][607,2203] visible
+                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/oni bounds=[648,2067][864,2205] visible clickable
+                        android.widget.TextView id=- bounds=[757,2073][829,2118] visible
+                        android.widget.TextView id=- bounds=[648,2153][864,2190] visible
+                        android.widget.ImageView id=- bounds=[711,2073][801,2163] visible
+                      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/onj bounds=[864,2067][1080,2205] visible clickable
+                        android.widget.TextView id=- bounds=[864,2153][1080,2190] visible
+                        android.widget.ImageView id=- bounds=[927,2073][1017,2163] visible
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/f2t bounds=[1080,0][1080,2340]
+              android.widget.FrameLayout id=com.zhiliaoapp.musically:id/tjq bounds=[0,0][208,326] visible
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/xnv bounds=[0,163][45,163]
+              android.view.View id=com.zhiliaoapp.musically:id/gsf bounds=[0,2205][1080,2340] visible

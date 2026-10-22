@@ -1,0 +1,143 @@
+# com.google.android.youtube nodes=142
+android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+  android.widget.LinearLayout id=- bounds=[0,0][1080,2340] visible
+    android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+      android.widget.LinearLayout id=com.google.android.youtube:id/action_bar_root bounds=[0,0][1080,2340] visible
+        android.widget.FrameLayout id=android:id/content bounds=[0,0][1080,2340] visible
+          androidx.drawerlayout.widget.DrawerLayout id=com.google.android.youtube:id/more_drawer_container bounds=[0,0][1080,2340] visible
+            android.widget.FrameLayout id=com.google.android.youtube:id/slim_status_bar_player_container bounds=[0,0][1080,2340] visible
+              android.view.ViewGroup id=com.google.android.youtube:id/navigation_bar_divider_frame bounds=[0,0][1080,2205] visible
+                android.widget.FrameLayout id=com.google.android.youtube:id/global_slim_status_bar_container bounds=[0,0][1080,2205] visible
+                android.widget.FrameLayout id=com.google.android.youtube:id/accessibility_layer_container bounds=[0,0][1080,2205] visible
+                  android.widget.FrameLayout id=com.google.android.youtube:id/fullscreen_mode_container bounds=[0,0][1080,0]
+                  android.view.ViewGroup id=com.google.android.youtube:id/next_gen_watch_container_layout bounds=[0,0][1080,2205] visible
+                    android.view.ViewGroup id=com.google.android.youtube:id/watch_while_layout_coordinator_layout bounds=[0,0][1080,2205] visible
+                      android.widget.FrameLayout id=com.google.android.youtube:id/fab_container bounds=[0,0][1080,2205] visible
+                      android.widget.FrameLayout id=com.google.android.youtube:id/pane_fragment_container bounds=[0,0][1080,2205] visible
+                        android.widget.ScrollView id=com.google.android.youtube:id/browse_fragment_layout_coordinator_layout bounds=[0,0][1080,2070] visible
+                          android.widget.FrameLayout id=com.google.android.youtube:id/pane_fragment_contents bounds=[0,0][1080,2070] visible
+                            android.widget.FrameLayout id=- bounds=[0,0][1080,2070] visible
+                              android.widget.FrameLayout id=com.google.android.youtube:id/fragment_container_view bounds=[0,0][1080,2070] visible
+                                android.widget.LinearLayout id=- bounds=[0,0][1080,2070] visible
+                                  android.widget.FrameLayout id=com.google.android.youtube:id/reel_watch_fragment_root bounds=[0,80][1080,2070] visible
+                                    android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_underlay bounds=[0,80][1080,2070] visible
+                                    android.widget.FrameLayout id=com.google.android.youtube:id/nerd_stats_container bounds=[0,80][1080,2070] visible
+                                      android.widget.RelativeLayout id=- bounds=[0,80][1080,2070] visible
+                                    android.view.ViewGroup id=com.google.android.youtube:id/reel_watch_refresher bounds=[0,80][1080,2070] visible
+                                      android.support.v7.widget.RecyclerView id=com.google.android.youtube:id/reel_recycler bounds=[0,80][1080,2070] visible
+                                        android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_page_container bounds=[0,80][1080,2070] visible
+                                          android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_page_content bounds=[0,80][1080,2070] visible
+                                            android.widget.FrameLayout id=- bounds=[0,80][1080,2070] visible
+                                              android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_overlay_root bounds=[0,80][1080,2070] visible
+                                                android.widget.FrameLayout id=- bounds=[0,80][1080,2070] visible
+                                                  android.widget.ImageView id=com.google.android.youtube:id/reel_feedback_pause bounds=[405,940][675,1210] visible
+                                                android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_overlay_container bounds=[0,80][1080,2070] visible
+                                                  android.widget.FrameLayout id=com.google.android.youtube:id/reel_video_interactions bounds=[0,80][1080,2070] visible
+                                                  android.widget.FrameLayout id=com.google.android.youtube:id/reel_player_footer_container bounds=[0,1044][1080,2070] visible
+                                                    android.widget.FrameLayout id=- bounds=[0,1044][1080,2070] visible
+                                                      android.widget.FrameLayout id=com.google.android.youtube:id/player_overlay bounds=[0,1044][1080,2070] visible
+                                                        android.view.ViewGroup id=- bounds=[0,1044][1080,2070] visible
+                                                          android.view.ViewGroup id=- bounds=[0,1740][900,1852] visible
+                                                            android.view.ViewGroup id=- bounds=[45,1751][652,1841] visible
+                                                              android.widget.Button id=- bounds=[45,1751][652,1841] visible clickable
+                                                              android.widget.ImageView id=- bounds=[76,1770][127,1821] visible
+                                                          android.view.ViewGroup id=- bounds=[0,1852][900,1964] visible
+                                                            android.view.ViewGroup id=- bounds=[45,1863][618,1953] visible clickable
+                                                              android.widget.Button id=- bounds=[45,1863][135,1953] visible clickable
+                                                                android.widget.ImageView id=- bounds=[45,1863][135,1953] visible
+                                                              android.view.ViewGroup id=- bounds=[158,1863][618,1953] visible
+                                                                android.view.ViewGroup id=- bounds=[158,1863][595,1953] visible
+                                                                  android.widget.Button id=- bounds=[158,1863][595,1953] visible clickable
+                                                            android.widget.Button id=- bounds=[618,1863][839,1953] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[652,1888][805,1928] visible
+                                                          android.view.ViewGroup id=- bounds=[0,1964][900,2036] visible
+                                                            android.view.ViewGroup id=- bounds=[0,1964][900,2036] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[45,1975][900,2025] visible
+                                                                android.view.ViewGroup id=- bounds=[45,1975][900,2025] visible clickable
+                                                                  android.widget.Button id=- bounds=[495,1975][780,2025] visible clickable
+                                                                  android.widget.Button id=- bounds=[790,1975][846,2025] visible clickable
+                                                          android.view.ViewGroup id=- bounds=[900,1044][1080,2070] visible
+                                                            android.widget.RadioButton id=- bounds=[900,1044][1080,1213] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[956,1066][1024,1134] visible
+                                                                android.view.ViewGroup id=- bounds=[956,1066][1024,1134] visible
+                                                                  android.widget.ImageView id=- bounds=[956,1066][1024,1134] visible
+                                                              android.view.ViewGroup id=- bounds=[900,1145][1080,1191] visible
+                                                            android.widget.Button id=- bounds=[900,1213][1080,1382] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[956,1235][1024,1303] visible
+                                                                android.widget.ImageView id=- bounds=[956,1235][1024,1303] visible
+                                                              android.view.ViewGroup id=- bounds=[900,1314][1080,1360] visible
+                                                            android.widget.RadioButton id=- bounds=[900,1382][1080,1551] visible clickable longClickable
+                                                              android.view.ViewGroup id=- bounds=[956,1404][1024,1472] visible
+                                                                android.widget.ImageView id=- bounds=[956,1404][1024,1472] visible
+                                                              android.view.ViewGroup id=- bounds=[900,1483][1080,1529] visible
+                                                            android.widget.Button id=- bounds=[900,1551][1080,1720] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[956,1573][1024,1641] visible
+                                                                android.widget.ImageView id=- bounds=[956,1573][1024,1641] visible
+                                                              android.view.ViewGroup id=- bounds=[900,1652][1080,1698] visible
+                                                            android.widget.Button id=- bounds=[900,1720][1080,1889] visible clickable
+                                                              android.view.ViewGroup id=- bounds=[956,1742][1024,1810] visible
+                                                                android.widget.ImageView id=- bounds=[956,1742][1024,1810] visible
+                                                              android.view.ViewGroup id=- bounds=[900,1821][1080,1867] visible
+                                                            android.widget.Button id=- bounds=[900,1889][1080,2070] visible clickable
+                                                              android.widget.ImageView id=- bounds=[951,1929][1030,2008] visible
+                                                  android.view.View id=com.google.android.youtube:id/reel_scrim_shorts_while_bottom_gradient bounds=[0,1620][1080,2070] visible
+                                    android.view.ViewGroup id=com.google.android.youtube:id/reel_watch_player bounds=[0,80][1080,2070] visible
+                                      android.view.ViewGroup id=- bounds=[0,80][1080,2070] visible
+                                        android.view.ViewGroup id=- bounds=[0,80][1080,2070] visible
+                                          android.view.SurfaceView id=- bounds=[0,80][1080,2070] visible
+                                      android.widget.FrameLayout id=- bounds=[0,80][1080,2070] visible
+                                    android.view.View id=com.google.android.youtube:id/reel_scrim_shorts_while_top bounds=[0,80][1080,350] visible
+                          android.widget.LinearLayout id=com.google.android.youtube:id/appbar_layout bounds=[0,0][1080,350] visible
+                            android.widget.FrameLayout id=com.google.android.youtube:id/toolbar_container bounds=[0,0][1080,215] visible
+                              android.widget.FrameLayout id=com.google.android.youtube:id/collapsing_header_container bounds=[0,0][1080,0]
+                              android.view.ViewGroup id=com.google.android.youtube:id/toolbar bounds=[0,80][1080,215] visible
+                                android.widget.ImageButton id=- bounds=[0,80][158,215] visible clickable
+                                android.widget.FrameLayout id=- bounds=[158,80][1080,215] visible
+                                  android.widget.FrameLayout id=- bounds=[158,80][1080,215] visible
+                                    android.view.ViewGroup id=- bounds=[158,80][1080,215] visible
+                                      android.view.ViewGroup id=- bounds=[203,114][371,181] visible
+                                      android.widget.Button id=- bounds=[673,81][809,215] visible clickable
+                                        android.widget.ImageView id=- bounds=[707,114][775,182] visible
+                                      android.widget.Button id=- bounds=[842,114][910,182] visible clickable
+                                      android.widget.Button id=- bounds=[978,114][1046,182] visible clickable
+                                android.support.v7.widget.LinearLayoutCompat id=- bounds=[1080,80][1080,215]
+                            android.widget.FrameLayout id=- bounds=[0,215][1080,350] visible
+                              android.view.ViewGroup id=- bounds=[0,215][1080,350] visible
+                                android.widget.HorizontalScrollView id=- bounds=[0,215][1080,350] visible scrollable
+                                  android.view.ViewGroup id=- bounds=[45,215][1080,350] visible
+                                    android.widget.Button id=- bounds=[45,226][467,339] visible clickable
+                                      android.view.View id=- bounds=[45,226][467,339] visible
+                                      android.widget.ImageView id=- bounds=[93,248][161,316] visible
+                                      android.view.ViewGroup id=- bounds=[178,257][419,307] visible
+                                    android.widget.Button id=- bounds=[490,226][742,339] visible clickable
+                                      android.view.View id=- bounds=[490,226][742,339] visible
+                                      android.widget.ImageView id=- bounds=[538,248][606,316] visible
+                                      android.view.ViewGroup id=- bounds=[623,257][694,307] visible
+                                    android.widget.Button id=- bounds=[765,226][1030,339] visible clickable
+                                      android.view.View id=- bounds=[765,226][1030,339] visible
+                                      android.widget.ImageView id=- bounds=[813,248][881,316] visible
+                                      android.view.ViewGroup id=- bounds=[898,257][982,307] visible
+                                    android.widget.Button id=- bounds=[1053,226][1080,339] visible clickable
+                                      android.view.View id=- bounds=[1053,226][1080,339] visible
+                                      android.widget.ImageView id=- bounds=[1101,248][1080,316]
+                                      android.view.ViewGroup id=- bounds=[1186,257][1080,307]
+                      android.widget.FrameLayout id=com.google.android.youtube:id/root_pill_container bounds=[0,2092][1080,2092]
+                      android.widget.FrameLayout id=com.google.android.youtube:id/pane_fragment_footer_container bounds=[0,2205][1080,2205]
+                  android.widget.LinearLayout id=com.google.android.youtube:id/bottom_bar_container bounds=[0,2070][1080,2205] visible
+                    android.widget.HorizontalScrollView id=com.google.android.youtube:id/pivot_bar bounds=[0,2070][1080,2205] visible
+                      android.widget.LinearLayout id=- bounds=[0,2070][1080,2205] visible
+                        android.widget.Button id=- bounds=[0,2070][270,2205] visible clickable
+                          android.widget.ImageView id=com.google.android.youtube:id/image bounds=[101,2105][169,2173] visible
+                        android.widget.Button id=- bounds=[270,2070][540,2205] visible clickable
+                          android.widget.ImageView id=com.google.android.youtube:id/image bounds=[371,2105][439,2173] visible
+                        android.widget.Button id=- bounds=[540,2070][810,2205] visible clickable
+                          android.widget.ImageView id=com.google.android.youtube:id/image bounds=[641,2105][709,2173] visible
+                        android.widget.Button id=- bounds=[810,2070][1080,2205] visible clickable
+                          android.widget.FrameLayout id=com.google.android.youtube:id/thumbnail_layout bounds=[911,2104][979,2172] visible
+                            android.widget.ImageView id=com.google.android.youtube:id/pivot_bar_thumbnail bounds=[911,2104][979,2172] visible
+              android.widget.FrameLayout id=- bounds=[0,0][1080,80] visible
+                android.view.View id=com.google.android.youtube:id/global_status_bar_view bounds=[0,0][1080,80] visible
+              android.view.View id=- bounds=[0,0][3,3] visible
+          android.view.ViewGroup id=com.google.android.youtube:id/reel_time_bar bounds=[0,0][1080,2340] visible
+            android.widget.SeekBar id=- bounds=[0,2001][1080,2136] visible clickable
+  android.view.View id=android:id/navigationBarBackground bounds=[0,2205][1080,2340] visible
