@@ -42,7 +42,9 @@ dependencies {
   ksp "androidx.room:room-compiler:$roomVersion"
   implementation "androidx.work:work-runtime:$workVersion"
   // Ed25519 signature verification for detection rulesets (minSdk 24 has no platform Ed25519).
-  implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
+  // Same artifact/version the RN networking stack pulls in transitively (bcutil-jdk15to18),
+  // so the app does not end up with duplicate org.bouncycastle classes.
+  implementation 'org.bouncycastle:bcprov-jdk15to18:1.81'
 
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'org.json:json:20240303'
