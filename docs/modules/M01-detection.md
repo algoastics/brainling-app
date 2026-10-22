@@ -78,7 +78,11 @@ node scripts/rules/sign-rules.mjs verify <publicKeyB64> brainling-dev-2026-10 <f
 `HealthMonitor` derives `ok` / `disabled` / `not_running` and records each change in
 `health_events` (30-day retention). When the state goes from `ok` or `not_running` to `disabled`
 (typically a banking app asked the user to turn accessibility off) it posts a local notification
-on channel `brainling-service-health`; one tap opens `Settings.ACTION_ACCESSIBILITY_SETTINGS`. It is
+on channel `brainling-service-health`. One tap opens Brainling itself on `brainling://reenable`
+(an explicit `ACTION_VIEW` intent to our own package), never system settings directly: the
+`src/app/reenable.tsx` route explains why the AccessibilityService is needed (Play
+prominent-disclosure rule) and only its button calls `openAccessibilitySettings()`. The route
+re-checks `isServiceEnabled()` on foreground and shows a confirmation once it is back on. It is
 cleared when the service is back to `ok`. It uses the platform notification API (the JS runtime is
 not running in the worker) and the `POST_NOTIFICATIONS` permission declared by expo-notifications;
 without the runtime grant on Android 13+ it is skipped. No new dependency was added.
@@ -113,7 +117,7 @@ JVM unit tests in `modules/brainling-core/android/src/test`: ruleset parsing/val
 verify (bundled asset, tampering, unknown key, malformed, rollback/expiry policy), dwell and
 de-dupe (`ReelCounter`, restored keys), session persistence and policy, structural matching, day
 close (incl. DST), reminder trigger. Run with `./gradlew :brainling-core:testDebugUnitTest` after
-`npx expo prebuild -p android`. Jest covers the hooks (`src/detection/__tests__`).
+`npx expo prebuild -p android`. Jest covers the hooks and the re-enable route (`src/detection/__tests__`).
 
 ## Open
 
@@ -124,5 +128,5 @@ close (incl. DST), reminder trigger. Run with `./gradlew :brainling-core:testDeb
 | Device accuracy (DoD ≥95 % on 6 phones) | No device testing done for any of the five apps. View ids for TikTok, Facebook, Snapchat come from the spec, not from captures. |
 | Page index for apps without scroll indices | Item identity relies on scroll events (`fromIndex`/`scrollY`); apps that emit neither will count at most one item per surface session. Verify with capture-layout + logcat. |
 | YouTube autoplay advance | Not handled separately; depends on scroll events being emitted. |
-| Re-enable reminder vs M2 disclosure | The reminder opens settings directly; M2's DoD wants the disclosure before every settings deep-link. Decide before M2 merges. |
+| Re-enable route vs M2 disclosure | The reminder now opens `brainling://reenable` (minimal disclosure + settings button, M1 i18n/UI). M2's full disclosure screen is not on this branch; when M2 merges, have the route reuse M2's disclosure component and copy so there is one disclosure text. |
 | Production signing key | Replace the dev key in `TrustedRuleKeys.kt`. |

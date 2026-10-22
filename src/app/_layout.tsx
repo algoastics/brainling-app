@@ -28,6 +28,7 @@ function RootStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="design-system" options={{ presentation: 'modal' }} />
         <Stack.Screen name="detection-debug" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="reenable" />
       </Stack>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </>

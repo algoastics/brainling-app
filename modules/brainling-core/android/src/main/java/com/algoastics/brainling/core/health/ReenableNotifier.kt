@@ -7,13 +7,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.Settings
+import android.net.Uri
 import com.algoastics.brainling.core.R
 
 /**
  * Local reminder posted when the accessibility service gets turned off (often because a banking
- * or payment app asked the user to disable accessibility). One tap opens the system
- * accessibility settings. Uses the platform notification API directly because it must work from
+ * or payment app asked the user to disable accessibility). One tap opens Brainling on the
+ * `brainling://reenable` route, which explains why the service is needed before linking to
+ * system settings (Play's prominent-disclosure rule: no settings deep-link without it). Uses the platform notification API directly because it must work from
  * the watchdog with the JS runtime not running; POST_NOTIFICATIONS comes from expo-notifications'
  * manifest, and without that runtime permission (Android 13+) the reminder is silently skipped.
  */
@@ -21,6 +22,9 @@ internal object ReenableNotifier {
   private const val CHANNEL_ID = "brainling-service-health"
   private const val NOTIFICATION_ID = 4_001
   private const val REQUEST_CODE = 4_001
+
+  /** Expo Router deep link for the in-app re-enable screen (`src/app/reenable.tsx`). */
+  const val REENABLE_URI = "brainling://reenable"
 
   /** Whether a transition between two watchdog states should post the reminder. */
   fun shouldNotify(previous: String?, current: String): Boolean =
@@ -38,12 +42,14 @@ internal object ReenableNotifier {
       ).apply { description = context.getString(R.string.brainling_health_channel_description) }
       manager.createNotificationChannel(channel)
     }
-    val settings = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    // Explicit to our own package so no other app can claim the brainling:// scheme.
+    val open = Intent(Intent.ACTION_VIEW, Uri.parse(REENABLE_URI))
+      .setPackage(context.packageName)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     val tap = PendingIntent.getActivity(
       context,
       REQUEST_CODE,
-      settings,
+      open,
       PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
     val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

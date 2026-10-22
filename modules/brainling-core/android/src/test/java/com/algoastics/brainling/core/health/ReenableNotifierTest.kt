@@ -1,5 +1,6 @@
 package com.algoastics.brainling.core.health
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,5 +13,10 @@ class ReenableNotifierTest {
     assertFalse(ReenableNotifier.shouldNotify(null, "disabled"))
     assertFalse(ReenableNotifier.shouldNotify("disabled", "disabled"))
     assertFalse(ReenableNotifier.shouldNotify("ok", "not_running"))
+  }
+
+  @Test
+  fun tapOpensTheInAppReenableRouteNotSettings() {
+    assertEquals("brainling://reenable", ReenableNotifier.REENABLE_URI)
   }
 }
