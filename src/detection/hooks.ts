@@ -1,30 +1,63 @@
 import BrainlingCore, { type DayCounts } from 'brainling-core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 /** Calls `fn` on mount and whenever the app returns to the foreground. */
-function useOnMountAndForeground(fn: () => void) {
+function useOnMountAndForeground(fn: () => unknown) {
   useEffect(() => {
-    fn();
+    void fn();
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') fn();
+      if (s === 'active') void fn();
     });
     return () => sub.remove();
   }, [fn]);
 }
 
 /**
+ * Applies async native reads in order: a result is dropped if the component unmounted or a newer
+ * read or pushed value arrived while it was in flight.
+ */
+function useLatest<T>(set: (value: T) => void) {
+  const generation = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const read = useCallback(
+    async (load: () => Promise<T>) => {
+      const mine = ++generation.current;
+      const value = await load();
+      if (mounted.current && mine === generation.current) set(value);
+    },
+    [set],
+  );
+  const push = useCallback(
+    (value: T) => {
+      generation.current++;
+      if (mounted.current) set(value);
+    },
+    [set],
+  );
+  return { read, push };
+}
+
+/**
  * Today's per-app reel counts. Read on mount and when the app comes back to the
  * foreground, and pushed by the native `onCountChange` event in between. No polling.
  */
-export function useTodayCounts(): { counts: DayCounts | null; refresh: () => void } {
+export function useTodayCounts(): { counts: DayCounts | null; refresh: () => Promise<void> } {
   const [counts, setCounts] = useState<DayCounts | null>(null);
-  const refresh = useCallback(() => setCounts(BrainlingCore.getTodayCounts()), []);
+  const { read, push } = useLatest(setCounts);
+  const refresh = useCallback(() => read(() => BrainlingCore.getTodayCounts()), [read]);
 
   useEffect(() => {
-    const sub = BrainlingCore.addListener('onCountChange', setCounts);
+    const sub = BrainlingCore.addListener('onCountChange', push);
     return () => sub.remove();
-  }, []);
+  }, [push]);
   useOnMountAndForeground(refresh);
 
   return { counts, refresh };
@@ -35,9 +68,10 @@ export function useTodayCounts(): { counts: DayCounts | null; refresh: () => voi
  * the app returns to the foreground (e.g. back from the accessibility settings screen).
  * `null` until the first read.
  */
-export function useServiceStatus(): { enabled: boolean | null; refresh: () => void } {
+export function useServiceStatus(): { enabled: boolean | null; refresh: () => Promise<void> } {
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const refresh = useCallback(() => setEnabled(BrainlingCore.isServiceEnabled()), []);
+  const { read } = useLatest(setEnabled);
+  const refresh = useCallback(() => read(() => BrainlingCore.isServiceEnabled()), [read]);
   useOnMountAndForeground(refresh);
   return { enabled, refresh };
 }

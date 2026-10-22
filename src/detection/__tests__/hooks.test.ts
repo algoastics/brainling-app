@@ -9,8 +9,8 @@ type CountListener = (c: DayCounts) => void;
 
 const mockCore = {
   listeners: new Set<CountListener>(),
-  getTodayCounts: jest.fn<() => DayCounts>(),
-  isServiceEnabled: jest.fn<() => boolean>(),
+  getTodayCounts: jest.fn<() => Promise<DayCounts>>(),
+  isServiceEnabled: jest.fn<() => Promise<boolean>>(),
   addListener: jest.fn((_event: string, fn: CountListener) => {
     mockCore.listeners.add(fn);
     return { remove: () => mockCore.listeners.delete(fn) };
@@ -32,6 +32,8 @@ const day = (total: number, apps: Record<string, number> = {}): DayCounts => ({
   date: '2026-10-21',
   total,
   apps,
+  nextCloseAtMs: 0,
+  timeZone: 'Asia/Karachi',
 });
 
 const setAppState = (s: AppStateStatus) =>
@@ -51,13 +53,13 @@ beforeEach(() => {
 
 describe('useTodayCounts', () => {
   it('reads counts on mount', async () => {
-    mockCore.getTodayCounts.mockReturnValue(day(3, { instagram: 3 }));
+    mockCore.getTodayCounts.mockResolvedValue(day(3, { instagram: 3 }));
     const { result } = await renderHook(() => useTodayCounts());
     expect(result.current.counts).toEqual(day(3, { instagram: 3 }));
   });
 
   it('updates from onCountChange without calling native again', async () => {
-    mockCore.getTodayCounts.mockReturnValue(day(0));
+    mockCore.getTodayCounts.mockResolvedValue(day(0));
     const { result } = await renderHook(() => useTodayCounts());
     await act(() => {
       mockCore.listeners.forEach((l) => l(day(5, { youtube: 5 })));
@@ -67,17 +69,32 @@ describe('useTodayCounts', () => {
   });
 
   it('re-reads only when the app becomes active', async () => {
-    mockCore.getTodayCounts.mockReturnValue(day(1));
+    mockCore.getTodayCounts.mockResolvedValue(day(1));
     const { result } = await renderHook(() => useTodayCounts());
-    mockCore.getTodayCounts.mockReturnValue(day(7));
+    mockCore.getTodayCounts.mockResolvedValue(day(7));
     await setAppState('background');
     expect(result.current.counts?.total).toBe(1);
     await setAppState('active');
     expect(result.current.counts?.total).toBe(7);
   });
 
+  it('drops a read that resolves after a newer pushed value', async () => {
+    let resolveRead: (c: DayCounts) => void = () => undefined;
+    mockCore.getTodayCounts.mockReturnValue(
+      new Promise<DayCounts>((resolve) => {
+        resolveRead = resolve;
+      }),
+    );
+    const { result } = await renderHook(() => useTodayCounts());
+    await act(() => {
+      mockCore.listeners.forEach((l) => l(day(4)));
+    });
+    await act(async () => resolveRead(day(2)));
+    expect(result.current.counts?.total).toBe(4);
+  });
+
   it('removes its listeners on unmount', async () => {
-    mockCore.getTodayCounts.mockReturnValue(day(0));
+    mockCore.getTodayCounts.mockResolvedValue(day(0));
     const { unmount } = await renderHook(() => useTodayCounts());
     await unmount();
     expect(mockCore.listeners.size).toBe(0);
@@ -87,18 +104,18 @@ describe('useTodayCounts', () => {
 
 describe('useServiceStatus', () => {
   it('reads the status on mount and on foreground', async () => {
-    mockCore.isServiceEnabled.mockReturnValue(false);
+    mockCore.isServiceEnabled.mockResolvedValue(false);
     const { result } = await renderHook(() => useServiceStatus());
     expect(result.current.enabled).toBe(false);
-    mockCore.isServiceEnabled.mockReturnValue(true);
+    mockCore.isServiceEnabled.mockResolvedValue(true);
     await setAppState('active');
     expect(result.current.enabled).toBe(true);
   });
 
   it('refresh() re-reads on demand', async () => {
-    mockCore.isServiceEnabled.mockReturnValue(false);
+    mockCore.isServiceEnabled.mockResolvedValue(false);
     const { result } = await renderHook(() => useServiceStatus());
-    mockCore.isServiceEnabled.mockReturnValue(true);
+    mockCore.isServiceEnabled.mockResolvedValue(true);
     await act(() => result.current.refresh());
     expect(result.current.enabled).toBe(true);
   });
