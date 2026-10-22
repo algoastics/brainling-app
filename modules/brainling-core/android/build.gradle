@@ -1,7 +1,18 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:${rootProject["kspVersion"]}"
+  }
+}
+
 plugins {
   id 'com.android.library'
   id 'expo-module-gradle-plugin'
 }
+
+apply plugin: 'com.google.devtools.ksp'
 
 group = 'com.algoastics.brainling.core'
 version = '0.1.0'
@@ -11,13 +22,28 @@ android {
   defaultConfig {
     versionCode 1
     versionName "0.1.0"
+    consumerProguardFiles 'consumer-rules.pro'
   }
   buildFeatures {
     buildConfig true
   }
 }
 
+ksp {
+  arg("room.generateKotlin", "true")
+  arg("room.schemaLocation", "$projectDir/schemas".toString())
+}
+
+def roomVersion = "2.6.1"
+def workVersion = "2.10.0"
+
 dependencies {
+  implementation "androidx.room:room-runtime:$roomVersion"
+  ksp "androidx.room:room-compiler:$roomVersion"
+  implementation "androidx.work:work-runtime:$workVersion"
+  // Ed25519 signature verification for detection rulesets (minSdk 24 has no platform Ed25519).
+  implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
+
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'org.json:json:20240303'
 }
