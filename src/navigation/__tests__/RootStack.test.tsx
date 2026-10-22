@@ -7,6 +7,7 @@ import { useAppStore } from '@/state/appStore';
 
 import { RootStack } from '../RootStack';
 
+jest.mock('@/config/tester', () => ({ TESTER_MODE: false, TESTER_SETUP_ROUTE: '/tester-setup' }));
 jest.mock('@/storage', () => jest.requireActual('../../../test/memoryStorage'));
 
 const routes = {

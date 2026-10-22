@@ -314,5 +314,24 @@
       "checkPhone": "Check phone settings",
       "finishAnyway": "Finish anyway"
     }
+  },
+  "tester": {
+    "title": "Tester setup",
+    "intro": "Brainling counts the short videos you watch (Reels, Shorts, TikTok, Spotlight) so you can see your daily scroll habit. Thanks for testing!",
+    "disclosureHeading": "Before you turn it on",
+    "stepsHeading": "Turn on Brainling in Accessibility",
+    "step1": "1. Tap \"Open Accessibility settings\" below.",
+    "step2": "2. Open \"Installed apps\" (Samsung) or \"Downloaded apps\".",
+    "step3": "3. Tap Brainling and switch it On, then confirm.",
+    "step4": "4. Greyed out? Go to Settings > Apps > Brainling (App info) > ⋮ > Allow restricted settings, then try again.",
+    "playProtect": "Installed from an APK? Google Play Protect may block or warn about it. If so, pause Play Protect scanning in the Play Store (Profile > Play Protect > ⚙), install, then turn it back on.",
+    "cta": "Open Accessibility settings",
+    "ctaHint": "Opens Android accessibility settings",
+    "statusLabel": "Accessibility service",
+    "statusChecking": "Checking…",
+    "statusOn": "On: Brainling is counting",
+    "statusOff": "Off",
+    "continue": "Continue",
+    "badgeNote": "While testing, a small purple badge shows today's count at the top of the screen when you watch reels."
   }
 }
