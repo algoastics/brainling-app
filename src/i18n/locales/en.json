@@ -270,6 +270,39 @@
         "maker": "Pixel",
         "steps": ["Battery → Unrestricted (the previous step is enough)"]
       }
+    },
+    "setupCheck": {
+      "title": "Setup check",
+      "rows": {
+        "accessibility": "Accessibility",
+        "notifications": "Notifications",
+        "battery": "Battery",
+        "autostart": "Autostart ({{maker}})",
+        "overlay": "Overlay"
+      },
+      "status": {
+        "ok": "On",
+        "off": "Off — tap to fix",
+        "skipped": "Skipped",
+        "notNeeded": "Not needed"
+      },
+      "testTitle": "Self-test",
+      "testBody_one": "Open Instagram or YouTube, swipe {{count}} reel, come back.",
+      "testBody_other": "Open Instagram or YouTube, swipe {{count}} reels, come back.",
+      "progress": "{{seen}} of {{total}} reels counted",
+      "needsAccessibility": "Turn on Accessibility first.",
+      "run": "Run test",
+      "restart": "Restart test",
+      "finish": "Finish",
+      "passTitle_one": "{{count}} reel counted!",
+      "passTitle_other": "{{count}} reels counted!",
+      "passBody": "Brainling is ready. Go easy on it.",
+      "failTitle": "We couldn’t see reels",
+      "failBody_one": "{{count}} counted. Try again, or check your phone’s background settings.",
+      "failBody_other": "{{count}} counted. Try again, or check your phone’s background settings.",
+      "retry": "Try again",
+      "checkPhone": "Check phone settings",
+      "finishAnyway": "Finish anyway"
     }
   }
 }
