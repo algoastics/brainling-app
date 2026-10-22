@@ -54,7 +54,14 @@ export type LayoutCapture = {
   /** Absolute path of the dump in the app cache. */
   path: string;
   packageName: string;
+  /** Tree nodes written so far (first window plus snapshots). */
   nodes: number;
+  /** Accessibility events logged so far (debug session capture). */
+  events?: number;
+  /** Tree snapshots written so far. */
+  trees?: number;
+  /** True while the session capture is still recording. */
+  recording?: boolean;
   atMs: number;
 };
 
@@ -84,6 +91,8 @@ declare class BrainlingCoreModule extends NativeModule<BrainlingCoreEvents> {
    * (see `DebugState.lastCapture`). Resolves false in release builds.
    */
   captureLayout(): Promise<boolean>;
+  /** Debug builds: stops the running session capture and flushes it. False in release builds. */
+  stopCapture(): Promise<boolean>;
 }
 
 /** Native Kotlin core (Android only): reel detection service, counts and settings shortcuts. */

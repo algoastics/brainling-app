@@ -30,6 +30,11 @@ function DetectionDebugScreen() {
     await refreshDebug();
   }, [refreshDebug]);
 
+  const stopCapture = useCallback(async () => {
+    await BrainlingCore.stopCapture();
+    await refreshDebug();
+  }, [refreshDebug]);
+
   const capture = debug?.lastCapture;
   const shareCapture = useCallback(async () => {
     if (!capture) return;
@@ -108,14 +113,24 @@ function DetectionDebugScreen() {
         <Text variant="heading.h3">Capture layout</Text>
         <Text color="muted">
           {debug?.captureArmed
-            ? 'Armed: open a reels app; its next window is written to a file.'
-            : 'Dumps view ids, classes, bounds and flags of the next reels-app window. No text.'}
+            ? 'Recording: open a reels app and swipe. Every event and a tree per count/page is logged.'
+            : 'Logs events plus view ids, classes, bounds and flags of a reels-app session. No text.'}
         </Text>
-        <Button kind="secondary" label="Capture next window" onPress={() => void armCapture()} />
+        {debug?.captureArmed ? (
+          <Button kind="secondary" label="Stop capture" onPress={() => void stopCapture()} />
+        ) : (
+          <Button
+            kind="secondary"
+            label="Start session capture"
+            onPress={() => void armCapture()}
+          />
+        )}
         {capture ? (
           <View style={styles.rows}>
             <ListRow title="Package" subtitle={capture.packageName} />
             <ListRow title="Nodes" value={String(capture.nodes)} />
+            <ListRow title="Events" value={String(capture.events ?? 0)} />
+            <ListRow title="Trees" value={String(capture.trees ?? 1)} />
             <ListRow title="At" value={new Date(capture.atMs).toLocaleTimeString()} />
             <Button kind="ghost" label="Share capture" onPress={() => void shareCapture()} />
           </View>

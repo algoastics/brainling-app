@@ -2,6 +2,7 @@ package com.algoastics.brainling.core.detection
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -10,6 +11,7 @@ import android.view.accessibility.AccessibilityEvent
 import com.algoastics.brainling.core.BuildConfig
 import com.algoastics.brainling.core.data.CountRepository
 import com.algoastics.brainling.core.health.HealthMonitor
+import com.algoastics.brainling.core.rules.AppRule
 import com.algoastics.brainling.core.rules.RuleSet
 import com.algoastics.brainling.core.rules.RulesManager
 import java.security.MessageDigest
@@ -40,6 +42,11 @@ class BrainlingAccessibilityService : AccessibilityService() {
     var surfaceHeight = 0
     var retryStep = Int.MAX_VALUE
     val pager = PagerTracker()
+    val flips = PageFlipDetector()
+    /** True when a pager index arrived since the last evaluation (see [PageFlipDetector]). */
+    var indexMoved = false
+    /** Bounds of the feed pager at the last evaluation; scroll events from elsewhere are not it. */
+    var pagerBounds: Rect? = null
 
     fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
   }
@@ -87,18 +94,43 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val session = session(packageName, active)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-        if (session.onSurface && NodeInspector.isPagerEvent(event, rule)) {
-          val now = SystemClock.elapsedRealtime()
-          session.pager.onScroll(NodeInspector.scrollOf(event), session.surfaceHeight, now)
-            ?.let { onPageIndex(session, it) }
-        }
+        val verdict = if (session.onSurface) onScrolled(session, rule, event) else "off-surface"
+        DetectionDebug.logEvent(this, packageName, event, verdict)
       }
-      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> session.retryStep = 0
+      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+        session.retryStep = 0
+        DetectionDebug.logEvent(this, packageName, event, "window")
+      }
+      else -> DetectionDebug.logEvent(this, packageName, event, "content")
     }
     schedule(packageName, THROTTLE_MS)
   }
 
+  /**
+   * Routes one scroll event: the feed pager's events carry the index; same-id outer pagers are
+   * dropped; other vertical scrolls covering most of the surface (a pager we could not match,
+   * e.g. YouTube's recycler sending events from a wrapper) only count as swipe movement.
+   */
+  private fun onScrolled(session: Session, rule: AppRule, event: AccessibilityEvent): String {
+    val now = SystemClock.elapsedRealtime()
+    val scroll = NodeInspector.scrollOf(event)
+    val sourceBounds = NodeInspector.sourceBounds(event)
+    val known = session.pagerBounds
+    if (NodeInspector.isPagerEvent(event, rule) && (known == null || sourceBounds == null || sourceBounds == known)) {
+      session.pager.onScroll(scroll, session.surfaceHeight, now)?.let { onPageIndex(session, it) }
+      return "pager"
+    }
+    if (NodeInspector.isOtherPagerEvent(event, rule)) return "other-pager"
+    val height = sourceBounds?.height() ?: 0
+    if (scroll.scrollDeltaY != 0 && session.surfaceHeight > 0 && height * 2 >= session.surfaceHeight) {
+      session.pager.onScroll(scroll.copy(fromIndex = -1, toIndex = -1, scrollY = -1, maxScrollY = 0), session.surfaceHeight, now)
+      return "movement"
+    }
+    return "ignored"
+  }
+
   private fun onPageIndex(session: Session, index: Int) {
+    if (index != session.pageIndex) session.indexMoved = true
     if (session.awaitingFirstIndex) {
       session.awaitingFirstIndex = false
       if (SessionPolicy.feedRestarted(session.pageIndex, index)) session.id++
@@ -131,6 +163,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val surface = root?.let { NodeInspector.findSurface(it, rule, packageName) }
 
     if (surface == null) {
+      session.flips.reset()
+      session.pagerBounds = null
       if (session.onSurface) {
         session.onSurface = false
         stateStore.save(packageName, session.snapshot())
@@ -149,7 +183,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
     if (!session.onSurface) enterSurface(session, active.sessionGapMs, wallNow)
     session.onSurface = true
     session.lastSeenAtMs = wallNow
-    session.surfaceHeight = surface.bounds.height()
+    val pager = root?.let { NodeInspector.findPager(it, rule, packageName, surface) }
+    session.pagerBounds = pager?.bounds
+    session.surfaceHeight = (pager?.bounds ?: surface.bounds).height()
 
     // Mid-swipe the surface on screen is neither reel; wait for the pager to settle so a
     // half-visible page never starts a dwell (and the old reel's dwell cannot complete).
@@ -158,6 +194,14 @@ class BrainlingAccessibilityService : AccessibilityService() {
       return
     }
     session.pager.settle(session.pageIndex, session.surfaceHeight, now)?.let { onPageIndex(session, it) }
+    val step = session.flips.observe(pager?.let(NodeInspector::visiblePageId), session.indexMoved)
+    val moved = session.indexMoved || step != 0
+    session.indexMoved = false
+    if (step != 0) {
+      session.pager.markFlip()
+      onPageIndex(session, (session.pageIndex ?: 0) + step)
+      session.indexMoved = false
+    }
 
     val key = itemKey(packageName, session.id, session.pageIndex)
     val fromDm = root != null && NodeInspector.hasDmSignature(root, rule, packageName)
@@ -167,6 +211,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
       false
     } else {
       session.counter.observe(key, now) != null
+    }
+    if (root != null && (counted || moved)) {
+      DetectionDebug.treeSnapshot(this, packageName, root, if (counted) "count" else "page ${session.pageIndex}")
     }
     if (counted) {
       counts.record(rule.key)

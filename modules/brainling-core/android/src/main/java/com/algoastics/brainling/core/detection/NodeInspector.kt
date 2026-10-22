@@ -13,7 +13,12 @@ data class Surface(
   val signal: String,
   val className: String?,
   val bounds: Rect,
+  /** The matched node, used to find the pager around it (never compared or persisted). */
+  val node: AccessibilityNodeInfo? = null,
 )
+
+/** The pager that carries the reel position, and the bounds used to match its scroll events. */
+class Pager(val node: AccessibilityNodeInfo, val bounds: Rect)
 
 /**
  * Finds reels surfaces with the signals of an [AppRule]: view ids first, then exact
@@ -48,6 +53,87 @@ object NodeInspector {
     )
   }
 
+  /** True for scroll events from a same-id pager that is not the feed pager (see [PagerMatch.isOtherPager]). */
+  fun isOtherPagerEvent(event: AccessibilityEvent, rule: AppRule): Boolean {
+    val source = event.source
+    return PagerMatch.isOtherPager(
+      rule = rule,
+      viewId = source?.viewIdResourceName,
+      eventClass = event.className?.toString(),
+      sourceClass = source?.className?.toString(),
+    )
+  }
+
+  /** Screen bounds of the event source, null when the event has no source node. */
+  fun sourceBounds(event: AccessibilityEvent): Rect? =
+    event.source?.let { node -> Rect().also { node.getBoundsInScreen(it) } }
+
+  /**
+   * The feed pager: with pager ids, the node chosen by [PagerMatch.selectPager] (deepest class
+   * match, so nested same-id tab pagers are skipped); without, the surface itself when it
+   * scrolls (Instagram, Facebook) or its nearest scrollable ancestor.
+   */
+  fun findPager(root: AccessibilityNodeInfo, rule: AppRule, packageName: String, surface: Surface): Pager? {
+    if (rule.pagerIds.isNotEmpty()) {
+      val nodes = rule.pagerIds.flatMap { id ->
+        qualifiedIds(id, rule, packageName).flatMap { root.findAccessibilityNodeInfosByViewId(it) }
+      }
+      val bounds = nodes.map { Rect().also(it::getBoundsInScreen) }
+      val candidates = nodes.mapIndexed { i, node ->
+        PagerCandidate(depthOf(node), node.className?.toString(), node.isVisibleToUser, bounds[i].width(), bounds[i].height())
+      }
+      val chosen = PagerMatch.selectPager(rule, candidates) ?: return null
+      return Pager(nodes[chosen], bounds[chosen])
+    }
+    var node = surface.node
+    var hops = 0
+    while (node != null && hops <= MAX_PAGER_HOPS) {
+      if (node.isScrollable) return visibleBounds(node)?.let { Pager(node, it) }
+      node = node.parent
+      hops++
+    }
+    return null
+  }
+
+  /**
+   * Identity of the page view that fills most of [pager] (at least [PAGE_FILL] of its height),
+   * or null mid-swipe. Uses the node's hash, which Android derives from the source view id, so
+   * it is stable for one view and differs between page views. Never reads text.
+   */
+  fun visiblePageId(pager: Pager): Long? {
+    val node = pager.node
+    val height = pager.bounds.height()
+    if (height <= 0) return null
+    var best: AccessibilityNodeInfo? = null
+    var bestHeight = 0
+    val r = Rect()
+    for (i in 0 until node.childCount) {
+      val child = node.getChild(i) ?: continue
+      child.getBoundsInScreen(r)
+      if (!r.intersect(pager.bounds)) continue
+      if (r.height() > bestHeight) {
+        bestHeight = r.height()
+        best = child
+      }
+    }
+    if (best == null || bestHeight < PAGE_FILL * height) return null
+    return best.hashCode().toLong()
+  }
+
+  private fun depthOf(node: AccessibilityNodeInfo): Int {
+    var depth = 0
+    var cursor = node.parent
+    while (cursor != null && depth < MAX_DEPTH) {
+      depth++
+      cursor = cursor.parent
+    }
+    return depth
+  }
+
+  private const val MAX_PAGER_HOPS = 6
+  private const val MAX_DEPTH = 100
+  private const val PAGE_FILL = 0.6f
+
   /** The structural fields of a scroll event. */
   fun scrollOf(event: AccessibilityEvent): PagerScroll = PagerScroll(
     fromIndex = event.fromIndex,
@@ -67,7 +153,7 @@ object NodeInspector {
       for (qualified in qualifiedIds(id, rule, packageName)) {
         for (node in root.findAccessibilityNodeInfosByViewId(qualified)) {
           val bounds = visibleBounds(node) ?: continue
-          return Surface(id, node.className?.toString(), bounds)
+          return Surface(id, node.className?.toString(), bounds, node)
         }
       }
     }
@@ -88,7 +174,7 @@ object NodeInspector {
     walk(root) { node ->
       val description = node.contentDescription?.toString()
       if (description != null && description in labels) {
-        visibleBounds(node)?.let { found = Surface(description, node.className?.toString(), it) }
+        visibleBounds(node)?.let { found = Surface(description, node.className?.toString(), it, node) }
       }
       found == null
     }
@@ -101,7 +187,7 @@ object NodeInspector {
     var found: Surface? = null
     walk(root) { node ->
       if (matchesStructure(node, rule, screen)) {
-        visibleBounds(node)?.let { found = Surface(SIGNAL_STRUCTURE, node.className?.toString(), it) }
+        visibleBounds(node)?.let { found = Surface(SIGNAL_STRUCTURE, node.className?.toString(), it, node) }
       }
       found == null
     }

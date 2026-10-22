@@ -70,6 +70,10 @@ class BrainlingCoreModule : Module() {
       DetectionDebug.armCapture()
     }
 
+    AsyncFunction("stopCapture") {
+      DetectionDebug.stopCapture()
+    }
+
     OnStartObserving(COUNT_EVENT) {
       CountRepository.get(context).addListener(countListener)
     }

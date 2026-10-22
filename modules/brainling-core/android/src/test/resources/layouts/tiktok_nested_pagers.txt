@@ -1,0 +1,13 @@
+# com.zhiliaoapp.musically nodes=12
+android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+  X.05rH id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2340] visible scrollable
+    android.widget.TabHost id=com.zhiliaoapp.musically:id/ooa bounds=[0,0][1080,2340] visible
+      android.widget.FrameLayout id=com.zhiliaoapp.musically:id/im9 bounds=[0,0][1080,2205] visible
+        X.05rH id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2205] visible scrollable
+          android.widget.LinearLayout id=com.zhiliaoapp.musically:id/viewpager_container bounds=[0,0][1080,2205] visible
+            android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_pager_layout_wrapper bounds=[0,0][1080,2067] visible
+              androidx.viewpager.widget.ViewPager id=com.zhiliaoapp.musically:id/viewpager bounds=[0,0][1080,2067] visible scrollable
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,-2067][1080,0]
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,0][1080,2067] visible
+                  android.view.View id=com.zhiliaoapp.musically:id/player_view bounds=[0,0][1080,2067] visible
+                android.widget.FrameLayout id=com.zhiliaoapp.musically:id/view_rootview bounds=[0,2067][1080,4134]
