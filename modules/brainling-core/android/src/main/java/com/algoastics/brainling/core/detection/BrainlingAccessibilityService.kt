@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.algoastics.brainling.core.BuildConfig
 import com.algoastics.brainling.core.data.CountRepository
+import com.algoastics.brainling.core.data.DayCounts
 import com.algoastics.brainling.core.health.HealthMonitor
 import com.algoastics.brainling.core.rules.AppRule
 import com.algoastics.brainling.core.rules.RuleSet
@@ -31,6 +32,22 @@ class BrainlingAccessibilityService : AccessibilityService() {
   private val sessions = mutableMapOf<String, Session>()
   private val scheduled = mutableSetOf<String>()
   private val rulesListener: (RuleSet) -> Unit = { updated -> handler.post { applyRules(updated) } }
+
+  // Tester live count badge (BuildConfig.TESTER_MODE). Counts arrive on the repository thread and
+  // are cached here on the main thread, so showing the badge never touches the database.
+  private var badge: CountBadge? = null
+  private var badgePackage: String? = null
+  private var badgeAppKey: String? = null
+  private var todayCounts: Map<String, Int> = emptyMap()
+  private val countsListener: (DayCounts) -> Unit = { day -> handler.post { onCounts(day.apps) } }
+  private val badgeWatch = object : Runnable {
+    override fun run() {
+      val pkg = badgePackage ?: return
+      // Events only arrive from target apps, so leaving to another app is noticed here.
+      if (rootInActiveWindow?.packageName?.toString() != pkg) hideBadge()
+      else handler.postDelayed(this, BADGE_WATCH_MS)
+    }
+  }
 
   /** Browsing state for one package; the persisted part lives in [DetectionStateStore]. */
   private class Session(val counter: ReelCounter, snapshot: SessionSnapshot) {
@@ -58,6 +75,11 @@ class BrainlingAccessibilityService : AccessibilityService() {
     stateStore = DetectionStateStore(this)
     health = HealthMonitor.get(this)
     health.onServiceConnected()
+    if (BuildConfig.TESTER_MODE) {
+      badge = CountBadge(this)
+      counts.addListener(countsListener)
+      Thread({ countsListener(counts.today()) }, "brainling-badge-init").start()
+    }
     val manager = try {
       RulesManager.get(this)
     } catch (e: Exception) {
@@ -129,6 +151,32 @@ class BrainlingAccessibilityService : AccessibilityService() {
     return "ignored"
   }
 
+  private fun onCounts(apps: Map<String, Int>) {
+    todayCounts = apps
+    val key = badgeAppKey ?: return
+    badge?.show(key, apps[key] ?: 0)
+  }
+
+  /** Shows the badge for [packageName]'s app; a no-op when it already shows the same text. */
+  private fun showBadge(packageName: String, appKey: String) {
+    val pill = badge ?: return
+    val wasShown = pill.isShown && badgePackage == packageName
+    badgePackage = packageName
+    badgeAppKey = appKey
+    pill.show(appKey, todayCounts[appKey] ?: 0)
+    if (!wasShown) {
+      handler.removeCallbacks(badgeWatch)
+      handler.postDelayed(badgeWatch, BADGE_WATCH_MS)
+    }
+  }
+
+  private fun hideBadge() {
+    handler.removeCallbacks(badgeWatch)
+    badgePackage = null
+    badgeAppKey = null
+    badge?.hide()
+  }
+
   private fun onPageIndex(session: Session, index: Int) {
     if (index != session.pageIndex) session.indexMoved = true
     if (session.awaitingFirstIndex) {
@@ -163,6 +211,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val surface = root?.let { NodeInspector.findSurface(it, rule, packageName) }
 
     if (surface == null) {
+      if (badgePackage == packageName) hideBadge()
       session.flips.reset()
       session.pagerBounds = null
       if (session.onSurface) {
@@ -180,6 +229,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
     }
 
     session.retryStep = Int.MAX_VALUE
+    showBadge(packageName, rule.key)
     if (!session.onSurface) enterSurface(session, active.sessionGapMs, wallNow)
     session.onSurface = true
     session.lastSeenAtMs = wallNow
@@ -262,7 +312,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
     sessions.forEach { (packageName, session) -> stateStore.save(packageName, session.snapshot()) }
   }
 
-  override fun onInterrupt() = Unit
+  override fun onInterrupt() {
+    hideBadge()
+  }
 
   override fun onUnbind(intent: Intent?): Boolean {
     shutdown()
@@ -277,6 +329,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
   private fun shutdown() {
     if (!connected) return
     connected = false
+    hideBadge()
+    if (::counts.isInitialized) counts.removeListener(countsListener)
     handler.removeCallbacksAndMessages(null)
     scheduled.clear()
     rulesManager?.removeListener(rulesListener)
@@ -293,6 +347,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
     private const val THROTTLE_MS = 250L
     private const val DWELL_SLACK_MS = 50L
     private const val KEY_HEX_CHARS = 16
+    private const val BADGE_WATCH_MS = 1_000L
 
     /** True while the service is bound in this process (read by the watchdog and debug tools). */
     @Volatile var connected = false

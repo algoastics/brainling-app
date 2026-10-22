@@ -23,6 +23,9 @@ android {
     versionCode 1
     versionName "0.1.0"
     consumerProguardFiles 'consumer-rules.pro'
+    // Tester builds show a live count badge over reels. On unless BRAINLING_TESTER_MODE=0.
+    def testerMode = (System.getenv('BRAINLING_TESTER_MODE') ?: '1') != '0'
+    buildConfigField 'boolean', 'TESTER_MODE', testerMode.toString()
   }
   buildFeatures {
     buildConfig true
