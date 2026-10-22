@@ -30,6 +30,26 @@ Project: `@algoasticssoftwarecompany/brainling` (projectId in `app.json`). Build
 | `SENTRY_ORG`, `SENTRY_PROJECT` | production | plaintext | Sentry config plugin / source-map upload |
 | `SENTRY_AUTH_TOKEN` | production | **secret** | source-map upload during EAS Build |
 | `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST` | preview, production | plaintext (project key, EU host) | M11 analytics |
+| `BRAINLING_RULES_URL` | development, preview, production (optional) | plaintext (public URL) | M1 remote detection ruleset |
+
+### `BRAINLING_RULES_URL` (M1 detection rules)
+
+Read at prebuild time by the `brainling-core` config plugin (`modules/brainling-core/app.plugin.js`)
+and written to the manifest as `<meta-data android:name="com.algoastics.brainling.RULES_URL">`. It
+is not an `EXPO_PUBLIC_*` variable and never reaches the JS bundle.
+
+- Must be an `https://` URL serving a signed envelope produced by `scripts/rules/sign-rules.mjs`;
+  prebuild fails on any other scheme.
+- Unset: no meta-data, the app uses only the bundled signed ruleset (`RulesManager` reports
+  `NOT_CONFIGURED`).
+- Changing it changes the native manifest, so it needs a new build, not an `eas update`.
+- The URL is public; the trust comes from the Ed25519 signature, not from the URL. Signing keys are
+  never stored in EAS (see `docs/modules/M01-detection.md`).
+
+```bash
+npx eas-cli@latest env:create --environment preview --name BRAINLING_RULES_URL \
+  --value https://<host>/brainling/rules.signed.json --visibility plaintext
+```
 
 `development` and `preview` set `SENTRY_DISABLE_AUTO_UPLOAD=true` in `eas.json`, so those builds
 never need the Sentry token.
