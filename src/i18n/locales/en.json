@@ -135,6 +135,24 @@
       },
       "moreInShop": "More in Shop",
       "save": "Save name"
+    },
+    "disclosure": {
+      "title": "Brainling needs Accessibility to count your reels",
+      "points": {
+        "counts": "Counts reels on your phone",
+        "lock": "Shows the lock screen when you hit your limit",
+        "never": "Never reads your messages, never sends screen content anywhere"
+      },
+      "body": {
+        "what": "To count Reels, Shorts, TikToks and Spotlight videos, Brainling uses Android’s AccessibilityService API. While you use Instagram, Instagram Lite, YouTube, TikTok, Facebook, Facebook Lite or Snapchat, it reads screen layout information (which screen is open, the names of on-screen elements, and scroll events).",
+        "use": "We use this only to: count how many short videos you watch, show your count and mascot, and — if you set a limit — cover the reels screen or go back when you reach it.",
+        "never": "What we never do: we do not read or store your messages, comments, video titles or what is in the videos. We do not record your screen. Everything is processed on your phone and is not sent to us or anyone else.",
+        "off": "You can turn this off any time in Android Settings → Accessibility."
+      },
+      "consent": "I understand and agree that Brainling uses the Accessibility service as described above.",
+      "agree": "Agree & continue",
+      "agreeHint": "Tick the box above first",
+      "notNow": "Not now"
     }
   }
 }
