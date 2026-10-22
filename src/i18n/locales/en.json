@@ -117,6 +117,24 @@
       "title": "Per-app limits are Pro",
       "body": "Give TikTok 10 and YouTube 30 — each app its own budget.",
       "notNow": "Not now"
+    },
+    "hatch": {
+      "title": "Something is hatching…",
+      "subtitle_one": "Tap the brain-pod {{count}} time.",
+      "subtitle_other": "Tap the brain-pod {{count}} times.",
+      "eggLabel": "Brain-pod",
+      "tapCount": "Tap {{step}} of {{total}}",
+      "namedTitle": "Say hi to your Brainling!",
+      "nameLabel": "Name (2–14 characters, emoji OK)",
+      "nameError": "Name needs 2–14 characters.",
+      "colour": "Colour",
+      "colours": {
+        "pink": "Pink",
+        "ice": "Ice blue",
+        "mint": "Mint"
+      },
+      "moreInShop": "More in Shop",
+      "save": "Save name"
     }
   }
 }
