@@ -24,6 +24,8 @@ export function RootStack() {
         </Stack.Protected>
         <Stack.Screen name="design-system" options={{ presentation: 'modal' }} />
         <Stack.Screen name="detection-debug" options={{ presentation: 'modal' }} />
+        {/* Unguarded: the watchdog deep-link must open whether or not onboarding is done. */}
+        <Stack.Screen name="reenable" />
       </Stack>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </>
