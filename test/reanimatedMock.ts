@@ -4,7 +4,7 @@
  * resolve to their target value immediately; components render with final styles.
  */
 import type { ComponentType } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 type Shared<T> = { value: T; get: () => T; set: (v: T) => void };
 
@@ -21,12 +21,14 @@ function useSharedValue<T>(initial: T): Shared<T> {
 
 const identity = <T>(value: T) => value;
 const lastOf = <T>(...values: T[]) => values[values.length - 1];
-const animation = { duration: () => animation };
+type Builder = { duration: () => Builder; delay: () => Builder };
+const animation: Builder = { duration: () => animation, delay: () => animation };
 
 const reanimated = {
   __esModule: true,
   default: {
     View,
+    Text,
     createAnimatedComponent: <P extends object>(component: ComponentType<P>) => component,
   },
   createAnimatedComponent: <P extends object>(component: ComponentType<P>) => component,
@@ -38,6 +40,8 @@ const reanimated = {
   withSpring: identity,
   withDelay: (_delay: number, value: unknown) => value,
   withSequence: lastOf,
+  withRepeat: identity,
+  cancelAnimation: () => undefined,
   Easing: { bezier: () => identity },
   FadeIn: animation,
   FadeOut: animation,
