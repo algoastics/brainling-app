@@ -128,6 +128,12 @@ class BrainlingAccessibilityService : AccessibilityService() {
         session.pagerBounds = null
         DetectionDebug.logEvent(this, packageName, event, "window")
       }
+      AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+        // A tap in the content (a thumbnail), not the tab bar: whatever player opens next is new.
+        val inTabBar = event.source?.let { NodeInspector.inTabBar(it, rule, packageName) } == true
+        if (!inTabBar) session.reels.onContentClick()
+        DetectionDebug.logEvent(this, packageName, event, if (inTabBar) "tab-click" else "click")
+      }
       else -> DetectionDebug.logEvent(this, packageName, event, "content")
     }
     schedule(packageName, THROTTLE_MS)
@@ -261,7 +267,10 @@ class BrainlingAccessibilityService : AccessibilityService() {
       }
     }
 
-    val path = session.paths.getOrPut(playerKey) { NodeInspector.structuralPath(playerNode) }
+    val path = session.paths.getOrPut(playerKey) {
+      NodeInspector.structuralPath(playerNode) +
+        (NodeInspector.selectedTab(root, rule, packageName)?.let { "${ReelSession.TAB_MARK}$it" } ?: "")
+    }
     if (session.paths.size > 16) session.paths.keys.first().let(session.paths::remove)
     val adLabels = AdMarker.labelsFor(rule.key, rule.adLabels)
     val result = session.reels.evaluate(playerKey, visiblePage, settling, now, path) {

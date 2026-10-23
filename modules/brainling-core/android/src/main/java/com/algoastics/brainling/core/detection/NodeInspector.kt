@@ -175,6 +175,47 @@ object NodeInspector {
 
   private const val PATH_HOPS = 8
 
+  /** True when [node] is (inside) the app's bottom tab bar. */
+  fun inTabBar(node: AccessibilityNodeInfo, rule: AppRule, packageName: String): Boolean {
+    val ids = TAB_BAR_IDS.flatMap { qualifiedIds(it, rule, packageName) }
+    var cursor: AccessibilityNodeInfo? = node
+    var hops = 0
+    while (cursor != null && hops++ < 8) {
+      if (cursor.viewIdResourceName in ids) return true
+      cursor = cursor.parent
+    }
+    return false
+  }
+
+  private fun hasSelected(node: AccessibilityNodeInfo, depth: Int): Boolean =
+    node.isSelected || (depth > 0 && (0 until node.childCount).any { i ->
+      node.getChild(i)?.let { hasSelected(it, depth - 1) } == true
+    })
+
+  /** Bottom tab bars whose selected item tells tab players apart (YouTube's pivot bar). */
+  private val TAB_BAR_IDS = listOf("pivot_bar")
+
+  /**
+   * Position of the selected item in the app's bottom tab bar, or null without one. Structural
+   * only (child index and selected flag); never reads text.
+   */
+  fun selectedTab(root: AccessibilityNodeInfo, rule: AppRule, packageName: String): Int? {
+    for (id in TAB_BAR_IDS) {
+      for (qualified in qualifiedIds(id, rule, packageName)) {
+        for (bar in root.findAccessibilityNodeInfosByViewId(qualified)) {
+          // The items may sit under single-child wrappers; the selected flag on the item or within.
+          var items: AccessibilityNodeInfo = bar
+          var hops = 0
+          while (items.childCount == 1 && hops++ < 4) items = items.getChild(0) ?: break
+          for (i in 0 until items.childCount) {
+            if (items.getChild(i)?.let { hasSelected(it, 3) } == true) return i
+          }
+        }
+      }
+    }
+    return null
+  }
+
   private fun depthOf(node: AccessibilityNodeInfo): Int {
     var depth = 0
     var cursor = node.parent

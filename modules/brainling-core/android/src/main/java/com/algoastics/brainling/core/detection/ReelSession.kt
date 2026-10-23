@@ -52,6 +52,8 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     val seenIndexes = ArrayDeque<Int>()
     /** The last page change went toward a lower index (swipe back / up). */
     var backward = false
+    /** Positions came only from swipes/page flips, never from a pager index. */
+    var stepOnly = false
 
     /** An independent copy, so a structural match never shares (or wipes) the original. */
     fun copy(): Player = Player().also {
@@ -63,6 +65,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       it.restores = restores
       it.exit = exit
       it.seenIndexes.addAll(seenIndexes)
+      it.stepOnly = stepOnly
     }
 
     fun markSeen(reel: String, index: Int?) {
@@ -108,6 +111,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       return
     }
     p.index = newIndex
+    p.stepOnly = false
     if (old == null) {
       // The first index of a player may name the reel already counted without one; decided at
       // the next evaluation by comparing the visible page view.
@@ -123,9 +127,17 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
   /** A swipe (fallback) or page flip moved by [step] without a pager index. */
   fun onStep(step: Int, why: String) {
     val p = current ?: return
+    if (p.index == null) p.stepOnly = true
     p.index = (p.index ?: 0) + step
     p.backward = step < 0
     reason = why
+  }
+
+  private var contentClicked = false
+
+  /** A view in the app's content (not its tab bar) was tapped. */
+  fun onContentClick() {
+    if (current == null) contentClicked = true
   }
 
   /** The tracked player left the screen. */
@@ -138,6 +150,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     current = null
     awayIndex = null
     probationUntil = 0L
+    contentClicked = false
   }
 
   /**
@@ -226,12 +239,16 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
         (awayIndex == null || awayIndex == p.index)
     }?.also { players.remove(it.key) }?.value
     // A long-lived tab player (e.g. Instagram's Reels tab) rebuilt under a new node: matched by
-    // structure, window and an index continuing its seen range.
+    // structure, window and an index continuing its seen range. A pager that never reports an
+    // index (YouTube Shorts: page flips only) cannot say where it resumed; it resumes where it left.
+    // Only when the path names the selected bottom tab and nothing in the content was tapped while
+    // away (back or a tab tap), so a short opened from a thumbnail (Home shelf, a channel's
+    // Shorts) with the same structure stays a new player.
     // Copied, never moved: the original node may come back (Instagram profile pagers share the
     // Reels tab's structure), and the copy's resets must not touch the original's history.
     val byPath = if (byNode != null || byWindow != null || path == null) null else players.entries.lastOrNull { (k, p) ->
       p.exit != null && p.longLived && p.path == path && k.windowId == key.windowId &&
-        awayIndex != null && p.inRange(awayIndex!!)
+        (awayIndex?.let(p::inRange) ?: (p.stepOnly && TAB_MARK in path && !contentClicked))
     }?.value?.copy()
     val known = byNode ?: byWindow ?: byPath
     val tab = known?.longLived == true
@@ -258,12 +275,13 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     p.attachedAtMs = nowMs
     p.exit = null
     awayIndex = null
+    contentClicked = false
     players.remove(key)
     players[key] = p
     evict()
     currentKey = key
     current = p
-    attachLog = "attach player=$key from=${known?.let { if (it === byNode) "node" else if (it === byWindow) "window" else "path" } ?: "-"} index=${p.index ?: "-"} seen=${p.seen.size} players=${players.size} reason=$reason"
+    attachLog = "attach player=$key from=${known?.let { if (it === byNode) "node" else if (it === byWindow) "window" else "path" } ?: "-"} index=${p.index ?: "-"} seen=${p.seen.size} players=${players.size} tab=${path?.substringAfter(TAB_MARK, "-") ?: "-"} reason=$reason"
   }
 
   /** Last attach decision, for one diagnostic log line per player switch (no screen text). */
@@ -294,5 +312,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     private const val MAX_TABS = 4
     /** Seen indices kept per player. */
     const val MAX_SEEN = 200
+    /** Appended to a structural path with the selected bottom-tab position. */
+    const val TAB_MARK = "|tab="
   }
 }
