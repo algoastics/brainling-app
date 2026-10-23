@@ -67,6 +67,44 @@ class ReelSessionTest {
     assertEquals(4, counted)
   }
 
+  /** Device run of df6350e: Reels 4, creator profile -> same reel (+1), back -> same reel. */
+  @Test
+  fun backToTheReelsTabRestoresItsSeenSet() {
+    for (i in 0..3) page(reelsTab, i)
+    page(reelsTab, 2) // back to reel 3
+    assertEquals(4, counted)
+    away(Exit.CLOSED) // the profile replaces the surface (logged exit=closed)
+    stay(other, 777) // that reel opened from the profile: a new player
+    assertEquals(5, counted)
+    away(Exit.CLOSED) // back
+    stay(reelsTab, 102) // same node, no index reported, same page view
+    assertEquals(5, counted)
+    page(reelsTab, 3) // swipe on: already seen in this player
+    page(reelsTab, 4)
+    assertEquals(6, counted)
+  }
+
+  @Test
+  fun backToARebuiltReelsTabMatchesByWindowIndexAndPageView() {
+    for (i in 0..3) page(reelsTab, i)
+    away(Exit.CLOSED)
+    stay(other, 777)
+    away(Exit.CLOSED)
+    val rebuilt = PlayerKey(reelsTab.windowId, 0x99)
+    stay(rebuilt, 103)
+    assertEquals(5, counted)
+    page(rebuilt, 4)
+    assertEquals(6, counted)
+  }
+
+  @Test
+  fun reopenAfterCloseWithUnknownContentCounts() {
+    stay(reelsTab, null)
+    away(Exit.CLOSED)
+    stay(reelsTab, null)
+    assertEquals(2, counted)
+  }
+
   @Test
   fun feedVideoOpensFullScreenThenSwipes() {
     stay(other, 1)
