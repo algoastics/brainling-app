@@ -9,24 +9,25 @@ import org.junit.Test
 
 /**
  * Event sequences shaped like the captured pagers, replayed through the same steps the service
- * runs: pager scroll -> PagerTracker -> page index -> key -> ReelCounter (dwell 800 ms).
+ * runs: pager scroll -> PagerTracker -> page index -> ReelSession (settle 800 ms).
  */
 class PagerTrackerTest {
   /** Mirrors BrainlingAccessibilityService: scroll handling plus throttled evaluations. */
   private class Feed(private val surfaceHeight: Int) {
     val tracker = PagerTracker()
-    val counter = ReelCounter(dwellMs = 800, dedupeSize = 20)
-    var pageIndex: Int? = null
+    val reels = ReelSession(settleMs = 800)
+    val player = PlayerKey(1, 1)
+    val pageIndex: Int? get() = reels.index
     var counted = 0
 
     fun scroll(now: Long, from: Int, to: Int = from, deltaY: Int = 0) {
-      tracker.onScroll(PagerScroll(from, to, 0, -1, deltaY), surfaceHeight, now)?.let { pageIndex = it }
+      tracker.onScroll(PagerScroll(from, to, 0, -1, deltaY), surfaceHeight, now)?.let { reels.onIndex(it, now) }
     }
 
     fun evaluate(now: Long) {
-      if (tracker.isSettling(now)) return
-      tracker.settle(pageIndex, surfaceHeight, now)?.let { pageIndex = it }
-      if (counter.observe("k${pageIndex ?: "start"}", now) != null) counted++
+      val settling = tracker.isSettling(now)
+      if (!settling) tracker.settle(pageIndex, surfaceHeight, now)?.let { reels.onStep(it - (pageIndex ?: 0), "swipe") }
+      if (reels.evaluate(player, null, settling, now).decision == ReelSession.Decision.COUNTED) counted++
     }
 
     fun evaluateEvery(from: Long, to: Long, step: Long = 250) {

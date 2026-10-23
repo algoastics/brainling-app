@@ -15,7 +15,6 @@ import com.algoastics.brainling.core.health.HealthMonitor
 import com.algoastics.brainling.core.rules.AppRule
 import com.algoastics.brainling.core.rules.RuleSet
 import com.algoastics.brainling.core.rules.RulesManager
-import java.security.MessageDigest
 
 /**
  * Counts reels in the apps enabled by the active [RuleSet]. Reads only view ids, class names,
@@ -25,7 +24,6 @@ import java.security.MessageDigest
 class BrainlingAccessibilityService : AccessibilityService() {
   private val handler = Handler(Looper.getMainLooper())
   private lateinit var counts: CountRepository
-  private lateinit var stateStore: DetectionStateStore
   private lateinit var health: HealthMonitor
   private var rulesManager: RulesManager? = null
   private var rules: RuleSet? = null
@@ -49,45 +47,29 @@ class BrainlingAccessibilityService : AccessibilityService() {
     }
   }
 
-  /** Browsing state for one package; the persisted part lives in [DetectionStateStore]. */
-  private class Session(val counter: ReelCounter, snapshot: SessionSnapshot) {
-    var id = snapshot.sessionId
-    /** Highest session id issued, so a new player never reuses a restored player's id. */
-    var maxId = snapshot.sessionId
-    var pageIndex: Int? = snapshot.pageIndex
-    var lastSeenAtMs = snapshot.lastSeenAtMs
+  /** Browsing state for one package; in memory only (nothing about reels is persisted). */
+  private class Session(settleMs: Long) {
+    val reels = ReelSession(settleMs)
     var onSurface = false
-    var awaitingFirstIndex = false
     var surfaceHeight = 0
     var retryStep = Int.MAX_VALUE
-    var pager = PagerTracker()
+    val pager = PagerTracker()
     val flips = PageFlipDetector()
     /** True when a pager index arrived since the last evaluation (see [PageFlipDetector]). */
     var indexMoved = false
     /** Bounds of the feed pager at the last evaluation; scroll events from elsewhere are not it. */
     var pagerBounds: Rect? = null
-    /** Which reel player (pager node + window) this session is on; see [PlayerTracker]. */
-    val players = PlayerTracker()
-    /** True after entering the surface, until the first player is attached. */
-    var continuing = false
+    /** True while a player is attached, and whether it was a pager (vs the surface node). */
+    var attached = false
     var hadPager = false
-    /** Last pager index reported since the tracked player left (see [PlayerTracker.restoreRefuted]). */
-    var indexSinceExit: Int? = null
-
-    /** Page index and visible page view at the last evaluation on the tracked player. */
-    var lastIndex: Int? = null
-    var lastPageId: Long? = null
-
-    fun position() = PlayerTracker.State(id, pageIndex, lastPageId)
-
-    fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
+    /** Last logged decision, so logcat gets one line per decision change. */
+    var lastLog: String? = null
   }
 
   override fun onServiceConnected() {
     super.onServiceConnected()
     connected = true
     counts = CountRepository.get(this)
-    stateStore = DetectionStateStore(this)
     health = HealthMonitor.get(this)
     health.onServiceConnected()
     if (BuildConfig.TESTER_MODE) {
@@ -111,10 +93,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
   private fun applyRules(updated: RuleSet) {
     val previous = rules
     rules = updated
-    if (previous == null || previous.countingDiffers(updated)) {
-      persistAll()
-      sessions.clear()
-    }
+    if (previous == null || previous.countingDiffers(updated)) sessions.clear()
     sessions.keys.retainAll(updated.enabledPackages)
     serviceInfo?.let { info ->
       info.packageNames = updated.enabledPackages.toTypedArray()
@@ -195,20 +174,12 @@ class BrainlingAccessibilityService : AccessibilityService() {
   }
 
   private fun onPageIndex(session: Session, index: Int) {
-    session.indexSinceExit = index
-    if (index != session.pageIndex) session.indexMoved = true
-    if (session.awaitingFirstIndex) {
-      session.awaitingFirstIndex = false
-      if (SessionPolicy.feedRestarted(session.pageIndex, index)) session.id++
-    }
-    session.pageIndex = index
+    if (index != session.reels.index) session.indexMoved = true
+    session.reels.onIndex(index, SystemClock.elapsedRealtime())
   }
 
   private fun session(packageName: String, active: RuleSet): Session =
-    sessions.getOrPut(packageName) {
-      val snapshot = stateStore.load(packageName)
-      Session(ReelCounter(active.dwellMs, active.dedupeSize, snapshot.recentKeys), snapshot)
-    }
+    sessions.getOrPut(packageName) { Session(maxOf(ReelSession.SETTLE_MS, active.dwellMs)) }
 
   private fun schedule(packageName: String, delayMs: Long) {
     if (!scheduled.add(packageName)) return
@@ -225,30 +196,18 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val activeRoot = rootInActiveWindow
     val root = activeRoot?.takeIf { it.packageName?.toString() == packageName }
     val now = SystemClock.elapsedRealtime()
-    val wallNow = System.currentTimeMillis()
     if (root != null) DetectionDebug.maybeCapture(this, packageName, root)
     val surface = root?.let { NodeInspector.findSurface(it, rule, packageName) }
 
-    if (surface == null) {
+    if (root == null || surface == null) {
       if (badgePackage == packageName) hideBadge()
-      session.flips.reset()
-      session.pagerBounds = null
-      if (session.players.tracked != null) {
-        session.players.detach(
-          session.position(),
-          when {
-            root != null -> PlayerTracker.Exit.CLOSED
-            activeRoot == null -> PlayerTracker.Exit.COVERED
-            else -> PlayerTracker.Exit.BACKGROUND
-          },
-        )
-        session.indexSinceExit = null
+      val exit = when {
+        root != null -> ReelSession.Exit.CLOSED
+        activeRoot == null -> ReelSession.Exit.COVERED
+        else -> ReelSession.Exit.BACKGROUND
       }
-      if (session.onSurface) {
-        session.onSurface = false
-        stateStore.save(packageName, session.snapshot())
-      }
-      session.counter.observe(null, now)
+      leavePlayer(session, packageName, exit)
+      session.onSurface = false
       val delays = active.surfaceRetryDelaysMs
       if (session.retryStep < delays.size) {
         val delay = delays[session.retryStep]
@@ -260,166 +219,88 @@ class BrainlingAccessibilityService : AccessibilityService() {
 
     session.retryStep = Int.MAX_VALUE
     showBadge(packageName, rule.key)
-    if (!session.onSurface) enterSurface(session, active.sessionGapMs, wallNow)
     session.onSurface = true
-    session.lastSeenAtMs = wallNow
     // Re-selected on every evaluation; a stale or invisible node is never kept.
-    val pager = root?.let { NodeInspector.findPager(it, rule, packageName, surface) }
+    val pager = NodeInspector.findPager(root, rule, packageName, surface)
       ?.takeIf { it.node.refresh() && it.node.isVisibleToUser }
     session.pagerBounds = pager?.bounds
-    val visiblePage = pager?.let(NodeInspector::visiblePageId)
-    if (pager == null && session.players.tracked != null && session.hadPager) {
+    if (pager == null && session.attached && session.hadPager) {
       // The tracked pager is covered or gone while the surface lingers (e.g. a profile pushed
-      // over the player). Leave it; re-attaching checks whether it still shows the same reel.
-      session.players.detach(session.position(), PlayerTracker.Exit.COVERED)
-      session.indexSinceExit = null
-      session.hadPager = false
-      session.counter.observe(null, now)
+      // over the player). Re-attaching decides whether it still shows the same reel.
+      leavePlayer(session, packageName, ReelSession.Exit.COVERED)
       return
     }
-    val playerNode = pager?.node ?: surface.node
-    val playerKey = playerNode?.let { PlayerKey(it.windowId, it.hashCode().toLong()) }
-    val attach = session.players.attach(playerKey, session.position(), now, session.continuing, visiblePage)
-    if (playerKey != null) session.continuing = false
-    if (playerKey != null) session.hadPager = pager != null
-    if (attach.kind != PlayerTracker.Kind.SAME) {
-      session.lastIndex = session.pageIndex
-      session.lastPageId = visiblePage
-    }
-    when (attach.kind) {
-      PlayerTracker.Kind.NEW -> startPlayerSession(session)
-      PlayerTracker.Kind.RESTORED -> attach.state?.let { restorePlayerSession(session, it) }
-      else -> Unit
-    }
-    if (!session.players.isSettled(now)) {
-      // A newly opened player: let it settle before its initial reel starts a dwell.
-      session.counter.observe(null, now)
-      schedule(packageName, PlayerTracker.SETTLE_MS)
-      return
-    }
+    val playerNode = pager?.node ?: surface.node ?: return
+    val playerKey = PlayerKey(playerNode.windowId, playerNode.hashCode().toLong())
+    session.attached = true
+    session.hadPager = pager != null
     session.surfaceHeight = (pager?.bounds ?: surface.bounds).height()
+    val visiblePage = pager?.let(NodeInspector::visiblePageId)
 
     // Mid-swipe the surface on screen is neither reel; wait for the pager to settle so a
-    // half-visible page never starts a dwell (and the old reel's dwell cannot complete).
-    if (session.pager.isSettling(now)) {
-      schedule(packageName, PagerTracker.SETTLE_MS)
-      return
-    }
-    session.pager.settle(session.pageIndex, session.surfaceHeight, now)?.let { onPageIndex(session, it) }
-    val wasUnindexed = session.pageIndex == null
-    val step = session.flips.observe(visiblePage, session.indexMoved)
-    val moved = session.indexMoved || step != 0
-    session.indexMoved = false
-    if (step != 0) {
-      session.pager.markFlip()
-      onPageIndex(session, (session.pageIndex ?: 0) + step)
+    // half-visible page never starts a settle timer.
+    val settling = session.pager.isSettling(now)
+    if (!settling) {
+      session.pager.settle(session.reels.index, session.surfaceHeight, now)?.let {
+        session.reels.onStep(it - (session.reels.index ?: 0), "swipe")
+      }
+      val step = session.flips.observe(visiblePage, session.indexMoved)
       session.indexMoved = false
+      if (step != 0) {
+        session.pager.markFlip()
+        session.reels.onStep(step, "flip")
+      }
     }
 
-    if (session.players.restoreRefuted(session.indexSinceExit, now)) {
-      val index = session.indexSinceExit
-      startPlayerSession(session)
-      session.pageIndex = index
-      session.lastIndex = index
-      session.lastPageId = visiblePage
-    }
-    if (session.players.pagerReset(session.lastIndex, session.pageIndex, visiblePage, now)) {
-      val index = session.pageIndex
-      startPlayerSession(session)
-      session.pageIndex = index
-      session.lastIndex = index
-      session.lastPageId = visiblePage
-      session.counter.observe(null, now)
-      schedule(packageName, PlayerTracker.SETTLE_MS)
-      return
-    }
-    session.lastIndex = session.pageIndex
-    session.lastPageId = visiblePage ?: session.lastPageId
-    val key = itemKey(packageName, session.id, session.pageIndex)
-    // A new player's first reported index names the reel already counted as its "start" reel.
-    if (wasUnindexed && session.pageIndex != null && step == 0 &&
-      session.players.firstIndexIsStartReel(visiblePage) &&
-      itemKey(packageName, session.id, null) in session.counter.recentKeys()
-    ) {
-      session.counter.suppress(key)
-    }
-    val fromDm = root != null && NodeInspector.hasDmSignature(root, rule, packageName)
-    val counted = if (fromDm) {
-      session.counter.suppress(key)
-      session.counter.observe(null, now)
-      false
-    } else {
-      session.counter.observe(key, now) != null
-    }
-    if (root != null && (counted || moved)) {
-      DetectionDebug.treeSnapshot(this, packageName, root, if (counted) "count" else "page ${session.pageIndex}")
-    }
+    val result = session.reels.evaluate(playerKey, visiblePage, settling, now)
+    val counted = result.decision == ReelSession.Decision.COUNTED
+    logDecision(session, packageName, result)
     if (counted) {
       counts.record(rule.key)
-      stateStore.save(packageName, session.snapshot())
+      DetectionDebug.treeSnapshot(this, packageName, root, "count")
     }
-
     DetectionDebug.record(
       DetectionInfo(
         packageName = packageName,
         surfaceId = surface.signal,
         className = surface.className,
         bounds = surface.bounds.toShortString(),
-        sessionId = session.id,
-        itemIndex = session.pageIndex,
+        sessionId = 0,
+        itemIndex = result.index,
         indexSource = session.pager.source?.name?.lowercase(),
-        keyPrefix = key.take(8),
+        keyPrefix = playerKey.toString(),
         counted = counted,
-        dmExcluded = fromDm,
-        atMs = wallNow,
+        dmExcluded = false,
+        atMs = System.currentTimeMillis(),
       ),
     )
-    if (session.counter.hasPending()) schedule(packageName, active.dwellMs + DWELL_SLACK_MS)
-  }
-
-  /** Continues the previous browsing session after a short absence, else starts a new one. */
-  private fun enterSurface(session: Session, sessionGapMs: Long, wallNow: Long) {
-    if (SessionPolicy.continues(session.lastSeenAtMs, wallNow, sessionGapMs)) {
-      session.awaitingFirstIndex = true
-    } else {
-      session.id++
-      session.pageIndex = null
-      session.awaitingFirstIndex = false
+    when {
+      settling -> schedule(packageName, PagerTracker.SETTLE_MS)
+      session.reels.hasPending() -> schedule(packageName, ReelSession.SETTLE_MS / 4)
     }
-    session.continuing = session.awaitingFirstIndex
   }
 
-  /** A different reel player appeared: its reels are new, starting with the one on screen. */
-  private fun startPlayerSession(session: Session) {
-    session.maxId = maxOf(session.maxId, session.id) + 1
-    session.id = session.maxId
-    session.pageIndex = null
-    session.awaitingFirstIndex = false
+  private fun leavePlayer(session: Session, packageName: String, exit: ReelSession.Exit) {
     session.flips.reset()
-    session.indexMoved = false
-    session.pager = PagerTracker()
+    session.pagerBounds = null
+    if (!session.attached) return
+    session.attached = false
+    session.hadPager = false
+    session.reels.exit(exit)
+    logLine(session, packageName, "exit=${exit.name.lowercase()}")
   }
 
-  private fun restorePlayerSession(session: Session, state: PlayerTracker.State) {
-    session.maxId = maxOf(session.maxId, session.id)
-    session.id = state.sessionId
-    session.pageIndex = state.pageIndex
-    session.awaitingFirstIndex = false
-    session.flips.reset()
-    session.indexMoved = false
+  /** One concise logcat line per count decision (no screen text; player is a node hash). */
+  private fun logDecision(session: Session, packageName: String, r: ReelSession.Result) {
+    if (r.decision == ReelSession.Decision.SETTLING) return
+    val verdict = if (r.decision == ReelSession.Decision.COUNTED) "counted" else "skipped"
+    logLine(session, packageName, "player=${r.player} index=${r.index ?: "-"} $verdict reason=${r.reason}")
   }
 
-  /** Salted hash of a structural position (package, browsing session, page index). */
-  private fun itemKey(packageName: String, sessionId: Int, pageIndex: Int?): String {
-    val digest = MessageDigest.getInstance("SHA-256")
-    digest.update(stateStore.salt)
-    digest.update("$packageName|$sessionId|${pageIndex ?: "start"}".toByteArray())
-    return digest.digest().joinToString("") { "%02x".format(it) }.take(KEY_HEX_CHARS)
-  }
-
-  private fun persistAll() {
-    if (!::stateStore.isInitialized) return
-    sessions.forEach { (packageName, session) -> stateStore.save(packageName, session.snapshot()) }
+  private fun logLine(session: Session, packageName: String, line: String) {
+    if (line == session.lastLog && !line.contains(" counted ")) return
+    session.lastLog = line
+    Log.i(TAG, "app=$packageName $line")
   }
 
   override fun onInterrupt() {
@@ -444,7 +325,6 @@ class BrainlingAccessibilityService : AccessibilityService() {
     handler.removeCallbacksAndMessages(null)
     scheduled.clear()
     rulesManager?.removeListener(rulesListener)
-    persistAll()
     if (::health.isInitialized) health.onServiceStopped()
   }
 
@@ -455,8 +335,6 @@ class BrainlingAccessibilityService : AccessibilityService() {
   companion object {
     private const val TAG = "BrainlingDetect"
     private const val THROTTLE_MS = 250L
-    private const val DWELL_SLACK_MS = 50L
-    private const val KEY_HEX_CHARS = 16
     private const val BADGE_WATCH_MS = 1_000L
 
     /** True while the service is bound in this process (read by the watchdog and debug tools). */
