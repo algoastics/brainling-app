@@ -12,6 +12,9 @@ if __name__ == "__main__":
     if which in ("fb", "all"):
         import facebook
         results += facebook.run()
+    if which in ("yt", "all"):
+        import youtube
+        results += youtube.run()
     print("\n| case | result | detail |\n|---|---|---|")
     for name, res, detail in results:
         print(f"| {name} | {res} | {detail} |")

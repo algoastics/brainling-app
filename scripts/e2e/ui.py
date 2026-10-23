@@ -82,7 +82,7 @@ def home():
 def launch(pkg):
     act = adb("shell", "cmd", "package", "resolve-activity", "--brief", "-c",
               "android.intent.category.LAUNCHER", pkg).strip().splitlines()[-1]
-    adb("shell", "am", "start", "-n", act)
+    adb("shell", "am", "start", "-n", f"'{act}'")  # quoted: YouTube's activity has a $
 
 
 def wait(s):

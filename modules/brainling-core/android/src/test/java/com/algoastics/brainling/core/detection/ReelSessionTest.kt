@@ -388,4 +388,64 @@ class ReelSessionTest {
     page(reelsTab, 1, sig = 998)
     assertEquals(7, counted)
   }
+
+  /**
+   * YouTube Shorts (10-23 20:40 PKT log): the tab pager only page-flips, and after Home and a
+   * shelf player it is rebuilt under a new node that reports no index; it resumes on its reel.
+   */
+  @Test
+  fun youtubeShortsTabRebuiltAfterShelfPlayer() {
+    val tab = PlayerKey(478, 0x68fbe)
+    val shelf = PlayerKey(478, 0x11134b)
+    val rebuilt = PlayerKey(478, 0x165ab3)
+    val path = "26/ReelRecyclerView#<SwipeRefreshLayout#<FrameLayout#reel_watch_fragment_root"
+    paths[tab] = "$path|tab=1"; paths[shelf] = "$path|tab=0"; paths[rebuilt] = "$path|tab=1"
+    stay(tab, 1)
+    for (n in 2..3) { s.onStep(1, "flip"); stay(tab, n.toLong()) }
+    assertEquals(3, counted)
+    s.onStep(-1, "flip"); stay(tab, 2)
+    away(Exit.COVERED); stay(tab, 2)
+    assertEquals(3, counted)
+    away(Exit.CLOSED); s.onContentClick() // a Home shelf thumbnail
+    stay(shelf, 50); s.onStep(1, "flip"); stay(shelf, 51)
+    assertEquals(5, counted)
+    away(Exit.CLOSED) // back, then the Shorts tab
+    stay(rebuilt, 77)
+    assertEquals(5, counted)
+    s.onStep(1, "flip"); stay(rebuilt, 78) // the reel it swiped back from
+    assertEquals(5, counted)
+    s.onStep(1, "flip"); stay(rebuilt, 79)
+    assertEquals(6, counted)
+  }
+
+  /** Without a selected-tab marker a step-only player is never matched by structure alone. */
+  @Test
+  fun stepOnlyPlayerWithoutTabMarkIsNotRestoredByPath() {
+    val a = PlayerKey(5, 0xa)
+    val b = PlayerKey(5, 0xb)
+    paths[a] = "9/RecyclerView#"; paths[b] = "9/RecyclerView#"
+    stay(a, 1); s.onStep(1, "flip"); stay(a, 2)
+    away(Exit.COVERED); stay(a, 2)
+    away(Exit.CLOSED)
+    stay(b, 30)
+    assertEquals(3, counted)
+  }
+
+  /** A channel's Shorts opened over the Shorts tab (same tab, same structure) is a new player. */
+  @Test
+  fun youtubeChannelShortsOverShortsTabIsNewPlayer() {
+    val tab = PlayerKey(499, 0x1)
+    val channel = PlayerKey(499, 0x2)
+    val path = "26/ReelRecyclerView#|tab=1"
+    paths[tab] = path; paths[channel] = path
+    stay(tab, 1); s.onStep(1, "flip"); stay(tab, 2)
+    away(Exit.COVERED); stay(tab, 2) // restored once: long-lived
+    away(Exit.CLOSED); s.onContentClick() // a thumbnail on the channel page
+    stay(channel, 40); s.onStep(1, "flip"); stay(channel, 41)
+    assertEquals(4, counted)
+    away(Exit.CLOSED) // back twice: the Shorts tab, rebuilt
+    val rebuilt = PlayerKey(499, 0x3).also { paths[it] = path }
+    stay(rebuilt, 90)
+    assertEquals(4, counted)
+  }
 }

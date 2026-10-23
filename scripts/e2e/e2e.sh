@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One command: build release (debug-keystore signed), install on the emulator, enable the
-# accessibility service, run the IG/FB e2e cases.   scripts/e2e/e2e.sh [ig|fb|all] [--no-build]
+# accessibility service, run the IG/FB e2e cases.   scripts/e2e/e2e.sh [ig|fb|yt|all] [--no-build]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 SERIAL=${E2E_SERIAL:-emulator-5554}

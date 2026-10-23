@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Brainling detection e2e on an emulator: drives IG/FB with adb and asserts BrainlingDetect logs.
 
-  python3 scripts/e2e/run.py [ig|fb|all]     (E2E_SERIAL defaults to emulator-5554)
+  python3 scripts/e2e/run.py [ig|fb|yt|all]     (E2E_SERIAL defaults to emulator-5554)
 """
 import re, time
 import ui
