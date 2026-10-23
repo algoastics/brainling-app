@@ -27,7 +27,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
   private lateinit var health: HealthMonitor
   private var rulesManager: RulesManager? = null
   private var rules: RuleSet? = null
-  private val sessions = mutableMapOf<String, Session>()
+  // Process-wide: Android rebinds the service (another accessibility client or UiAutomation
+  // connecting, a settings toggle) without killing the process; per-player seen sets survive.
+  private val sessions get() = SESSIONS
   private val scheduled = mutableSetOf<String>()
   private val rulesListener: (RuleSet) -> Unit = { updated -> handler.post { applyRules(updated) } }
 
@@ -71,6 +73,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
   override fun onServiceConnected() {
     super.onServiceConnected()
     connected = true
+    Log.i(TAG, "service connected sessions=${sessions.size}")
     counts = CountRepository.get(this)
     health = HealthMonitor.get(this)
     health.onServiceConnected()
@@ -93,9 +96,13 @@ class BrainlingAccessibilityService : AccessibilityService() {
 
   /** Activates [updated]: narrows the observed packages and resets counters if timing changed. */
   private fun applyRules(updated: RuleSet) {
-    val previous = rules
+    val previous = rules ?: lastRules
     rules = updated
-    if (previous == null || previous.countingDiffers(updated)) sessions.clear()
+    lastRules = updated
+    if (previous == null || previous.countingDiffers(updated)) {
+      if (sessions.isNotEmpty()) Log.i(TAG, "sessions reset: rules v${updated.version}")
+      sessions.clear()
+    }
     sessions.keys.retainAll(updated.enabledPackages)
     serviceInfo?.let { info ->
       info.packageNames = updated.enabledPackages.toTypedArray()
@@ -261,6 +268,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
       NodeInspector.hasAdLabel(pager, surface.node ?: root, adLabels)
     }
     val counted = result.decision == ReelSession.Decision.COUNTED
+    session.reels.attachLog?.let { logLine(session, packageName, it); session.reels.attachLog = null }
     logDecision(session, packageName, result)
     if (counted) {
       counts.record(rule.key)
@@ -340,6 +348,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
   }
 
   companion object {
+    private val SESSIONS = mutableMapOf<String, Session>()
+    private var lastRules: RuleSet? = null
     private const val TAG = "BrainlingDetect"
     private const val THROTTLE_MS = 250L
     private const val BADGE_WATCH_MS = 1_000L

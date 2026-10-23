@@ -263,7 +263,11 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     evict()
     currentKey = key
     current = p
+    attachLog = "attach player=$key from=${known?.let { if (it === byNode) "node" else if (it === byWindow) "window" else "path" } ?: "-"} index=${p.index ?: "-"} seen=${p.seen.size} players=${players.size} reason=$reason"
   }
+
+  /** Last attach decision, for one diagnostic log line per player switch (no screen text). */
+  var attachLog: String? = null
 
   /** Ephemeral players (profile, feed-opened) are evicted first; tab players are kept. */
   private fun evict() {
@@ -283,7 +287,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
 
   companion object {
     /** A reel counts once it has been settled on screen this long. */
-    const val SETTLE_MS = 1_000L
+    const val SETTLE_MS = 750L
     /** Remembered ephemeral players besides the current one. */
     private const val MAX_EPHEMERAL = 32
     /** Remembered long-lived tab players (never evicted by ephemeral ones). */
