@@ -174,18 +174,30 @@ class PagerTracker(private val settleMs: Long = SETTLE_MS) {
 class PageFlipDetector {
   private var current: Long? = null
   private var previous: Long? = null
+  private var resyncUntil = 0L
+
+  /**
+   * A settled swipe (scroll fallback) already moved the position at [nowMs]: the next page view
+   * change within [RESYNC_MS] is that same swipe (TikTok rebinds the page view a beat later), so
+   * it is only recorded.
+   */
+  fun stepped(nowMs: Long) {
+    resyncUntil = nowMs + RESYNC_MS
+  }
 
   /**
    * Feeds the identity of the page now filling the pager (null mid-swipe or unknown). Returns +1 or
    * -1 when it flipped, else 0. [indexMoved] means the pager already reported a new index since
    * the last call: the flip is then only recorded, so one swipe never advances twice.
    */
-  fun observe(identity: Long?, indexMoved: Boolean): Int {
+  fun observe(identity: Long?, indexMoved: Boolean, nowMs: Long = 0L): Int {
     if (identity == null) return 0
     val old = current
     if (old == identity) return 0
+    val resync = nowMs < resyncUntil
+    resyncUntil = 0L
     val step = when {
-      old == null || indexMoved -> 0
+      old == null || indexMoved || resync -> 0
       identity == previous -> -1
       else -> 1
     }
@@ -197,5 +209,10 @@ class PageFlipDetector {
   fun reset() {
     current = null
     previous = null
+    resyncUntil = 0L
+  }
+
+  companion object {
+    const val RESYNC_MS = 1_500L
   }
 }

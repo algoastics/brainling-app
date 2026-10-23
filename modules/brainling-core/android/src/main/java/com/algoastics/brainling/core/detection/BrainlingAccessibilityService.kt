@@ -258,8 +258,11 @@ class BrainlingAccessibilityService : AccessibilityService() {
     if (!settling) {
       session.pager.settle(session.reels.index, session.surfaceHeight, now)?.let {
         session.reels.onStep(it - (session.reels.index ?: 0), "swipe")
+        // The page view this swipe brought in only resyncs the flip tracker (TikTok: both
+        // fired for one swipe, so every swipe moved two positions).
+        session.flips.stepped(now)
       }
-      val step = session.flips.observe(visiblePage, session.indexMoved)
+      val step = session.flips.observe(visiblePage, session.indexMoved, now)
       session.indexMoved = false
       if (step != 0) {
         session.pager.markFlip()
