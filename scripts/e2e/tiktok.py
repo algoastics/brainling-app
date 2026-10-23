@@ -90,7 +90,7 @@ def run():
 
     def profile_swipe():
         ui.wait(DWELL); ui.swipe_up()
-    c.step("TT profile player swipe = 1", 1, profile_swipe)
+    c.step("TT profile player swipe = 1", 1, profile_swipe, needs="TT creator profile first video = 1")
 
     def back_fy():
         ui.back(); ui.wait(2.5); ui.back(); ui.wait(2.5)

@@ -13,16 +13,23 @@ class Case:
     def __init__(self, app):
         self.app = app
         self.results = []
+        self.skipped = set()
 
     def log(self):
         return [l for l in ui.adb("logcat", "-d", "-s", "BrainlingDetect").splitlines() if f"app={self.app}" in l]
 
-    def step(self, name, expected, action, allow_ads=True):
+    def step(self, name, expected, action, allow_ads=True, needs=None):
+        if needs and needs in self.skipped:  # its setup never happened: not a detection result
+            self.skipped.add(name)
+            self.results.append((name, "SKIP", f"needs: {needs}"))
+            print(f"SKIP {name}: needs {needs}")
+            return
         before = len(self.log())
         try:
             action()
             ui.wait(DWELL)
         except Exception as e:  # UI element not found etc.
+            self.skipped.add(name)
             self.results.append((name, "SKIP", str(e)))
             print(f"SKIP {name}: {e}")
             return

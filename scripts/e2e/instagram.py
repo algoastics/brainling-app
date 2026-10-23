@@ -57,7 +57,7 @@ def run():
     c.step("IG feed scrolling = 0", 0, feed_scroll)
 
     def feed_video():
-        for _ in range(15):
+        for _ in range(30):
             n = ui.find(lambda n: n["id"] == "video_states"
                         and min(n["b"][3], 2200) - max(n["b"][1], 300) > 500, ui.nodes(PKG))
             if n:
@@ -67,11 +67,11 @@ def run():
             ui.adb("shell", "input", "swipe", "540", "1900", "540", "700", "400"); ui.wait(1.5)
         raise RuntimeError("no feed reel")
     c.step("IG feed video tapped = 1", 1, feed_video)
-    c.step("IG feed player swipes 2 = 2", 2, swipes(2))
+    c.step("IG feed player swipes 2 = 2", 2, swipes(2), needs="IG feed video tapped = 1")
 
     def back_reels():
         ui.back(); ui.wait(2); reels_tab()
-    c.step("IG back then Reels tab = 0", 0, back_reels)
+    c.step("IG back then Reels tab = 0", 0, back_reels, needs="IG feed video tapped = 1")
     c.step("IG Reels swipe back = 0", 0, swipes(1, up=False))
 
     def comments():

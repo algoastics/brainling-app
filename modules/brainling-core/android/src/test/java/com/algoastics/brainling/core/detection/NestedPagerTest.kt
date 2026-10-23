@@ -90,10 +90,28 @@ class NestedPagerTest {
   fun flipAfterSettledSwipeIsTheSameSwipe() {
     val f = PageFlipDetector()
     assertEquals(0, f.observe(1, false, 0))
-    f.stepped(1_000)
+    assertEquals(1, f.stepped(1_000, 1))
     assertEquals(0, f.observe(2, false, 1_400)) // the swipe's own page view
-    assertEquals(1, f.observe(3, false, 2_000)) // a real flip afterwards still counts
-    f.stepped(3_000)
-    assertEquals(-1, f.observe(2, false, 5_000)) // resync window expired
+    assertEquals(1, f.observe(3, false, 4_000)) // a later flip alone still counts
+    assertEquals(-1, f.observe(2, false, 8_000)) // window expired: a plain swipe back
+  }
+
+  /** TikTok (10-23 23:09 PKT log): the page view flipped before the scroll settled. */
+  @Test
+  fun settledSwipeAfterFlipIsTheSameSwipe() {
+    val f = PageFlipDetector()
+    f.observe(1, false, 0)
+    assertEquals(1, f.observe(2, false, 1_000))
+    assertEquals(0, f.stepped(1_300, 1))
+    assertEquals(1, f.stepped(5_000, 1)) // a later swipe alone still counts
+  }
+
+  /** YouTube (10-23 PKT log): a stray backward settle, then the real forward flip, nets +1. */
+  @Test
+  fun flipCorrectsAWrongWaySwipe() {
+    val f = PageFlipDetector()
+    f.observe(1, false, 0)
+    assertEquals(-1, f.stepped(1_000, -1))
+    assertEquals(2, f.observe(2, false, 1_200))
   }
 }

@@ -71,7 +71,7 @@ def run():
     def shelf():
         ui.tap(*HOME_TAB); ui.wait(3); open_until_player(is_short)
     c.step("YT Home shelf short opens player = 1", 1, shelf)
-    c.step("YT shelf player swipe = 1", 1, swipes(1))
+    c.step("YT shelf player swipe = 1", 1, swipes(1), needs="YT Home shelf short opens player = 1")
 
     def back_tab():
         ui.back(); ui.wait(2.5); ui.tap(*SHORTS_TAB)

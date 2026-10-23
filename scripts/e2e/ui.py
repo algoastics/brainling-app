@@ -54,24 +54,41 @@ def find(pred, ns=None):
     return None
 
 
+# A uiautomator dump rebinds every accessibility service; input sent before Brainling's service
+# is back is lost to it (a harness artifact, not a detection result). Inputs wait it out.
+REBIND_S = 4.0
+_last_dump = 0.0
+
+
+def _settle_rebind():
+    left = _last_dump + REBIND_S - time.time()
+    if left > 0:
+        time.sleep(left)
+
+
 def tap_node(n):
+    _settle_rebind()
     l, t, r, b = n["b"]
     adb("shell", "input", "tap", str((l + r) // 2), str((t + b) // 2))
 
 
 def tap(x, y):
+    _settle_rebind()
     adb("shell", "input", "tap", str(x), str(y))
 
 
 def swipe_up(ms=300):  # next reel
+    _settle_rebind()
     adb("shell", "input", "swipe", "540", "1800", "540", "600", str(ms))
 
 
 def swipe_down(ms=300):  # previous reel
+    _settle_rebind()
     adb("shell", "input", "swipe", "540", "700", "540", "1900", str(ms))
 
 
 def back():
+    _settle_rebind()
     adb("shell", "input", "keyevent", "4")
 
 
@@ -98,7 +115,9 @@ if __name__ == "__main__":  # dump: python3 ui.py
 def ua_nodes():
     """uiautomator dump (text/content-desc). Rebinds accessibility services on the emulator;
     the service keeps sessions process-wide, so this is safe between steps."""
+    global _last_dump
     adb("shell", "uiautomator", "dump", "/sdcard/e2e.xml")
+    _last_dump = time.time()
     xml = adb("shell", "cat", "/sdcard/e2e.xml")
     out = []
     for m in re.finditer(r"<node [^>]*>", xml):
