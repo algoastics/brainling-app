@@ -142,6 +142,21 @@ class RuleSetTest {
   }
 
   @Test
+  fun parsesOptionalAdLabels() {
+    assertEquals(listOf("Sponsored"), source.ruleFor("com.instagram.android")!!.adLabels)
+    assertEquals(listOf("Sponsored", "Ad"), source.apps.first { it.key == "tiktok" }.adLabels)
+    val none = RuleSet.parse(withApps("""{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"]}"""))
+    assertTrue(none.apps.single().adLabels.isEmpty())
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun rejectsBlankAdLabel() {
+    RuleSet.parse(
+      withApps("""{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"],"adLabels":[" "]}"""),
+    )
+  }
+
+  @Test
   fun countingDiffersOnlyOnTimingChanges() {
     val same = RuleSet.parse(JSONObject(sourceText).put("version", 99).toString())
     val slower = RuleSet.parse(JSONObject(sourceText).put("dwellMs", 1200).toString())

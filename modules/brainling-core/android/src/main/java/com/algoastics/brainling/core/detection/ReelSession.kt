@@ -144,7 +144,14 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
    * One evaluation with player [key] on screen, its visible page view identity [pageSig] (null
    * when unknown) and [settling] true mid-swipe.
    */
-  fun evaluate(key: PlayerKey, pageSig: Long?, settling: Boolean, nowMs: Long, path: String? = null): Result {
+  fun evaluate(
+    key: PlayerKey,
+    pageSig: Long?,
+    settling: Boolean,
+    nowMs: Long,
+    path: String? = null,
+    isAd: () -> Boolean = { false },
+  ): Result {
     if (key != currentKey) attach(key, pageSig, nowMs, path)
     val p = current!!
     if (settling) {
@@ -171,7 +178,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       players[key] = fresh
       current = fresh
       reason = "pager reset"
-      return evaluate(key, pageSig, settling, nowMs)
+      return evaluate(key, pageSig, settling, nowMs, isAd = isAd)
     }
     p.evalIndex = now
     if (pageSig != null) p.lastSig = pageSig
@@ -196,8 +203,17 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     p.markSeen(reel, p.index)
     pageSig?.let(p.seenSigs::add)
     pendingReel = null
+    // Checked only once the reel settled: a sponsored reel is marked seen (never recounted).
+    if (isAd()) {
+      adsSeen++
+      return Result(Decision.SEEN, key, p.index, "ad")
+    }
     return Result(Decision.COUNTED, key, p.index, reason)
   }
+
+  /** Sponsored reels skipped (in memory only; for a later JS stat). */
+  var adsSeen = 0
+    private set
 
   fun hasPending(): Boolean = pendingReel != null
 

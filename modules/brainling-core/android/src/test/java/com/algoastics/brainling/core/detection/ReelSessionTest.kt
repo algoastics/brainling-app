@@ -295,6 +295,23 @@ class ReelSessionTest {
   }
 
   @Test
+  fun sponsoredReelIsSkippedAndNeverRecounted() {
+    val ads = setOf(2)
+    fun go(i: Int) {
+      s.onIndex(i, now)
+      val end = now + 1_500
+      while (now < end) {
+        val r = s.evaluate(other, 100L + i, settling = false, nowMs = now) { i in ads }
+        if (r.decision == ReelSession.Decision.COUNTED) counted++
+        now += 250
+      }
+    }
+    go(0); go(1); go(2); go(3); go(2); go(4)
+    assertEquals(4, counted)
+    assertEquals(1, s.adsSeen)
+  }
+
+  @Test
   fun swipeBackInTheSamePlayerDoesNotCount() {
     for (i in 0..4) page(reelsTab, i)
     for (i in 3 downTo 0) page(reelsTab, i)

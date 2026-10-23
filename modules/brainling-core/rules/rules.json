@@ -10,6 +10,7 @@
   "apps": [
     {
       "key": "instagram",
+      "adLabels": ["Sponsored"],
       "packageNames": ["com.instagram.android"],
       "enabled": true,
       "surfaceIds": ["clips_viewer_view_pager"],
@@ -17,6 +18,7 @@
     },
     {
       "key": "youtube",
+      "adLabels": ["Sponsored", "Ad"],
       "packageNames": [
         "com.google.android.youtube",
         "app.revanced.android.youtube",
@@ -28,6 +30,7 @@
     },
     {
       "key": "tiktok",
+      "adLabels": ["Sponsored", "Ad"],
       "packageNames": [
         "com.zhiliaoapp.musically",
         "com.ss.android.ugc.trill",
@@ -40,12 +43,14 @@
     },
     {
       "key": "tiktok_lite",
+      "adLabels": ["Sponsored", "Ad"],
       "packageNames": ["com.zhiliaoapp.musically.go", "com.tiktok.lite.go"],
       "enabled": true,
       "surfaceIds": ["simplayer_api_player_view"]
     },
     {
       "key": "facebook",
+      "adLabels": ["Sponsored"],
       "packageNames": ["com.facebook.katana"],
       "enabled": true,
       "contentDescriptions": [
@@ -69,12 +74,14 @@
     },
     {
       "key": "facebook_lite",
+      "adLabels": ["Sponsored"],
       "packageNames": ["com.facebook.lite"],
       "enabled": true,
       "surfaceIds": ["video_view"]
     },
     {
       "key": "snapchat",
+      "adLabels": ["Sponsored", "Ad"],
       "packageNames": ["com.snapchat.android"],
       "enabled": true,
       "surfaceIds": ["spotlight_container"]

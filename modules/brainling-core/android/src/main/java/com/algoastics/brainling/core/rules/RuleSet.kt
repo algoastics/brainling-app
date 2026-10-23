@@ -47,6 +47,11 @@ data class AppRule(
    * the source node's class name.
    */
   val pagerClassNames: List<String> = emptyList(),
+  /**
+   * Optional ad labels ("Sponsored", "Ad", localized variants) shown on sponsored reels; a reel
+   * carrying one is not counted. Compared case-insensitively against whole label nodes only.
+   */
+  val adLabels: List<String> = emptyList(),
 ) {
   val hasSignal: Boolean
     get() = surfaceIds.isNotEmpty() || contentDescriptions.isNotEmpty() || structure != null
@@ -80,7 +85,8 @@ data class RuleSet(
     dwellMs != other.dwellMs || dedupeSize != other.dedupeSize
 
   companion object {
-    /** Schema written by sign-rules.mjs. 3 adds the optional pagerIds / pagerClassNames. */
+    /** Schema written by sign-rules.mjs. 3 adds the optional pagerIds / pagerClassNames
+     * and adLabels. */
     const val SCHEMA = 3
     val SUPPORTED_SCHEMAS = setOf(2, 3)
     private val KEY = Regex("^[a-z][a-z0-9_]{0,31}$")
@@ -129,6 +135,7 @@ data class RuleSet(
         dmSignatureIds = optStrings(app, "dmSignatureIds"),
         pagerIds = optStrings(app, "pagerIds"),
         pagerClassNames = optStrings(app, "pagerClassNames"),
+        adLabels = optStrings(app, "adLabels"),
       )
       require(KEY.matches(rule.key)) { "bad key" }
       require(rule.packageNames.isNotEmpty() && rule.packageNames.all { PACKAGE.matches(it) }) {
@@ -139,6 +146,9 @@ data class RuleSet(
       require(rule.pagerClassNames.all { CLASS_NAME.matches(it) }) { "bad pagerClassNames" }
       require(rule.pagerClassNames.isEmpty() || rule.pagerIds.isNotEmpty()) {
         "pagerClassNames without pagerIds"
+      }
+      require(rule.adLabels.size <= 20 && rule.adLabels.all { it.trim().length in 1..32 }) {
+        "bad adLabels"
       }
       require(rule.contentDescriptions.all { it.length in 1..200 }) { "bad content description" }
       require(!rule.enabled || rule.hasSignal) { "enabled app without a detection signal" }

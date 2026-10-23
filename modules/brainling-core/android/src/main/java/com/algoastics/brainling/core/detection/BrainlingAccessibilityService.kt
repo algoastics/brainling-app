@@ -256,7 +256,10 @@ class BrainlingAccessibilityService : AccessibilityService() {
 
     val path = session.paths.getOrPut(playerKey) { NodeInspector.structuralPath(playerNode) }
     if (session.paths.size > 16) session.paths.keys.first().let(session.paths::remove)
-    val result = session.reels.evaluate(playerKey, visiblePage, settling, now, path)
+    val adLabels = AdMarker.labelsFor(rule.key, rule.adLabels)
+    val result = session.reels.evaluate(playerKey, visiblePage, settling, now, path) {
+      NodeInspector.hasAdLabel(pager, surface.node ?: root, adLabels)
+    }
     val counted = result.decision == ReelSession.Decision.COUNTED
     logDecision(session, packageName, result)
     if (counted) {

@@ -96,6 +96,32 @@ object NodeInspector {
   }
 
   /**
+   * True when the settled reel ([pager]'s visible page, else [fallback]) shows one of [labels]
+   * as a whole label node. Text is compared and dropped; nothing is kept.
+   */
+  fun hasAdLabel(pager: Pager?, fallback: AccessibilityNodeInfo?, labels: List<String>): Boolean {
+    if (labels.isEmpty()) return false
+    val root = pager?.let(::visiblePage) ?: fallback ?: return false
+    return AdMarker.containsAd(
+      root,
+      labels,
+      children = { n -> (0 until n.childCount).mapNotNull(n::getChild).filter { it.isVisibleToUser } },
+      values = { n -> listOf(n.text, n.contentDescription) },
+    )
+  }
+
+  private fun visiblePage(pager: Pager): AccessibilityNodeInfo? {
+    val node = pager.node
+    val height = pager.bounds.height()
+    if (height <= 0) return null
+    val r = Rect()
+    return (0 until node.childCount).mapNotNull(node::getChild).maxByOrNull { child ->
+      child.getBoundsInScreen(r)
+      if (r.intersect(pager.bounds)) r.height() else 0
+    }
+  }
+
+  /**
    * Identity of the page view that fills most of [pager] (at least [PAGE_FILL] of its height),
    * or null mid-swipe. Uses the node's hash, which Android derives from the source view id, so
    * it is stable for one view and differs between page views. Never reads text.
