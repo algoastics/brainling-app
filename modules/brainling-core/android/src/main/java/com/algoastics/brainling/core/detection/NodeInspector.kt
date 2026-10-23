@@ -120,6 +120,24 @@ object NodeInspector {
     return best.hashCode().toLong()
   }
 
+  /**
+   * Structural identity of a player node: its class and resource id plus those of its nearest
+   * ancestors and its depth. Stable when the app rebuilds the view; never reads text.
+   */
+  fun structuralPath(node: AccessibilityNodeInfo): String {
+    val parts = ArrayList<String>()
+    var cursor: AccessibilityNodeInfo? = node
+    var hops = 0
+    while (cursor != null && hops < PATH_HOPS) {
+      parts.add("${cursor.className?.toString()?.substringAfterLast('.')}#${cursor.viewIdResourceName?.substringAfter(":id/") ?: ""}")
+      cursor = cursor.parent
+      hops++
+    }
+    return "${depthOf(node)}/" + parts.joinToString("<")
+  }
+
+  private const val PATH_HOPS = 8
+
   private fun depthOf(node: AccessibilityNodeInfo): Int {
     var depth = 0
     var cursor = node.parent

@@ -14,7 +14,7 @@ class ReelSessionTest {
   private fun stay(player: PlayerKey, sig: Long?, ms: Long = 1_500) {
     val end = now + ms
     while (now < end) {
-      if (s.evaluate(player, sig, settling = false, nowMs = now).decision == ReelSession.Decision.COUNTED) counted++
+      if (s.evaluate(player, sig, settling = false, nowMs = now, path = paths[player]).decision == ReelSession.Decision.COUNTED) counted++
       now += 250
     }
   }
@@ -31,6 +31,7 @@ class ReelSessionTest {
   }
 
   private val reelsTab = PlayerKey(1, 0x10)
+  private val paths = mutableMapOf(reelsTab to "12/ViewPager#clips_viewer_pager<FrameLayout#tab")
   private val other = PlayerKey(2, 0x20)
 
   @Test
@@ -103,6 +104,66 @@ class ReelSessionTest {
     away(Exit.CLOSED)
     stay(reelsTab, null)
     assertEquals(2, counted)
+  }
+
+  /**
+   * Device run of 2c753d6: Reels to 25 with profile visits in between, feed video, swipe, back,
+   * Reels tab. Five other players opened meanwhile and evicted the Reels pager (log: e778 came
+   * back with reason=open and swipes back counted).
+   */
+  @Test
+  fun reelsTabSurvivesManyOtherPlayers() {
+    // Reels 0..21 = 22 reels, with 3 profile visits (one reel each) returning to the same reel.
+    var n = 0
+    for (i in 0..21) {
+      page(reelsTab, i)
+      if (i % 7 == 6) {
+        away(Exit.CLOSED); stay(PlayerKey(3, 0x100L + n++), 800L + n); away(Exit.CLOSED)
+        stay(reelsTab, 100L + i) // back: same reel, no count
+      }
+    }
+    assertEquals(25, counted)
+    away(Exit.CLOSED) // Feed tab
+    val feedVideo = PlayerKey(4, 0x400)
+    stay(feedVideo, 1)
+    assertEquals(26, counted)
+    page(feedVideo, 1, sig = 2)
+    assertEquals(27, counted)
+    away(Exit.CLOSED) // back to the feed
+    away(Exit.CLOSED)
+    stay(reelsTab, 555) // Reels tab resumes on the same reel, recycled page view
+    assertEquals(27, counted)
+    for (i in 20 downTo 18) page(reelsTab, i)
+    assertEquals(27, counted)
+    for (i in 19..21) page(reelsTab, i)
+    page(reelsTab, 22)
+    assertEquals(28, counted)
+  }
+
+  @Test
+  fun rebuiltReelsTabMatchesByStructureAndIndexRange() {
+    for (i in 0..5) page(reelsTab, i)
+    away(Exit.CLOSED); stay(PlayerKey(2, 1), 900); away(Exit.CLOSED)
+    page(reelsTab, 5) // restored once: now a long-lived tab player
+    away(Exit.CLOSED)
+    val rebuilt = PlayerKey(reelsTab.windowId, 0x77)
+    paths[rebuilt] = paths.getValue(reelsTab)
+    s.onIndex(6, now)
+    stay(rebuilt, 4242)
+    assertEquals(8, counted) // 6 + profile reel + index 6 (new, continues the range)
+    page(rebuilt, 3)
+    assertEquals(8, counted)
+  }
+
+  @Test
+  fun profilePlayerSharingTheTabPathStartsFresh() {
+    for (i in 0..5) page(reelsTab, i)
+    away(Exit.CLOSED)
+    val profile = PlayerKey(reelsTab.windowId, 0x55)
+    paths[profile] = paths.getValue(reelsTab)
+    s.onIndex(30, now)
+    stay(profile, 9)
+    assertEquals(7, counted)
   }
 
   @Test

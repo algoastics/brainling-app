@@ -42,6 +42,23 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     var aliasSig: Long? = null
     /** How this player last left the screen, null while it is (or was never) away. */
     var exit: Exit? = null
+    /** Structural identity (window + class/resource-id path), stable if the node is rebuilt. */
+    var path: String? = null
+    /** Times it was returned to after leaving; >= 1 marks a long-lived tab player. */
+    var restores = 0
+    val longLived: Boolean get() = restores > 0 && path != null
+    val seenIndexes = ArrayDeque<Int>()
+
+    fun markSeen(reel: String, index: Int?) {
+      seen.add(reel)
+      if (index != null && index !in seenIndexes) seenIndexes.addLast(index)
+      while (seenIndexes.size > MAX_SEEN) seen.remove("i${seenIndexes.removeFirst()}")
+      if (seen.size > MAX_SEEN * 2) seen.clear().also { seenIndexes.forEach { seen.add("i$it") } }
+    }
+
+    /** True when [i] continues this player's seen range (within one page of it). */
+    fun inRange(i: Int): Boolean =
+      seenIndexes.isNotEmpty() && i in (seenIndexes.minOrNull()!! - 1)..(seenIndexes.maxOrNull()!! + 1)
   }
 
   private val players = LinkedHashMap<PlayerKey, Player>()
@@ -108,8 +125,8 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
    * One evaluation with player [key] on screen, its visible page view identity [pageSig] (null
    * when unknown) and [settling] true mid-swipe.
    */
-  fun evaluate(key: PlayerKey, pageSig: Long?, settling: Boolean, nowMs: Long): Result {
-    if (key != currentKey) attach(key, pageSig, nowMs)
+  fun evaluate(key: PlayerKey, pageSig: Long?, settling: Boolean, nowMs: Long, path: String? = null): Result {
+    if (key != currentKey) attach(key, pageSig, nowMs, path)
     val p = current!!
     if (settling) {
       pendingReel = null
@@ -119,7 +136,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       val sig = p.aliasSig
       val sameView = pageSig == null || sig == null || pageSig == sig
       val shownCounted = "start" in p.seen || (sig != null && "s$sig" in p.seen)
-      if (sameView && shownCounted) p.seen.add(reelId(idx, null))
+      if (sameView && shownCounted) p.markSeen(reelId(idx, null), idx)
       p.aliasIndex = null
     }
     val prev = p.evalIndex
@@ -143,7 +160,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       pendingSince = nowMs
     }
     if (nowMs - pendingSince < settleMs) return Result(Decision.SETTLING, key, p.index, reason)
-    p.seen.add(reel)
+    p.markSeen(reel, p.index)
     pageSig?.let(p.seenSigs::add)
     pendingReel = null
     return Result(Decision.COUNTED, key, p.index, reason)
@@ -151,7 +168,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
 
   fun hasPending(): Boolean = pendingReel != null
 
-  private fun attach(key: PlayerKey, pageSig: Long?, nowMs: Long) {
+  private fun attach(key: PlayerKey, pageSig: Long?, nowMs: Long, path: String?) {
     // A remembered player: the same node, or (the app rebuilt the view on back navigation) a
     // player that left in the same window showing the same page view at the same index.
     val byNode = players[key]
@@ -159,13 +176,22 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       p.exit != null && k.windowId == key.windowId && p.lastSig == pageSig &&
         (awayIndex == null || awayIndex == p.index)
     }?.also { players.remove(it.key) }?.value
-    val known = byNode ?: byWindow
+    // A long-lived tab player (e.g. Instagram's Reels tab) rebuilt under a new node: matched by
+    // structure, window and an index continuing its seen range.
+    val byPath = if (byNode != null || byWindow != null || path == null) null else players.entries.lastOrNull { (k, p) ->
+      p.exit != null && p.longLived && p.path == path && k.windowId == key.windowId &&
+        (awayIndex == null || p.inRange(awayIndex!!))
+    }?.also { players.remove(it.key) }?.value
+    val known = byNode ?: byWindow ?: byPath
+    val tab = known?.longLived == true
     val returning = known?.exit != null
     val sigKnown = pageSig != null && known?.lastSig != null
-    val reused = returning && sigKnown && pageSig != known!!.lastSig
-    val moved = returning && awayIndex != null && awayIndex != known!!.index
+    // Tab players keep their history: recycled page views and a resume one page on are normal.
+    val reused = returning && !tab && sigKnown && pageSig != known!!.lastSig
+    val moved = returning && awayIndex != null && awayIndex != known!!.index &&
+      !(tab && known.inRange(awayIndex!!))
     // After a close we need positive proof it is the same reel (FB reopens reuse the node).
-    val unproven = known?.exit == Exit.CLOSED && !sigKnown && awayIndex == null
+    val unproven = known?.exit == Exit.CLOSED && !tab && !sigKnown && awayIndex == null
     val p = when {
       known == null -> Player().also { it.index = awayIndex; reason = "open" }
       reused -> Player().also { reason = "reused player" }
@@ -174,14 +200,30 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       else -> known
     }
     probationUntil = if (p === known && known.exit == Exit.COVERED) nowMs + settleMs else 0L
-    if (p === known && returning) reason = "restored"
+    if (p === known && returning) {
+      reason = "restored"
+      p.restores++
+      // The pager reported where it resumed while away; that is its position now.
+      awayIndex?.let { p.index = it }
+    }
+    if (p.path == null) p.path = path
     p.exit = null
     awayIndex = null
     players.remove(key)
     players[key] = p
-    while (players.size > MAX_PLAYERS) players.remove(players.keys.first())
+    evict()
     currentKey = key
     current = p
+  }
+
+  /** Ephemeral players (profile, feed-opened) are evicted first; tab players are kept. */
+  private fun evict() {
+    fun drop(longLived: Boolean, cap: Int) {
+      val keys = players.filter { (k, p) -> k != currentKey && p.longLived == longLived }.keys
+      keys.take(maxOf(0, keys.size - cap)).forEach(players::remove)
+    }
+    drop(longLived = false, cap = MAX_EPHEMERAL)
+    drop(longLived = true, cap = MAX_TABS)
   }
 
   private fun reelId(index: Int?, pageSig: Long?): String = when {
@@ -193,7 +235,11 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
   companion object {
     /** A reel counts once it has been settled on screen this long. */
     const val SETTLE_MS = 1_000L
-    /** Current player plus the last few covered or exited ones. */
-    private const val MAX_PLAYERS = 4
+    /** Remembered ephemeral players besides the current one. */
+    private const val MAX_EPHEMERAL = 3
+    /** Remembered long-lived tab players (never evicted by ephemeral ones). */
+    private const val MAX_TABS = 4
+    /** Seen indices kept per player. */
+    const val MAX_SEEN = 200
   }
 }

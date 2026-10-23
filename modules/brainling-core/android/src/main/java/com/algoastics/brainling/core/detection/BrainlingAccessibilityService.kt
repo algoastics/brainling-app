@@ -64,6 +64,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
     var hadPager = false
     /** Last logged decision, so logcat gets one line per decision change. */
     var lastLog: String? = null
+    /** Structural path per player node, computed once (walking ancestors is not free). */
+    val paths = LinkedHashMap<PlayerKey, String>()
   }
 
   override fun onServiceConnected() {
@@ -252,7 +254,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
       }
     }
 
-    val result = session.reels.evaluate(playerKey, visiblePage, settling, now)
+    val path = session.paths.getOrPut(playerKey) { NodeInspector.structuralPath(playerNode) }
+    if (session.paths.size > 16) session.paths.keys.first().let(session.paths::remove)
+    val result = session.reels.evaluate(playerKey, visiblePage, settling, now, path)
     val counted = result.decision == ReelSession.Decision.COUNTED
     logDecision(session, packageName, result)
     if (counted) {
