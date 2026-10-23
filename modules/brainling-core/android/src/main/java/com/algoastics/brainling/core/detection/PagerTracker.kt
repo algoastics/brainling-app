@@ -175,14 +175,26 @@ class PageFlipDetector {
   private var current: Long? = null
   private var previous: Long? = null
   private var resyncUntil = 0L
+  private var pendingStep = 0
+  private var pendingFromSwipe = false
 
   /**
-   * A settled swipe (scroll fallback) already moved the position at [nowMs]: the next page view
-   * change within [RESYNC_MS] is that same swipe (TikTok rebinds the page view a beat later), so
-   * it is only recorded.
+   * Some apps (TikTok) report one swipe twice: a settled scroll (swipe fallback, fed here as
+   * [step] at [nowMs]) and a page view change, in either order. Within [RESYNC_MS] the second
+   * report is the same swipe, so only the difference between the two moves the position: 0 when
+   * they agree, a correction when the scroll direction was wrong. Returns the step to apply.
    */
-  fun stepped(nowMs: Long) {
+  fun stepped(nowMs: Long, step: Int): Int = reconcile(nowMs, step, fromSwipe = true)
+
+  private fun reconcile(nowMs: Long, step: Int, fromSwipe: Boolean): Int {
+    if (nowMs < resyncUntil && pendingFromSwipe != fromSwipe) {
+      resyncUntil = 0L
+      return step - pendingStep
+    }
     resyncUntil = nowMs + RESYNC_MS
+    pendingStep = step
+    pendingFromSwipe = fromSwipe
+    return step
   }
 
   /**
@@ -194,16 +206,14 @@ class PageFlipDetector {
     if (identity == null) return 0
     val old = current
     if (old == identity) return 0
-    val resync = nowMs < resyncUntil
-    resyncUntil = 0L
     val step = when {
-      old == null || indexMoved || resync -> 0
+      old == null || indexMoved -> 0
       identity == previous -> -1
       else -> 1
     }
     previous = old
     current = identity
-    return step
+    return if (step == 0) 0 else reconcile(nowMs, step, fromSwipe = false)
   }
 
   fun reset() {
