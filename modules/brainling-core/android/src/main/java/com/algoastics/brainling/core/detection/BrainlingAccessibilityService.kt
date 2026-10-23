@@ -52,18 +52,26 @@ class BrainlingAccessibilityService : AccessibilityService() {
   /** Browsing state for one package; the persisted part lives in [DetectionStateStore]. */
   private class Session(val counter: ReelCounter, snapshot: SessionSnapshot) {
     var id = snapshot.sessionId
+    /** Highest session id issued, so a new player never reuses a restored player's id. */
+    var maxId = snapshot.sessionId
     var pageIndex: Int? = snapshot.pageIndex
     var lastSeenAtMs = snapshot.lastSeenAtMs
     var onSurface = false
     var awaitingFirstIndex = false
     var surfaceHeight = 0
     var retryStep = Int.MAX_VALUE
-    val pager = PagerTracker()
+    var pager = PagerTracker()
     val flips = PageFlipDetector()
     /** True when a pager index arrived since the last evaluation (see [PageFlipDetector]). */
     var indexMoved = false
     /** Bounds of the feed pager at the last evaluation; scroll events from elsewhere are not it. */
     var pagerBounds: Rect? = null
+    /** Which reel player (pager node + window) this session is on; see [PlayerTracker]. */
+    val players = PlayerTracker()
+    /** True after entering the surface, until the first player is attached. */
+    var continuing = false
+
+    fun position() = PlayerTracker.State(id, pageIndex)
 
     fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
   }
@@ -121,6 +129,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
       }
       AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
         session.retryStep = 0
+        // The screen changed: re-select the pager, never filter scrolls by the old one's bounds.
+        session.pagerBounds = null
         DetectionDebug.logEvent(this, packageName, event, "window")
       }
       else -> DetectionDebug.logEvent(this, packageName, event, "content")
@@ -214,6 +224,9 @@ class BrainlingAccessibilityService : AccessibilityService() {
       if (badgePackage == packageName) hideBadge()
       session.flips.reset()
       session.pagerBounds = null
+      if (session.players.tracked != null) {
+        session.players.detach(session.position(), closedInApp = root != null)
+      }
       if (session.onSurface) {
         session.onSurface = false
         stateStore.save(packageName, session.snapshot())
@@ -233,8 +246,26 @@ class BrainlingAccessibilityService : AccessibilityService() {
     if (!session.onSurface) enterSurface(session, active.sessionGapMs, wallNow)
     session.onSurface = true
     session.lastSeenAtMs = wallNow
+    // Re-selected on every evaluation; a stale or invisible node is never kept.
     val pager = root?.let { NodeInspector.findPager(it, rule, packageName, surface) }
+      ?.takeIf { it.node.refresh() && it.node.isVisibleToUser }
     session.pagerBounds = pager?.bounds
+    val visiblePage = pager?.let(NodeInspector::visiblePageId)
+    val playerNode = pager?.node ?: surface.node
+    val playerKey = playerNode?.let { PlayerKey(it.windowId, it.hashCode().toLong()) }
+    val attach = session.players.attach(playerKey, session.position(), now, session.continuing, visiblePage)
+    if (playerKey != null) session.continuing = false
+    when (attach.kind) {
+      PlayerTracker.Kind.NEW -> startPlayerSession(session)
+      PlayerTracker.Kind.RESTORED -> attach.state?.let { restorePlayerSession(session, it) }
+      else -> Unit
+    }
+    if (!session.players.isSettled(now)) {
+      // A newly opened player: let it settle before its initial reel starts a dwell.
+      session.counter.observe(null, now)
+      schedule(packageName, PlayerTracker.SETTLE_MS)
+      return
+    }
     session.surfaceHeight = (pager?.bounds ?: surface.bounds).height()
 
     // Mid-swipe the surface on screen is neither reel; wait for the pager to settle so a
@@ -244,7 +275,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
       return
     }
     session.pager.settle(session.pageIndex, session.surfaceHeight, now)?.let { onPageIndex(session, it) }
-    val step = session.flips.observe(pager?.let(NodeInspector::visiblePageId), session.indexMoved)
+    val wasUnindexed = session.pageIndex == null
+    val step = session.flips.observe(visiblePage, session.indexMoved)
     val moved = session.indexMoved || step != 0
     session.indexMoved = false
     if (step != 0) {
@@ -254,6 +286,13 @@ class BrainlingAccessibilityService : AccessibilityService() {
     }
 
     val key = itemKey(packageName, session.id, session.pageIndex)
+    // A new player's first reported index names the reel already counted as its "start" reel.
+    if (wasUnindexed && session.pageIndex != null && step == 0 &&
+      session.players.firstIndexIsStartReel(visiblePage) &&
+      itemKey(packageName, session.id, null) in session.counter.recentKeys()
+    ) {
+      session.counter.suppress(key)
+    }
     val fromDm = root != null && NodeInspector.hasDmSignature(root, rule, packageName)
     val counted = if (fromDm) {
       session.counter.suppress(key)
@@ -297,6 +336,27 @@ class BrainlingAccessibilityService : AccessibilityService() {
       session.pageIndex = null
       session.awaitingFirstIndex = false
     }
+    session.continuing = session.awaitingFirstIndex
+  }
+
+  /** A different reel player appeared: its reels are new, starting with the one on screen. */
+  private fun startPlayerSession(session: Session) {
+    session.maxId = maxOf(session.maxId, session.id) + 1
+    session.id = session.maxId
+    session.pageIndex = null
+    session.awaitingFirstIndex = false
+    session.flips.reset()
+    session.indexMoved = false
+    session.pager = PagerTracker()
+  }
+
+  private fun restorePlayerSession(session: Session, state: PlayerTracker.State) {
+    session.maxId = maxOf(session.maxId, session.id)
+    session.id = state.sessionId
+    session.pageIndex = state.pageIndex
+    session.awaitingFirstIndex = false
+    session.flips.reset()
+    session.indexMoved = false
   }
 
   /** Salted hash of a structural position (package, browsing session, page index). */
