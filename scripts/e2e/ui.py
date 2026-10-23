@@ -24,7 +24,12 @@ def nodes(pkg=None):
     service, which restarts Brainling's service (empty state) on each dump.
     """
     out, stack, section = [], [], False
-    for line in adb("shell", "dumpsys", "activity", "top").splitlines():
+    # Dump only the resumed activity: `dumpsys activity top` dumps every task's top activity and
+    # a stale one that times out (FB LoginActivity) can drop the rest, e.g. the IG feed.
+    m = re.search(r"topResumedActivity=ActivityRecord\{\S+ \S+ (\S+)",
+                  adb("shell", "dumpsys", "activity", "activities"))
+    target = ["activity", m.group(1)] if m else ["top"]
+    for line in adb("shell", "dumpsys", "activity", *target).splitlines():
         if line.lstrip().startswith("ACTIVITY "):
             section = pkg is None or f" {pkg}/" in line
             stack = []
