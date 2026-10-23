@@ -40,6 +40,8 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     var evalIndex: Int? = null
     var aliasIndex: Int? = null
     var aliasSig: Long? = null
+    var aliasAtMs = 0L
+    var attachedAtMs = 0L
     /** How this player last left the screen, null while it is (or was never) away. */
     var exit: Exit? = null
     /** Structural identity (window + class/resource-id path), stable if the node is rebuilt. */
@@ -111,6 +113,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       // the next evaluation by comparing the visible page view.
       p.aliasIndex = newIndex
       p.aliasSig = p.lastSig
+      p.aliasAtMs = nowMs
       return
     }
     p.backward = newIndex < old
@@ -150,7 +153,10 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     }
     p.aliasIndex?.let { idx ->
       val sig = p.aliasSig
-      val sameView = pageSig == null || sig == null || pageSig == sig
+      // Without page-view identities (Facebook's surface path) only an index reported while the
+      // opened reel was still settling names it; a later first index is a swipe to the next one.
+      val sameView = if (pageSig != null && sig != null) pageSig == sig
+        else p.aliasAtMs - p.attachedAtMs < settleMs
       val shownCounted = "start" in p.seen || (sig != null && "s$sig" in p.seen)
       if (sameView && shownCounted) p.markSeen(reelId(idx, null), idx)
       p.aliasIndex = null
@@ -219,13 +225,10 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     val reused = returning && !tab && sigKnown && pageSig != known!!.lastSig
     val moved = returning && awayIndex != null && awayIndex != known!!.index &&
       !(tab && known.inRange(awayIndex!!))
-    // After a close we need positive proof it is the same reel (FB reopens reuse the node).
-    val unproven = known?.exit == Exit.CLOSED && !tab && !sigKnown && awayIndex == null
     val p = when {
       known == null -> Player().also { it.index = awayIndex; reason = "open" }
       reused -> Player().also { reason = "reused player" }
       moved -> Player().also { it.index = awayIndex; reason = "covered then different reel" }
-      unproven -> Player().also { reason = "reopen" }
       else -> known
     }
     probationUntil = if (p === known && known.exit == Exit.COVERED) nowMs + settleMs else 0L
@@ -236,6 +239,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       awayIndex?.let { p.index = it }
     }
     if (p.path == null) p.path = path
+    p.attachedAtMs = nowMs
     p.exit = null
     awayIndex = null
     players.remove(key)
@@ -265,7 +269,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     /** A reel counts once it has been settled on screen this long. */
     const val SETTLE_MS = 1_000L
     /** Remembered ephemeral players besides the current one. */
-    private const val MAX_EPHEMERAL = 3
+    private const val MAX_EPHEMERAL = 32
     /** Remembered long-lived tab players (never evicted by ephemeral ones). */
     private const val MAX_TABS = 4
     /** Seen indices kept per player. */

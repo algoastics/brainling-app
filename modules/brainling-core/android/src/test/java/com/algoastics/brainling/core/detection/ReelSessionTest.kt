@@ -102,7 +102,7 @@ class ReelSessionTest {
   fun reopenAfterCloseWithUnknownContentCounts() {
     stay(reelsTab, null)
     away(Exit.CLOSED)
-    stay(reelsTab, null)
+    stay(PlayerKey(reelsTab.windowId + 2, reelsTab.nodeId), null) // FB reopens get a new window
     assertEquals(2, counted)
   }
 
@@ -235,12 +235,63 @@ class ReelSessionTest {
 
   @Test
   fun facebookCloseAndReopenRepeatedly() {
-    repeat(3) {
-      stay(reelsTab, 1)
-      for (k in 1..4) { s.onStep(1, "flip"); stay(reelsTab, 1L + k) }
+    repeat(3) { n ->
+      val player = PlayerKey(1825 + 2 * n, 0x6e3d6) // log: every FB open has a new window id
+      stay(player, 1)
+      for (k in 1..4) { s.onStep(1, "flip"); stay(player, 1L + k) }
       away(Exit.CLOSED)
     }
     assertEquals(15, counted)
+  }
+
+  /** 9cedb87 FB log 15:39: feed video w1853:2222b4 opened (no index), first index 2 is a swipe. */
+  @Test
+  fun facebookFeedVideoFirstSwipesCount() {
+    val fb = PlayerKey(1853, 0x2222b4)
+    stay(fb, null, ms = 7_000)
+    assertEquals(1, counted)
+    page(fb, 2, sig = null, ms = 13_000)
+    page(fb, 3, sig = null)
+    page(fb, 4, sig = null)
+    assertEquals(4, counted)
+  }
+
+  /** IG-style: the first index reported while the opened reel settles names that reel. */
+  @Test
+  fun firstIndexDuringOpenIsTheOpenedReel() {
+    stay(other, null, ms = 250)
+    page(other, 5, sig = null)
+    assertEquals(1, counted)
+  }
+
+  /** 9cedb87 FB log 15:39:44-15:40:36: comment sheet open/close gave exit=closed then reopen. */
+  @Test
+  fun facebookCommentSheetDoesNotRecount() {
+    val fb = PlayerKey(1853, 0x2222b4)
+    stay(fb, null)
+    page(fb, 2, sig = null)
+    repeat(10) {
+      away(Exit.CLOSED, 3_000)
+      stay(fb, null, ms = 2_000)
+    }
+    assertEquals(2, counted)
+  }
+
+  /** 9cedb87 FB log: Video tab w1825:6e3d6 (15:33) came back at 15:42 after 8 other players. */
+  @Test
+  fun facebookVideoTabSurvivesOtherPlayers() {
+    val tab = PlayerKey(1825, 0x6e3d6)
+    stay(tab, null); page(tab, 2, sig = null, ms = 10_000); page(tab, 3, sig = null); page(tab, 4, sig = null)
+    assertEquals(4, counted)
+    away(Exit.CLOSED)
+    for (w in listOf(1833, 1837, 1839, 1841, 1843, 1845, 1847, 1849, 1853)) {
+      val p = PlayerKey(w, w.toLong() * 7)
+      stay(p, null); page(p, 2, sig = null, ms = 5_000)
+      away(Exit.CLOSED)
+    }
+    assertEquals(22, counted)
+    stay(tab, null, ms = 3_000) // resumes the same video
+    assertEquals(22, counted)
   }
 
   @Test
