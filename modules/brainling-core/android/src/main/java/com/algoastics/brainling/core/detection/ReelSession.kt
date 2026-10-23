@@ -48,6 +48,20 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     var restores = 0
     val longLived: Boolean get() = restores > 0 && path != null
     val seenIndexes = ArrayDeque<Int>()
+    /** The last page change went toward a lower index (swipe back / up). */
+    var backward = false
+
+    /** An independent copy, so a structural match never shares (or wipes) the original. */
+    fun copy(): Player = Player().also {
+      it.index = index
+      it.seen.addAll(seen)
+      it.seenSigs.addAll(seenSigs)
+      it.lastSig = lastSig
+      it.path = path
+      it.restores = restores
+      it.exit = exit
+      it.seenIndexes.addAll(seenIndexes)
+    }
 
     fun markSeen(reel: String, index: Int?) {
       seen.add(reel)
@@ -99,6 +113,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       p.aliasSig = p.lastSig
       return
     }
+    p.backward = newIndex < old
     reason = "index $old->$newIndex"
   }
 
@@ -106,6 +121,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
   fun onStep(step: Int, why: String) {
     val p = current ?: return
     p.index = (p.index ?: 0) + step
+    p.backward = step < 0
     reason = why
   }
 
@@ -143,17 +159,28 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     val now = p.index
     if (prev != null && now != null && now < prev - 1 && pageSig != null && pageSig !in p.seenSigs) {
       // The adapter was replaced under the same node (index jumped back to a reel view this
-      // player never showed): a new player opened, so its reels start unseen.
-      p.seen.clear()
-      p.seenSigs.clear()
+      // player never showed): a new player opened, so its reels start unseen. A fresh object, so
+      // a remembered tab player's history is never wiped.
+      val fresh = Player().also { it.index = now; it.path = p.path }
+      players[key] = fresh
+      current = fresh
       reason = "pager reset"
+      return evaluate(key, pageSig, settling, nowMs)
     }
     p.evalIndex = now
     if (pageSig != null) p.lastSig = pageSig
     val reel = reelId(p.index, pageSig)
     if (reel in p.seen) {
+      if (pageSig != null) p.seenSigs.add(pageSig)
       pendingReel = null
       return Result(Decision.SEEN, key, p.index, "seen in this player")
+    }
+    if (p.backward) {
+      // Primary guard: what is behind you in this player was already shown by it.
+      p.markSeen(reel, p.index)
+      if (pageSig != null) p.seenSigs.add(pageSig)
+      pendingReel = null
+      return Result(Decision.SEEN, key, p.index, "backward swipe")
     }
     if (reel != pendingReel) {
       pendingReel = reel
@@ -178,10 +205,12 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     }?.also { players.remove(it.key) }?.value
     // A long-lived tab player (e.g. Instagram's Reels tab) rebuilt under a new node: matched by
     // structure, window and an index continuing its seen range.
+    // Copied, never moved: the original node may come back (Instagram profile pagers share the
+    // Reels tab's structure), and the copy's resets must not touch the original's history.
     val byPath = if (byNode != null || byWindow != null || path == null) null else players.entries.lastOrNull { (k, p) ->
       p.exit != null && p.longLived && p.path == path && k.windowId == key.windowId &&
-        (awayIndex == null || p.inRange(awayIndex!!))
-    }?.also { players.remove(it.key) }?.value
+        awayIndex != null && p.inRange(awayIndex!!)
+    }?.value?.copy()
     val known = byNode ?: byWindow ?: byPath
     val tab = known?.longLived == true
     val returning = known?.exit != null

@@ -166,6 +166,54 @@ class ReelSessionTest {
     assertEquals(7, counted)
   }
 
+  /**
+   * Replays the 0815f8f device log (14:31-14:35 PKT). The profile pager c5b10d shares the Reels
+   * pager's window and structure; it was matched by path, took over the Reels history, and its
+   * pager reset wiped it, so back on the Reels tab 19, 18, 17 counted again.
+   */
+  @Test
+  fun loggedReelsProfileFeedSequence() {
+    val tab = PlayerKey(1668, 0xe7a1)
+    val feed = PlayerKey(1697, 0xb7e4bd)
+    val profile = PlayerKey(1668, 0xc5b10d)
+    val path = "14/ViewPager#clips_viewer_view_pager<FrameLayout#"
+    paths[tab] = path
+    paths[profile] = path
+    s.onIndex(18, now); stay(tab, 18)
+    page(tab, 19, sig = 19); page(tab, 20, sig = 20)
+    for (i in 19 downTo 15) page(tab, i, sig = i.toLong()) // swipes back never count
+    for (i in 16..21) page(tab, i, sig = i.toLong())
+    page(tab, 17, sig = 17); page(tab, 18, sig = 18)
+    assertEquals(4, counted)
+    away(Exit.CLOSED)
+    s.onIndex(19, now); stay(feed, 1)
+    for (i in 20..22) page(feed, i, sig = i.toLong())
+    assertEquals(8, counted)
+    away(Exit.CLOSED)
+    stay(tab, 18); page(tab, 19, sig = 19); page(tab, 20, sig = 20)
+    assertEquals(8, counted)
+    away(Exit.CLOSED)
+    stay(profile, 9_000) // the creator's profile reels, same window and structure
+    for (i in 0..6) page(profile, i, sig = 9_000L + i)
+    assertEquals(15, counted)
+    away(Exit.CLOSED)
+    stay(tab, 20) // back to the Reels tab
+    for (i in 19 downTo 17) page(tab, i, sig = i.toLong())
+    assertEquals(15, counted)
+    page(tab, 21, sig = 21); page(tab, 22, sig = 22)
+    assertEquals(16, counted)
+  }
+
+  @Test
+  fun backwardSwipeNeverCountsEvenIfUnseen() {
+    s.onIndex(10, now); stay(other, 10)
+    page(other, 9, sig = 9); page(other, 8, sig = 8)
+    s.onStep(-1, "swipe"); stay(other, 7)
+    assertEquals(1, counted)
+    page(other, 11, sig = 11)
+    assertEquals(2, counted)
+  }
+
   @Test
   fun feedVideoOpensFullScreenThenSwipes() {
     stay(other, 1)
