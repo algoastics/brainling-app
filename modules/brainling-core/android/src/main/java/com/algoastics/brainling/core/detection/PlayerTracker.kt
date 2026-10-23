@@ -16,7 +16,23 @@ data class PlayerKey(val windowId: Int, val nodeId: Long)
  * another candidate) restores the old position instead of recounting.
  */
 class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity: Int = 8) {
-  data class State(val sessionId: Int, val pageIndex: Int?, val pageId: Long? = null)
+  data class State(
+    val sessionId: Int,
+    val pageIndex: Int?,
+    val pageId: Long? = null,
+    /** Left within the app (covered by another screen): restore only if exactly this reel. */
+    val strict: Boolean = false,
+  )
+
+  /** How the tracked player left the screen. */
+  enum class Exit {
+    /** Closed inside the app: the next player is always new. */
+    CLOSED,
+    /** Covered by another in-app screen (profile, sheet): same reel only if it proves identical. */
+    COVERED,
+    /** The app went to the background: returning to the same node restores it. */
+    BACKGROUND,
+  }
 
   enum class Kind { SAME, RESTORED, NEW, ADOPTED }
 
@@ -52,6 +68,8 @@ class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity
       if (!reused) {
         aliasOpen = false
         visiblePageId?.let(seenPages::add)
+        probationIndex = if (restored.strict) restored.pageIndex else null
+        probation = restored.strict
         return Attach(Kind.RESTORED, restored)
       }
     }
@@ -90,10 +108,36 @@ class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity
    * position is remembered so the return never recounts. When the user closed the player inside
    * the app, the next player shown is a new one even if the app reuses the same node.
    */
-  fun detach(state: State, closedInApp: Boolean) {
-    current?.let { if (closedInApp) saved.remove(it) else remember(it, state) }
+  fun detach(state: State, exit: Exit) {
+    current?.let {
+      if (exit == Exit.CLOSED) saved.remove(it) else remember(it, state.copy(strict = exit == Exit.COVERED))
+    }
+    probation = false
     current = null
     aliasOpen = false
+  }
+
+  private var probation = false
+  private var probationIndex: Int? = null
+
+  /**
+   * After restoring a player that was covered by another in-app screen, the reel must prove it is
+   * exactly the remembered one: any page index reported since it left (or during the settle
+   * window) that differs from the remembered index means the app reused the pager for a reel
+   * opened elsewhere (e.g. profile -> Reels grid). Returns true when the restore is refuted; the
+   * caller then starts a new session.
+   */
+  fun restoreRefuted(reportedIndex: Int?, nowMs: Long): Boolean {
+    if (!probation) return false
+    if (reportedIndex != null && reportedIndex != probationIndex) {
+      // Already on screen for the settle window: the reel counts after the normal dwell.
+      probation = false
+      aliasOpen = false
+      seenPages.clear()
+      return true
+    }
+    if (isSettled(nowMs)) probation = false
+    return false
   }
 
   /** False until a newly attached player has been on screen for [settleMs]. */

@@ -21,12 +21,14 @@ class PlayerTrackerTest {
     var counted = 0
     var lastIndex: Int? = null
     var lastPageId: Long? = null
+    var indexSinceExit: Int? = null
     var now = 0L
 
     fun key(index: Int?) = "$id|${index ?: "start"}"
 
     /** One evaluation with [player] on screen showing page [page] (pager index [index]). */
     fun show(player: PlayerKey?, page: Long?, index: Int? = pageIndex) {
+      if (index != null) indexSinceExit = index // the pager's scroll events precede evaluation
       val attach = players.attach(player, PlayerTracker.State(id, pageIndex, lastPageId), now, continuing, page)
       if (player != null) continuing = false
       when (attach.kind) {
@@ -38,6 +40,10 @@ class PlayerTrackerTest {
       if (!players.isSettled(now)) { counter.observe(null, now); return }
       val wasUnindexed = pageIndex == null
       pageIndex = index ?: pageIndex
+      if (players.restoreRefuted(indexSinceExit, now)) {
+        maxId = maxOf(maxId, id) + 1; id = maxId
+        lastIndex = pageIndex; lastPageId = page
+      }
       if (players.pagerReset(lastIndex, pageIndex, page, now)) {
         maxId = maxOf(maxId, id) + 1; id = maxId
         lastIndex = pageIndex; lastPageId = page
@@ -53,8 +59,14 @@ class PlayerTrackerTest {
       if (counter.observe(k, now) != null) counted++
     }
 
-    fun hide(inApp: Boolean) {
-      players.detach(PlayerTracker.State(id, pageIndex, lastPageId), closedInApp = inApp)
+    fun hide(inApp: Boolean) = exit(if (inApp) PlayerTracker.Exit.CLOSED else PlayerTracker.Exit.BACKGROUND)
+
+    /** Another in-app screen (profile, sheet) covers the player. */
+    fun cover() = exit(PlayerTracker.Exit.COVERED)
+
+    fun exit(how: PlayerTracker.Exit) {
+      players.detach(PlayerTracker.State(id, pageIndex, lastPageId), how)
+      indexSinceExit = null
       counter.observe(null, now)
     }
 
@@ -170,7 +182,7 @@ class PlayerTrackerTest {
   @Test
   fun feedPlayerProfileGridReusingPagerWhileCovered() =
     // Profile covers the player without a window change (pager invisible), same node reused.
-    feedPlayerToProfileGrid({ hide(inApp = false); now += 2_000 }, gridIndex = 0, sameNode = true)
+    feedPlayerToProfileGrid({ cover(); now += 2_000 }, gridIndex = 0, sameNode = true)
 
   @Test
   fun feedPlayerProfileGridWithNullRoot() =
@@ -186,7 +198,7 @@ class PlayerTrackerTest {
   fun commentSheetOverPlayerDoesNotRecount() {
     val h = Harness()
     for (i in 0..3) h.dwell(fbPlayerA, page = 1L + i, index = i)
-    h.hide(inApp = false) // pager covered by the sheet
+    h.cover() // pager covered by the sheet
     h.dwell(fbPlayerA, page = 4, index = 3)
     assertEquals(4, h.counted)
   }
@@ -198,6 +210,65 @@ class PlayerTrackerTest {
     h.dwell(fbPlayerA, page = 3, index = 2)
     h.dwell(fbPlayerA, page = 2, index = 1)
     assertEquals(4, h.counted)
+  }
+
+  /**
+   * Device run of 6fcd018: Reels tab 3 reels, swipe back to reel 2, creator profile -> Reels grid
+   * -> a reel. IG reuses the pager and a recycled page view, so the reel looked like the
+   * remembered reel 2 (same node, same page view hash) and its index was already deduped.
+   */
+  private fun swipeBackThenOpen(backTo: Int, reels: Int, openedIndex: Int, reusedPage: Long?) {
+    val h = Harness()
+    for (i in 0 until reels) h.dwell(igReelsTab, page = 1L + i, index = i)
+    assertEquals(reels, h.counted)
+    for (i in reels - 2 downTo backTo) h.dwell(igReelsTab, page = 1L + i, index = i)
+    assertEquals("swiping back never counts", reels, h.counted)
+    h.cover() // profile, then its Reels tab, pushed over the player
+    h.now += 3_000
+    h.dwell(igReelsTab, page = reusedPage ?: (1L + backTo), index = openedIndex)
+    assertEquals(reels + 1, h.counted)
+    h.dwell(igReelsTab, page = 900, index = openedIndex + 1)
+    assertEquals(reels + 2, h.counted)
+  }
+
+  @Test
+  fun swipeBackOneThenProfileReelCounts() = swipeBackThenOpen(backTo = 1, reels = 3, openedIndex = 0, reusedPage = null)
+
+  @Test
+  fun swipeBackSeveralThenProfileReelCounts() = swipeBackThenOpen(backTo = 1, reels = 6, openedIndex = 0, reusedPage = null)
+
+  @Test
+  fun swipeBackThenProfileReelAtLaterIndexCounts() = swipeBackThenOpen(backTo = 1, reels = 3, openedIndex = 4, reusedPage = 2)
+
+  @Test
+  fun swipeBackThenFeedVideoPlayerCounts() {
+    val h = Harness()
+    for (i in 0..2) h.dwell(igReelsTab, page = 1L + i, index = i)
+    h.dwell(igReelsTab, page = 2, index = 1)
+    h.hide(inApp = true) // back to the feed
+    h.dwell(igGridPlayer, page = 2, index = null) // feed video opens full screen
+    assertEquals(4, h.counted)
+  }
+
+  @Test
+  fun swipeBackThenBackgroundReturnDoesNotRecount() {
+    val h = Harness()
+    for (i in 0..2) h.dwell(igReelsTab, page = 1L + i, index = i)
+    h.dwell(igReelsTab, page = 2, index = 1)
+    h.hide(inApp = false)
+    h.now += 60_000
+    h.dwell(igReelsTab, page = 2, index = 1)
+    assertEquals(3, h.counted)
+  }
+
+  @Test
+  fun swipeBackThenCommentSheetDoesNotRecount() {
+    val h = Harness()
+    for (i in 0..2) h.dwell(igReelsTab, page = 1L + i, index = i)
+    h.dwell(igReelsTab, page = 2, index = 1)
+    h.cover()
+    h.dwell(igReelsTab, page = 2, index = 1)
+    assertEquals(3, h.counted)
   }
 
   @Test

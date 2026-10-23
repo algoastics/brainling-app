@@ -71,6 +71,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
     /** True after entering the surface, until the first player is attached. */
     var continuing = false
     var hadPager = false
+    /** Last pager index reported since the tracked player left (see [PlayerTracker.restoreRefuted]). */
+    var indexSinceExit: Int? = null
 
     /** Page index and visible page view at the last evaluation on the tracked player. */
     var lastIndex: Int? = null
@@ -193,6 +195,7 @@ class BrainlingAccessibilityService : AccessibilityService() {
   }
 
   private fun onPageIndex(session: Session, index: Int) {
+    session.indexSinceExit = index
     if (index != session.pageIndex) session.indexMoved = true
     if (session.awaitingFirstIndex) {
       session.awaitingFirstIndex = false
@@ -219,7 +222,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val active = rules ?: return
     val rule = active.ruleFor(packageName) ?: return
     val session = sessions[packageName] ?: return
-    val root = rootInActiveWindow?.takeIf { it.packageName?.toString() == packageName }
+    val activeRoot = rootInActiveWindow
+    val root = activeRoot?.takeIf { it.packageName?.toString() == packageName }
     val now = SystemClock.elapsedRealtime()
     val wallNow = System.currentTimeMillis()
     if (root != null) DetectionDebug.maybeCapture(this, packageName, root)
@@ -230,7 +234,15 @@ class BrainlingAccessibilityService : AccessibilityService() {
       session.flips.reset()
       session.pagerBounds = null
       if (session.players.tracked != null) {
-        session.players.detach(session.position(), closedInApp = root != null)
+        session.players.detach(
+          session.position(),
+          when {
+            root != null -> PlayerTracker.Exit.CLOSED
+            activeRoot == null -> PlayerTracker.Exit.COVERED
+            else -> PlayerTracker.Exit.BACKGROUND
+          },
+        )
+        session.indexSinceExit = null
       }
       if (session.onSurface) {
         session.onSurface = false
@@ -259,7 +271,8 @@ class BrainlingAccessibilityService : AccessibilityService() {
     if (pager == null && session.players.tracked != null && session.hadPager) {
       // The tracked pager is covered or gone while the surface lingers (e.g. a profile pushed
       // over the player). Leave it; re-attaching checks whether it still shows the same reel.
-      session.players.detach(session.position(), closedInApp = false)
+      session.players.detach(session.position(), PlayerTracker.Exit.COVERED)
+      session.indexSinceExit = null
       session.hadPager = false
       session.counter.observe(null, now)
       return
@@ -303,6 +316,13 @@ class BrainlingAccessibilityService : AccessibilityService() {
       session.indexMoved = false
     }
 
+    if (session.players.restoreRefuted(session.indexSinceExit, now)) {
+      val index = session.indexSinceExit
+      startPlayerSession(session)
+      session.pageIndex = index
+      session.lastIndex = index
+      session.lastPageId = visiblePage
+    }
     if (session.players.pagerReset(session.lastIndex, session.pageIndex, visiblePage, now)) {
       val index = session.pageIndex
       startPlayerSession(session)
