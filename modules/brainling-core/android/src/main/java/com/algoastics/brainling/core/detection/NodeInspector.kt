@@ -29,9 +29,17 @@ object NodeInspector {
   /** Upper bound on nodes visited by the tree walks (content descriptions, structure). */
   private const val MAX_NODES = 600
 
+  /**
+   * Player component labels shipped with the code, merged with the ruleset's. Facebook's Reels tab
+   * renders its video inside Litho hosts that hide the TextureView from accessibility, so the
+   * structural rule never matches there; its per-page "Reels tab details" button does.
+   */
+  private val BUILTIN_DESCRIPTIONS = mapOf("facebook" to listOf("Reels tab details"))
+
   fun findSurface(root: AccessibilityNodeInfo, rule: AppRule, packageName: String): Surface? =
     findById(root, rule.surfaceIds, rule, packageName)
       ?: findByContentDescription(root, rule.contentDescriptions)
+      ?: findByContentDescription(root, BUILTIN_DESCRIPTIONS[rule.key].orEmpty())?.let(::toPager)
       ?: rule.structure?.let { findByStructure(root, it) }
 
   /** True when every view id of the rule's DM signature is visible (a reel opened from a DM). */
@@ -88,7 +96,10 @@ object NodeInspector {
     var node = surface.node
     var hops = 0
     while (node != null && hops <= MAX_PAGER_HOPS) {
-      if (node.isScrollable) return visibleBounds(node)?.let { Pager(node, it) }
+      // By class, not isScrollable: while only one reel is loaded the pager is not scrollable yet
+      // and the walk would land on the outer tab pager.
+      val cls = node.className?.toString().orEmpty()
+      if (cls.endsWith("RecyclerView") || cls.endsWith("ViewPager2")) return visibleBounds(node)?.let { Pager(node, it) }
       node = node.parent
       hops++
     }
@@ -211,6 +222,23 @@ object NodeInspector {
    */
   private fun qualifiedIds(id: String, rule: AppRule, packageName: String): List<String> =
     (listOf(packageName) + rule.packageNames).distinct().map { "$it:id/$id" }
+
+  /**
+   * A built-in label sits on each page, so keying the player by it would make every swipe a new
+   * player: the surface becomes the nearest RecyclerView/ViewPager2 ancestor (the reel pager) instead.
+   */
+  private fun toPager(surface: Surface): Surface? {
+    var node = surface.node?.parent
+    var depth = 0
+    while (node != null && depth++ < 12) {
+      // By class, not isScrollable: while only one reel is loaded the pager is not scrollable yet
+      // and the walk would land on the outer tab pager.
+      val cls = node.className?.toString().orEmpty()
+      if (cls.endsWith("RecyclerView") || cls.endsWith("ViewPager2")) return visibleBounds(node)?.let { Surface(SIGNAL_STRUCTURE, node.className?.toString(), it, node) }
+      node = node.parent
+    }
+    return null
+  }
 
   private fun findByContentDescription(root: AccessibilityNodeInfo, labels: List<String>): Surface? {
     if (labels.isEmpty()) return null
