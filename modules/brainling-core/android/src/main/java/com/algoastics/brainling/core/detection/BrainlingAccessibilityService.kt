@@ -70,8 +70,13 @@ class BrainlingAccessibilityService : AccessibilityService() {
     val players = PlayerTracker()
     /** True after entering the surface, until the first player is attached. */
     var continuing = false
+    var hadPager = false
 
-    fun position() = PlayerTracker.State(id, pageIndex)
+    /** Page index and visible page view at the last evaluation on the tracked player. */
+    var lastIndex: Int? = null
+    var lastPageId: Long? = null
+
+    fun position() = PlayerTracker.State(id, pageIndex, lastPageId)
 
     fun snapshot() = SessionSnapshot(id, pageIndex, lastSeenAtMs, counter.recentKeys())
   }
@@ -251,10 +256,23 @@ class BrainlingAccessibilityService : AccessibilityService() {
       ?.takeIf { it.node.refresh() && it.node.isVisibleToUser }
     session.pagerBounds = pager?.bounds
     val visiblePage = pager?.let(NodeInspector::visiblePageId)
+    if (pager == null && session.players.tracked != null && session.hadPager) {
+      // The tracked pager is covered or gone while the surface lingers (e.g. a profile pushed
+      // over the player). Leave it; re-attaching checks whether it still shows the same reel.
+      session.players.detach(session.position(), closedInApp = false)
+      session.hadPager = false
+      session.counter.observe(null, now)
+      return
+    }
     val playerNode = pager?.node ?: surface.node
     val playerKey = playerNode?.let { PlayerKey(it.windowId, it.hashCode().toLong()) }
     val attach = session.players.attach(playerKey, session.position(), now, session.continuing, visiblePage)
     if (playerKey != null) session.continuing = false
+    if (playerKey != null) session.hadPager = pager != null
+    if (attach.kind != PlayerTracker.Kind.SAME) {
+      session.lastIndex = session.pageIndex
+      session.lastPageId = visiblePage
+    }
     when (attach.kind) {
       PlayerTracker.Kind.NEW -> startPlayerSession(session)
       PlayerTracker.Kind.RESTORED -> attach.state?.let { restorePlayerSession(session, it) }
@@ -285,6 +303,18 @@ class BrainlingAccessibilityService : AccessibilityService() {
       session.indexMoved = false
     }
 
+    if (session.players.pagerReset(session.lastIndex, session.pageIndex, visiblePage, now)) {
+      val index = session.pageIndex
+      startPlayerSession(session)
+      session.pageIndex = index
+      session.lastIndex = index
+      session.lastPageId = visiblePage
+      session.counter.observe(null, now)
+      schedule(packageName, PlayerTracker.SETTLE_MS)
+      return
+    }
+    session.lastIndex = session.pageIndex
+    session.lastPageId = visiblePage ?: session.lastPageId
     val key = itemKey(packageName, session.id, session.pageIndex)
     // A new player's first reported index names the reel already counted as its "start" reel.
     if (wasUnindexed && session.pageIndex != null && step == 0 &&

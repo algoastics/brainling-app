@@ -16,7 +16,7 @@ data class PlayerKey(val windowId: Int, val nodeId: Long)
  * another candidate) restores the old position instead of recounting.
  */
 class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity: Int = 8) {
-  data class State(val sessionId: Int, val pageIndex: Int?)
+  data class State(val sessionId: Int, val pageIndex: Int?, val pageId: Long? = null)
 
   enum class Kind { SAME, RESTORED, NEW, ADOPTED }
 
@@ -27,6 +27,7 @@ class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity
   private var startPageId: Long? = null
   private var aliasOpen = false
   private val saved = LinkedHashMap<PlayerKey, State>()
+  private val seenPages = HashSet<Long>()
 
   val tracked: PlayerKey? get() = current
 
@@ -43,17 +44,45 @@ class PlayerTracker(private val settleMs: Long = SETTLE_MS, private val capacity
     if (previous != null) remember(previous, state)
     current = key
     attachedAtMs = nowMs
+    seenPages.clear()
     saved.remove(key)?.let { restored ->
-      aliasOpen = false
-      return Attach(Kind.RESTORED, restored)
+      // Same node, but showing a different reel than when it left: the app reused the pager
+      // for a new player (e.g. Instagram feed player -> profile -> grid reel). Count it as new.
+      val reused = restored.pageId != null && visiblePageId != null && restored.pageId != visiblePageId
+      if (!reused) {
+        aliasOpen = false
+        visiblePageId?.let(seenPages::add)
+        return Attach(Kind.RESTORED, restored)
+      }
     }
     if (previous == null && continuing) {
       aliasOpen = false
       return Attach(Kind.ADOPTED)
     }
+    startNew(nowMs, visiblePageId)
+    return Attach(Kind.NEW)
+  }
+
+  private fun startNew(nowMs: Long, visiblePageId: Long?) {
+    attachedAtMs = nowMs
     startPageId = visiblePageId
     aliasOpen = true
-    return Attach(Kind.NEW)
+    seenPages.clear()
+    visiblePageId?.let(seenPages::add)
+  }
+
+  /**
+   * Called each evaluation of the tracked player. Returns true when its pager was reset under us:
+   * the index jumped back by more than one page to a page view never shown in this player, which
+   * a swipe cannot do but a new adapter (same pager reused for a new player) does. The caller
+   * then starts a new session; the player settles again before counting.
+   */
+  fun pagerReset(previousIndex: Int?, index: Int?, visiblePageId: Long?, nowMs: Long): Boolean {
+    val reset = previousIndex != null && index != null && index < previousIndex - 1 &&
+      visiblePageId != null && visiblePageId !in seenPages
+    if (reset) startNew(nowMs, null).also { aliasOpen = false }
+    visiblePageId?.let(seenPages::add)
+    return reset
   }
 
   /**

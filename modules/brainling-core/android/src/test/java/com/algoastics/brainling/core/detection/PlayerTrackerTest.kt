@@ -19,22 +19,33 @@ class PlayerTrackerTest {
     var pageIndex: Int? = startIndex
     var continuing = continuingAtStart
     var counted = 0
+    var lastIndex: Int? = null
+    var lastPageId: Long? = null
     var now = 0L
 
     fun key(index: Int?) = "$id|${index ?: "start"}"
 
     /** One evaluation with [player] on screen showing page [page] (pager index [index]). */
     fun show(player: PlayerKey?, page: Long?, index: Int? = pageIndex) {
-      val attach = players.attach(player, PlayerTracker.State(id, pageIndex), now, continuing, page)
+      val attach = players.attach(player, PlayerTracker.State(id, pageIndex, lastPageId), now, continuing, page)
       if (player != null) continuing = false
       when (attach.kind) {
         PlayerTracker.Kind.NEW -> { maxId = maxOf(maxId, id) + 1; id = maxId; pageIndex = null }
         PlayerTracker.Kind.RESTORED -> { maxId = maxOf(maxId, id); id = attach.state!!.sessionId; pageIndex = attach.state.pageIndex }
         else -> Unit
       }
+      if (attach.kind != PlayerTracker.Kind.SAME) { lastIndex = pageIndex; lastPageId = page }
       if (!players.isSettled(now)) { counter.observe(null, now); return }
       val wasUnindexed = pageIndex == null
       pageIndex = index ?: pageIndex
+      if (players.pagerReset(lastIndex, pageIndex, page, now)) {
+        maxId = maxOf(maxId, id) + 1; id = maxId
+        lastIndex = pageIndex; lastPageId = page
+        counter.observe(null, now)
+        return
+      }
+      lastIndex = pageIndex
+      lastPageId = page ?: lastPageId
       val k = key(pageIndex)
       if (wasUnindexed && pageIndex != null && players.firstIndexIsStartReel(page) && key(null) in counter.recentKeys()) {
         counter.suppress(k)
@@ -43,7 +54,7 @@ class PlayerTrackerTest {
     }
 
     fun hide(inApp: Boolean) {
-      players.detach(PlayerTracker.State(id, pageIndex), closedInApp = inApp)
+      players.detach(PlayerTracker.State(id, pageIndex, lastPageId), closedInApp = inApp)
       counter.observe(null, now)
     }
 
@@ -135,6 +146,58 @@ class PlayerTrackerTest {
     h.dwell(outer, page = 99, index = null, ms = 250)
     h.dwell(inner, page = 10, index = 4)
     assertEquals(1, h.counted)
+  }
+
+  /** Device run of 9ca240f: feed player -> creator profile -> first reel of the profile grid. */
+  private fun feedPlayerToProfileGrid(profile: Harness.() -> Unit, gridIndex: Int?, sameNode: Boolean) {
+    val h = Harness()
+    for (i in 0..2) h.dwell(igReelsTab, page = 1L + i, index = i)
+    h.hide(inApp = true)
+    h.dwell(igGridPlayer, page = 500, index = 0)
+    h.dwell(igGridPlayer, page = 501, index = 1)
+    h.hide(inApp = true)
+    val feedPlayer = PlayerKey(12, 700)
+    h.dwell(feedPlayer, page = 600, index = null)
+    for (i in 1..6) h.dwell(feedPlayer, page = 600L + i, index = i)
+    assertEquals(12, h.counted)
+    h.profile()
+    h.dwell(if (sameNode) feedPlayer else PlayerKey(12, 701), page = 800, index = gridIndex)
+    assertEquals(13, h.counted)
+    h.dwell(if (sameNode) feedPlayer else PlayerKey(12, 701), page = 801, index = gridIndex?.plus(1) ?: 1)
+    assertEquals(14, h.counted)
+  }
+
+  @Test
+  fun feedPlayerProfileGridReusingPagerWhileCovered() =
+    // Profile covers the player without a window change (pager invisible), same node reused.
+    feedPlayerToProfileGrid({ hide(inApp = false); now += 2_000 }, gridIndex = 0, sameNode = true)
+
+  @Test
+  fun feedPlayerProfileGridWithNullRoot() =
+    // Root unavailable during the transition, so the exit looked like a background.
+    feedPlayerToProfileGrid({ hide(inApp = false) }, gridIndex = null, sameNode = true)
+
+  @Test
+  fun feedPlayerProfileGridPagerResetInPlace() =
+    // Player never left the tree; its pager just got a new adapter starting at 0.
+    feedPlayerToProfileGrid({ now += 2_000 }, gridIndex = 0, sameNode = true)
+
+  @Test
+  fun commentSheetOverPlayerDoesNotRecount() {
+    val h = Harness()
+    for (i in 0..3) h.dwell(fbPlayerA, page = 1L + i, index = i)
+    h.hide(inApp = false) // pager covered by the sheet
+    h.dwell(fbPlayerA, page = 4, index = 3)
+    assertEquals(4, h.counted)
+  }
+
+  @Test
+  fun swipingBackOnePageIsNotAReset() {
+    val h = Harness()
+    for (i in 0..3) h.dwell(fbPlayerA, page = 1L + i, index = i)
+    h.dwell(fbPlayerA, page = 3, index = 2)
+    h.dwell(fbPlayerA, page = 2, index = 1)
+    assertEquals(4, h.counted)
   }
 
   @Test
