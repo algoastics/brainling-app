@@ -50,14 +50,23 @@ def run():
     c.step("IG back to Reels tab = 0", 0, back_to_reels)
     c.step("IG swipe forward to seen reel = 0", 0, swipes(1))
 
-    def feed_scroll():
+    def to_main_feed():  # a profile/reel ModalActivity left open would hide the feed
+        for _ in range(4):
+            top = ui.adb("shell", "dumpsys", "activity", "activities")
+            if ".activity.MainTabActivity" in (top.split("topResumedActivity=") + [""])[1].split("\n")[0]:
+                break
+            ui.back(); ui.wait(2)
         home_tab(); ui.wait(3)
+
+    def feed_scroll():
+        to_main_feed()
         for _ in range(3):
             ui.adb("shell", "input", "swipe", "540", "1700", "540", "900", "400"); ui.wait(1.5)
     c.step("IG feed scrolling = 0", 0, feed_scroll)
 
     def feed_video():
         tapped = 0
+        to_main_feed()
         for _ in range(30):
             n = ui.find(lambda n: n["id"] == "video_states"
                         and min(n["b"][3], 2200) - max(n["b"][1], 300) > 500, ui.nodes(PKG))
