@@ -30,7 +30,9 @@ def tap_visible(n):
 
 def open_until_player(pred):
     for _ in range(3):
-        tap_visible(scroll_find(pred)); ui.wait(3)
+        n = scroll_find(pred)
+        ui.wait(DWELL)  # the dump rebinds the service: a tap right after it loses its click event
+        tap_visible(n); ui.wait(3)
         if in_player():
             return
         ui.back(); ui.wait(2)

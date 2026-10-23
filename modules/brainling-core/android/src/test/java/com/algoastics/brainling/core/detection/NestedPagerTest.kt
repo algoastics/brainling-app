@@ -84,4 +84,16 @@ class NestedPagerTest {
     u.markFlip()
     assertEquals(IndexSource.FLIP, u.source)
   }
+
+  /** TikTok (10-23 22:31 PKT log): a settled swipe stepped, then its page view flipped later. */
+  @Test
+  fun flipAfterSettledSwipeIsTheSameSwipe() {
+    val f = PageFlipDetector()
+    assertEquals(0, f.observe(1, false, 0))
+    f.stepped(1_000)
+    assertEquals(0, f.observe(2, false, 1_400)) // the swipe's own page view
+    assertEquals(1, f.observe(3, false, 2_000)) // a real flip afterwards still counts
+    f.stepped(3_000)
+    assertEquals(-1, f.observe(2, false, 5_000)) // resync window expired
+  }
 }

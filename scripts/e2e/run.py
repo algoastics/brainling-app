@@ -12,6 +12,9 @@ if __name__ == "__main__":
     if which in ("fb", "all"):
         import facebook
         results += facebook.run()
+    if which in ("tt", "all"):
+        import tiktok
+        results += tiktok.run()
     if which in ("yt", "all"):
         import youtube
         results += youtube.run()
