@@ -37,6 +37,7 @@ def run():
         for _ in range(3):
             btn = [n for n in ui.ua_find(r"^(\d[\d.,KM]* comments?|Comment|Comments)$") if n["b"][0] > 900]
             if not btn:
+                ui.adb("pull", "/sdcard/e2e.xml", "/tmp/fb_no_comment.xml")  # evidence for a skip
                 raise RuntimeError("no comment button")
             ui.tap_node(btn[0]); ui.wait(2.5); ui.back(); ui.wait(2.5)
     c.step("FB comment sheet open/close x3 = 0", 0, comments)
