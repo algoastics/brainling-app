@@ -89,19 +89,34 @@ def run():
                 break
     c.step("TT Friends tab and back to For You = 0", 0, tab_and_back)
 
+    extra = [0]  # feed videos swiped past (each counts) while looking for a creator with videos
+
     def profile():
         dismiss_wall()
-        av = first(lambda n: n["rid"].endswith(("/user_avatar", "/title")), "creator avatar")
-        ui.wait(DWELL)
-        ui.tap_node(av); ui.wait(5)
-        grid = [n for n in ui.ua_nodes() if n["rid"].endswith("/cover") and n["b"][1] > 500]
-        if not grid:
+        g = None
+        for attempt in range(4):
+            av = first(lambda n: n["rid"].endswith(("/user_avatar", "/title")), "creator avatar")
+            ui.wait(DWELL)
+            ui.tap_node(av); ui.wait(5)
+            for _ in range(3):
+                grid = [n for n in ui.ua_nodes() if n["rid"].endswith("/cover") and n["b"][1] > 500]
+                if grid:
+                    break
+                ui.wait(2)
+            if grid:
+                g = min(grid, key=lambda n: (n["b"][1], n["b"][0]))
+                break
+            # Some creators have no videos (empty grid): back out, move to the next feed video.
+            ui.back(); ui.wait(2.5); ui.swipe_up(); ui.wait(DWELL); extra[0] += 1
+        if g is None:
             raise RuntimeError("no profile grid video")
-        g = min(grid, key=lambda n: (n["b"][1], n["b"][0]))
-        ui.tap_node(g); ui.wait(4)
-        if not in_player():
+        for _ in range(3):  # the grid can swallow the first tap while it loads
+            ui.tap_node(g); ui.wait(4)
+            if in_player():
+                break
+        else:
             raise RuntimeError("profile video did not open")
-    c.step("TT creator profile first video = 1", 1, profile)
+    c.step("TT creator profile first video = 1", lambda: 1 + extra[0], profile)
 
     def profile_swipe():
         ui.wait(DWELL); ui.swipe_up()
@@ -110,9 +125,16 @@ def run():
     def back_fy():
         ui.back(); ui.wait(2.5); ui.back(); ui.wait(2.5)
     c.step("TT back to For You = 0", 0, back_fy, needs="TT creator profile first video = 1")
-    # The feed rests one behind its furthest reel (the earlier swipe back): that one is seen.
-    c.step("TT swipe forward to seen video = 0", 0, swipes(1))
-    c.step("TT swipe forward to new video = 1", 1, swipes(1))
+    # Where the feed rests after the profile detour varies (a Home re-tap refreshes it to its first
+    # video, which is "seen"). Swipe forward until a count appears: the seen videos on the way must
+    # not count and the first new one must count exactly once (up to 5 swipes).
+    def forward_to_new():
+        n0 = sum(" counted " in l for l in c.log())
+        for _ in range(5):
+            ui.swipe_up(); ui.wait(DWELL)
+            if sum(" counted " in l for l in c.log()) > n0:
+                break
+    c.step("TT swipes forward over seen videos to a new one = 1", 1, forward_to_new)
 
     log = c.log()
     lives = sum("live" in l.lower() for l in log)

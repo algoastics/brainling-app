@@ -36,6 +36,7 @@ class Case:
         lines = self.log()[before:]
         counted = sum(" counted " in l for l in lines)
         ads = sum("reason=ad" in l for l in lines)
+        expected = expected() if callable(expected) else expected  # may depend on what the action did
         ok = counted == expected or (allow_ads and ads and counted == expected - ads)
         detail = f"counted={counted} expected={expected} ads={ads}"
         self.results.append((name, "PASS" if ok else "FAIL", detail))
