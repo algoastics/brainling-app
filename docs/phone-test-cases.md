@@ -25,6 +25,7 @@ carefully.
 - [ ] **IG-11** Comments x2: on a reel open comments, close, open again, close. → **+0**
 - [ ] **IG-12** Home and return: press the Home button, return to Instagram on the same reel, wait 3 s. → **+0**
 - [ ] **IG-13** Sponsored ad skipped: scroll Reels until an ad ("Sponsored" label) appears, stay 3 s, swipe on. Ad → **+0**, the next normal reel → **+1**. **NOT VERIFIED ON EMULATOR**
+- [ ] **IG-14** Fast skip, then back (fix 771db00): open Reels tab on reel A, wait 1.5 s (A counts, +1). Swipe to reel B and immediately to reel C within 0.5 s, wait 1.5 s (C counts, total +2, B does not). Swipe back to B, wait 1.5 s. → B counts, total **+3**. Then swipe forward to C, back to B, back to A, waiting each time: → still **+3**. **NOT VERIFIED ON DEVICE**
 
 ## YouTube
 
