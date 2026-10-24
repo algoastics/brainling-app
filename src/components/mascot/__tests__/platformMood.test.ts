@@ -15,6 +15,21 @@ describe('moodForCount', () => {
     expect(moodForCount(t.zombie)).toBe('zombie');
     expect(moodForCount(500)).toBe('zombie');
   });
+
+  it('matches the agreed testing scale: 0-9, 10-29, 30-44, 45-69, 70+', () => {
+    expect(PLATFORM_MOOD_THRESHOLDS).toEqual({ happy: 10, meh: 30, fried: 45, zombie: 70 });
+    expect([0, 9, 10, 29, 30, 44, 45, 69, 70].map(moodForCount)).toEqual([
+      'glowing',
+      'glowing',
+      'happy',
+      'happy',
+      'meh',
+      'meh',
+      'fried',
+      'fried',
+      'zombie',
+    ]);
+  });
 });
 
 describe('platformCount', () => {

@@ -6,10 +6,12 @@ import type { MascotState } from '@/theme';
 export type PlatformMood = Extract<MascotState, 'glowing' | 'happy' | 'meh' | 'fried' | 'zombie'>;
 
 /**
- * Internal placeholder thresholds (single place to tune): a count below `happy` is glowing,
- * below `meh` happy, below `fried` meh, below `zombie` fried, and at or above `zombie` a zombie.
+ * Temporary internal testing scale (single place to tune). A count below `happy` is glowing,
+ * below `meh` happy, below `fried` meh, below `zombie` fried, and at or above `zombie` a zombie:
+ * glowing 0-9, happy 10-29, meh 30-44, fried 45-69, zombie 70+. Keep in sync with the native
+ * overlay's MascotMood.kt (modules/brainling-core/.../detection/MascotMood.kt).
  */
-export const PLATFORM_MOOD_THRESHOLDS = { happy: 5, meh: 15, fried: 30, zombie: 50 } as const;
+export const PLATFORM_MOOD_THRESHOLDS = { happy: 10, meh: 30, fried: 45, zombie: 70 } as const;
 
 export function moodForCount(count: number): PlatformMood {
   const t = PLATFORM_MOOD_THRESHOLDS;
