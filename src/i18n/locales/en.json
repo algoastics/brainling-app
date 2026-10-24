@@ -7,6 +7,18 @@
     "storageError": "Something went wrong — restart",
     "retry": "Retry"
   },
+  "platforms": {
+    "title": "Today's reels",
+    "subtitle": "Brainling's mood follows how many reels you watch on each app.",
+    "count": "{{count}} reels",
+    "name": {
+      "instagram": "Instagram",
+      "youtube": "YouTube",
+      "tiktok": "TikTok",
+      "facebook": "Facebook",
+      "snapchat": "Snapchat"
+    }
+  },
   "tabs": {
     "home": "Home",
     "stats": "Stats",
