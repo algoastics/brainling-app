@@ -59,16 +59,30 @@ def run():
     def reels_tab():
         ui.back(); ui.wait(2.5); ui.tap(*REELS_TAB); ui.wait(2)
     c.step("FB Reels tab watch = 1", 1, reels_tab)
-    c.step("FB Reels tab swipe = 1", 1, swipes(1))
+    seen_reel = [None]
+
+    def reel_id():  # who/what the Reels tab shows, from the screen (a dump rebinds: take it after the count)
+        rx = re.compile(r"^View .*reels$|Original audio|^Reel by", re.I)
+        return frozenset((n["text"] or n["desc"]) for n in ui.ua_nodes() if rx.search(n["text"] or n["desc"]))
+
+    def tab_swipe():
+        swipes(1)()
+        seen_reel[0] = reel_id()
+    c.step("FB Reels tab swipe = 1", 1, tab_swipe)
 
     def tab_return():
         ui.tap(*HOME_TAB); ui.wait(3)
         tap_visible(scroll_find(r"^Reel$", min_h=800)); ui.wait(DWELL)
     c.step("FB Home, open a feed player = 1", 1, tab_return)
 
+    now_reel = [None]
+
     def back_to_tab():
-        ui.back(); ui.wait(2.5); ui.tap(*REELS_TAB); ui.wait(2)
-    c.step("FB back, Reels tab again = 0", 0, back_to_tab)
+        ui.back(); ui.wait(2.5); ui.tap(*REELS_TAB); ui.wait(DWELL)
+        now_reel[0] = reel_id()
+    # FB reloads the Reels tab on re-entry: a different reel on screen is a new view and counts once;
+    # the same reel must not recount.
+    c.step("FB back, Reels tab again = 0", lambda: 1 if seen_reel[0] and now_reel[0] != seen_reel[0] else 0, back_to_tab)
 
     def home_return():
         ui.home(); ui.wait(3); ui.launch(PKG); ui.wait(4)
