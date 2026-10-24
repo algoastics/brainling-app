@@ -1,9 +1,9 @@
-import re
+import re, subprocess
 from harness import *
 
 PKG = "com.zhiliaoapp.musically"
 # 1080x2400: bottom bar Home / Friends.
-HOME_TAB, FRIENDS_TAB = (108, 2272), (324, 2272)
+HOME_TAB, FRIENDS_TAB = (108, 2250), (324, 2250)
 LOGIN = re.compile(r"^(Log in to TikTok|Sign up for TikTok)")
 
 
@@ -20,7 +20,7 @@ def _dismiss():
     for _ in range(3):
         ns = ui.ua_nodes()
         if not any(LOGIN.match(n["text"]) for n in ns):
-            close = [n for n in ns if n["desc"] in ("Close", "Not now", "Dismiss") or n["text"] in ("Not now", "Skip")]
+            close = [n for n in ns if n["desc"] in ("Close", "Not now", "Dismiss") or n["text"] in ("Not now", "Skip", "Don’t allow")]
             if close:
                 ui.tap_node(close[0]); ui.wait(2)
             return
@@ -29,11 +29,18 @@ def _dismiss():
 
 
 def first(pred, what):
-    for _ in range(3):
-        hit = [n for n in ui.ua_nodes() if pred(n)]
+    for _ in range(4):
+        ns = ui.ua_nodes()
+        hit = [n for n in ns if pred(n)]
         if hit:
             return hit[0]
+        deny = [n for n in ns if n["text"] in ("Don’t allow", "Don't allow")]  # contacts prompt
+        if deny:  # shown asynchronously over the feed
+            ui.tap_node(deny[0]); ui.wait(2); ui.wait(DWELL); continue
         ui.wait(1.5)
+    ui.adb("pull", "/sdcard/e2e.xml", "/tmp/tt_not_found.xml")  # evidence for a skip
+    with open("/tmp/tt_not_found.png", "wb") as f:
+        f.write(subprocess.run([ui.ADB, "-s", ui.SERIAL, "exec-out", "screencap", "-p"], capture_output=True).stdout)
     raise RuntimeError(f"not found: {what}")
 
 
@@ -71,7 +78,15 @@ def run():
     c.step("TT home and return = 0", 0, home_return)
 
     def tab_and_back():
-        ui.tap(*FRIENDS_TAB); ui.wait(4); dismiss_wall(); ui.tap(*HOME_TAB); ui.wait(2)
+        ui.tap(*FRIENDS_TAB); ui.wait(4); dismiss_wall()
+        for _ in range(3):  # the first Home tap after the Friends page loads can be swallowed
+            ns = ui.ua_nodes()
+            deny = [n for n in ns if n["text"] in ("Don’t allow", "Don't allow")]  # contacts prompt
+            if deny:
+                ui.tap_node(deny[0]); ui.wait(2); continue
+            ui.tap(*HOME_TAB); ui.wait(2.5)
+            if any(n["text"] == "For You" for n in ui.ua_nodes()):
+                break
     c.step("TT Friends tab and back to For You = 0", 0, tab_and_back)
 
     def profile():
@@ -94,7 +109,7 @@ def run():
 
     def back_fy():
         ui.back(); ui.wait(2.5); ui.back(); ui.wait(2.5)
-    c.step("TT back to For You = 0", 0, back_fy)
+    c.step("TT back to For You = 0", 0, back_fy, needs="TT creator profile first video = 1")
     # The feed rests one behind its furthest reel (the earlier swipe back): that one is seen.
     c.step("TT swipe forward to seen video = 0", 0, swipes(1))
     c.step("TT swipe forward to new video = 1", 1, swipes(1))
