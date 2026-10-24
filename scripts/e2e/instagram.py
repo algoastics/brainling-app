@@ -3,9 +3,17 @@ from harness import *
 PKG = "com.instagram.android"
 
 
+def views(pkg_id):
+    """Views with this id. IG's ModalActivity (profiles, reels opened from them) never answers
+    dumpsys (IOException: Timeout), so fall back to uiautomator there."""
+    ns = [n for n in ui.nodes(PKG) if n["id"] == pkg_id]
+    if ns:
+        return ns
+    return [dict(n, id=pkg_id) for n in ui.ua_nodes() if n["rid"] == f"{PKG}:id/{pkg_id}"]
+
+
 def in_player():
-    return any(n["id"] == "clips_viewer_view_pager" and n["b"][0] == 0 and n["b"][3] - n["b"][1] > 1500
-               for n in ui.nodes(PKG))
+    return any(n["b"][0] == 0 and n["b"][3] - n["b"][1] > 1500 for n in views("clips_viewer_view_pager"))
 
 
 def run():
@@ -22,21 +30,33 @@ def run():
     def profile():
         ui.tap_node(need(by_id("clips_author_username"), "reel author", fallback=(300, 1995)))
         ui.wait(4)
-        tabs = sorted((n for n in ui.nodes(PKG) if n["id"] == "profile_tab_icon_view"), key=lambda n: n["b"][0])
-        if len(tabs) >= 2:
-            ui.tap_node(tabs[1])
-        else:
-            ui.tap(540, 845)
-        ui.wait(3)
-        thumbs = [n for n in ui.nodes(PKG) if n["id"] == "preview_clip_thumbnail"]
+        for _ in range(3):  # the grid shimmers for a few seconds first
+            thumbs = views("preview_clip_thumbnail")
+            if thumbs:
+                break
+            ui.wait(2)
+        if not thumbs:  # the profile opens on Reels when it came from a reel; tapping the selected
+            # Reels tab only opens its Latest/Most viewed menu, which hides the grid
+            tabs = sorted(views("profile_tab_icon_view"), key=lambda n: n["b"][0])
+            if len(tabs) >= 2:
+                ui.tap_node(tabs[1])
+            else:
+                ui.tap(540, 845)
+            ui.wait(3)
+            thumbs = views("preview_clip_thumbnail")
         if not thumbs:
             raise RuntimeError("no grid reel")
         # Pages of the profile ViewPager are laid out side by side: fold x back on screen.
         l, t, r, b = min(thumbs, key=lambda n: (n["b"][1], n["b"][0] % 1080))["b"]
         x, y = ((l + r) // 2) % 1080, (t + min(b, 2200)) // 2
+        attached = lambda: sum(" attach player" in l for l in c.log())
+        n0 = attached()
         for _ in range(3):  # the grid ignores taps while it is still loading
             ui.tap(x, y); ui.wait(3)
-            if in_player():
+            # The service's own attach log, not a dump: a uiautomator dump rebinds the service and a
+            # swipe sent right after it can be lost to the harness (and dumpsys would show the Reels
+            # tab pager behind the modal profile).
+            if attached() > n0:
                 break
         else:
             raise RuntimeError("grid reel did not open")
