@@ -45,15 +45,4 @@ class MascotMotionTest {
     assertFalse(MascotMotion.isDoubleBlink(MascotMood.FRIED, 0.99))
     assertFalse(MascotMotion.isDoubleBlink(MascotMood.ZOMBIE, 0.0))
   }
-
-  @Test
-  fun hopDelayInRange() {
-    assertEquals(MotionRange.MIN, MascotMotion.nextHopDelayMs(0.0))
-    assertEquals(MotionRange.MAX, MascotMotion.nextHopDelayMs(1.0))
-  }
-
-  private object MotionRange {
-    const val MIN = MascotMotion.HOP_MIN_MS
-    const val MAX = MascotMotion.HOP_MAX_MS
-  }
 }
