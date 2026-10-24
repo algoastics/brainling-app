@@ -78,7 +78,11 @@ def run():
     c.step("YT back, Shorts tab again = 0", 0, back_tab)
 
     def channel():
-        ch = [n for n in ui.ua_nodes() if n["desc"].startswith("Go to channel")]
+        for _ in range(6):  # the Short's controls are missing while it loads
+            ch = [n for n in ui.ua_nodes() if n["desc"].startswith("Go to channel")]
+            if ch:
+                break
+            ui.wait(2)
         if not ch:
             raise RuntimeError("no channel link")
         ui.tap_node(ch[0]); ui.wait(4)
