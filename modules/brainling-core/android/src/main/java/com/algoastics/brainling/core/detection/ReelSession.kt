@@ -52,6 +52,8 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     val seenIndexes = ArrayDeque<Int>()
     /** The last page change went toward a lower index (swipe back / up). */
     var backward = false
+    /** Indices reached by a forward move and left before they settled: passed through, never watched. */
+    val skipped = HashSet<Int>()
     /** Positions came only from swipes/page flips, never from a pager index. */
     var stepOnly = false
 
@@ -65,6 +67,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       it.restores = restores
       it.exit = exit
       it.seenIndexes.addAll(seenIndexes)
+      it.skipped.addAll(skipped)
       it.stepOnly = stepOnly
     }
 
@@ -73,6 +76,13 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       if (index != null && index !in seenIndexes) seenIndexes.addLast(index)
       while (seenIndexes.size > MAX_SEEN) seen.remove("i${seenIndexes.removeFirst()}")
       if (seen.size > MAX_SEEN * 2) seen.clear().also { seenIndexes.forEach { seen.add("i$it") } }
+    }
+
+    /** Called before a move away from [old]: a reel arrived at forward and left unsettled was skipped. */
+    fun leaving(old: Int?) {
+      if (old == null || backward || "i$old" in seen) return
+      if (skipped.size >= MAX_SEEN) skipped.clear() // bounded; forgetting only means "not counted"
+      skipped.add(old)
     }
 
     /** True when [i] continues this player's seen range (within one page of it). */
@@ -112,6 +122,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     }
     p.index = newIndex
     p.stepOnly = false
+    if (old != null) p.leaving(old)
     if (old == null) {
       // The first index of a player may name the reel already counted without one; decided at
       // the next evaluation by comparing the visible page view.
@@ -128,6 +139,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
   fun onStep(step: Int, why: String) {
     val p = current ?: return
     if (p.index == null) p.stepOnly = true
+    p.leaving(p.index)
     p.index = (p.index ?: 0) + step
     p.backward = step < 0
     reason = why
@@ -201,8 +213,9 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       pendingReel = null
       return Result(Decision.SEEN, key, p.index, "seen in this player")
     }
-    if (p.backward) {
-      // Primary guard: what is behind you in this player was already shown by it.
+    if (p.backward && p.index !in p.skipped) {
+      // Primary guard: what is behind you in this player was already shown by it, unless it was
+      // only passed through (skipped before it settled): that one is new and settles normally.
       p.markSeen(reel, p.index)
       if (pageSig != null) p.seenSigs.add(pageSig)
       pendingReel = null
@@ -214,6 +227,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     }
     if (nowMs - pendingSince < settleMs) return Result(Decision.SETTLING, key, p.index, reason)
     p.markSeen(reel, p.index)
+    p.index?.let(p.skipped::remove)
     pageSig?.let(p.seenSigs::add)
     pendingReel = null
     // Checked only once the reel settled: a sponsored reel is marked seen (never recounted).

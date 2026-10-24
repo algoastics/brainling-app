@@ -214,6 +214,41 @@ class ReelSessionTest {
     assertEquals(2, counted)
   }
 
+  /** Ahsan's Instagram report: a reel skipped in under 0.75 s counts when swiped back to and watched. */
+  @Test
+  fun backToASkippedReelCountsOnceThenNeverAgain() {
+    page(reelsTab, 0) // reel 1 counts
+    assertEquals(1, counted)
+    page(reelsTab, 1, ms = 500) // reel 2 passed in < 750 ms
+    page(reelsTab, 2) // reel 3 counts
+    assertEquals(2, counted)
+    page(reelsTab, 1, ms = 1_500) // back to reel 2 and stay
+    assertEquals(3, counted)
+    page(reelsTab, 2) // forward to the counted reel 3
+    page(reelsTab, 1) // and back to reel 2
+    assertEquals(3, counted)
+    page(reelsTab, 0) // back to the counted reel 1
+    assertEquals(3, counted)
+  }
+
+  @Test
+  fun backFromThreeToCountedReelOneNeverCounts() {
+    for (i in 0..2) page(reelsTab, i)
+    assertEquals(3, counted)
+    page(reelsTab, 1); page(reelsTab, 0)
+    assertEquals(3, counted)
+  }
+
+  @Test
+  fun backToASkippedReelNeedsTheFullSettle() {
+    page(reelsTab, 0)
+    page(reelsTab, 1, ms = 250)
+    page(reelsTab, 2)
+    assertEquals(2, counted)
+    page(reelsTab, 1, ms = 500) // passed again before settling
+    assertEquals(2, counted)
+  }
+
   @Test
   fun feedVideoOpensFullScreenThenSwipes() {
     stay(other, 1)
