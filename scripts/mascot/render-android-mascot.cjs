@@ -16,15 +16,24 @@ const INK = '#22183F';
 const lid = (d, w = 3.2) =>
   `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round"/>`;
 
+// The app icon's eyes: round dark eyes (r 8) with a white highlight. The glowing mood's own art
+// uses "^ ^" eyes; the overlay swaps them for the icon eyes so the resting state is always open.
+const ICON_EYES =
+  `<circle cx="-18" cy="6" r="8" fill="${INK}"/><circle cx="18" cy="6" r="8" fill="${INK}"/>` +
+  '<circle cx="-15.5" cy="3" r="2.8" fill="#fff"/><circle cx="20.5" cy="3" r="2.8" fill="#fff"/>';
+const OPEN = {
+  glowing: [/<path d="M-26 6 l8 -9 8 9"[^>]*\/><path d="M10 6 l8 -9 8 9"[^>]*\/>/, ICON_EYES],
+};
+
 // Closed-eye replacements per mood: [regex of the open-eye elements, replacement].
 const BLINK = {
   glowing: [
-    /<path d="M-26 6 l8 -9 8 9"[^>]*\/><path d="M10 6 l8 -9 8 9"[^>]*\/>/,
-    lid('M-26 4 Q-18 11 -10 4') + lid('M10 4 Q18 11 26 4'),
+    /<circle cx="-18" cy="6" r="8"[^>]*\/><circle cx="18" cy="6" r="8"[^>]*\/><circle[^>]*\/><circle[^>]*\/>/,
+    lid('M-26 7 L-10 7') + lid('M10 7 L26 7'),
   ],
   happy: [
     /<circle cx="-18" cy="6" r="8"[^>]*\/><circle cx="18" cy="6" r="8"[^>]*\/><circle[^>]*\/><circle[^>]*\/>/,
-    lid('M-26 6 Q-18 13 -10 6') + lid('M10 6 Q18 13 26 6'),
+    lid('M-26 7 L-10 7') + lid('M10 7 L26 7'),
   ],
   meh: [
     /<circle cx="-18" cy="6" r="7"[^>]*\/><circle cx="18" cy="6" r="7"[^>]*\/><rect [^>]*\/><rect [^>]*\/><line [^>]*\/><line [^>]*\/>/,
@@ -50,8 +59,13 @@ while ((m = re.exec(art))) {
   const [, mood, svg] = m;
   if (!BLINK[mood]) continue;
   const [find, repl] = BLINK[mood];
-  if (!find.test(svg)) throw new Error(`eye pattern not found for ${mood}`);
-  render(svg, `brainling_mascot_${mood}.png`);
-  render(svg.replace(find, repl), `brainling_mascot_${mood}_blink.png`);
+  let open = svg;
+  if (OPEN[mood]) {
+    if (!OPEN[mood][0].test(svg)) throw new Error(`open-eye pattern not found for ${mood}`);
+    open = svg.replace(OPEN[mood][0], OPEN[mood][1]);
+  }
+  if (!find.test(open)) throw new Error(`eye pattern not found for ${mood}`);
+  render(open, `brainling_mascot_${mood}.png`);
+  render(open.replace(find, repl), `brainling_mascot_${mood}_blink.png`);
   console.log('rendered', mood);
 }
