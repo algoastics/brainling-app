@@ -1,0 +1,10 @@
+# com.snapchat.android nodes=9
+android.widget.FrameLayout id=- bounds=[0,0][1080,2340] visible
+  android.widget.FrameLayout id=com.snapchat.android:id/spotlight_container bounds=[0,0][1080,2340] visible
+    androidx.recyclerview.widget.RecyclerView id=- bounds=[0,0][1080,2340] visible scrollable
+      android.view.ViewGroup id=- bounds=[0,-2340][1080,0]
+      android.view.ViewGroup id=- bounds=[0,0][1080,2340] visible
+        android.view.View id=- bounds=[0,0][1080,2340] visible
+      android.view.ViewGroup id=- bounds=[0,2340][1080,4680]
+  androidx.recyclerview.widget.RecyclerView id=com.snapchat.android:id/chat_list bounds=[0,200][1080,900] visible scrollable
+  android.widget.LinearLayout id=- bounds=[0,2200][1080,2340] visible

@@ -39,7 +39,9 @@ object PagerMatch {
     if (viewId == null && rule.pagerClassNames.isNotEmpty()) return eventClass in rule.pagerClassNames
     if (rule.pagerIds.isEmpty()) {
       if (rule.surfaceIds.isEmpty()) return true
-      return bare.isNotEmpty() && bare in rule.surfaceIds
+      if (bare.isNotEmpty() && bare in rule.surfaceIds) return true
+      // Snapchat Spotlight: the id'd surface is a page child, the pager is an unnamed list.
+      return rule.key in CLASS_PAGER_APPS && (eventClass in KNOWN_PAGER_CLASSES || sourceClass in KNOWN_PAGER_CLASSES)
     }
     if (bare.isEmpty() || bare !in rule.pagerIds) return false
     if (rule.pagerClassNames.isEmpty()) return true
@@ -55,6 +57,14 @@ object PagerMatch {
     val bare = viewId?.substringAfter(":id/", "").orEmpty()
     return bare.isNotEmpty() && bare in rule.pagerIds && !matches(rule, viewId, eventClass, sourceClass)
   }
+
+  /**
+   * Apps whose feed pager has no known view id (Snapchat's Spotlight is a vertical pager like
+   * IG/TikTok, but the resource id of the pager itself is unverified). Scroll events from a known
+   * pager widget class count as pager events; the service still drops any whose bounds differ
+   * from the pager it matched under the surface. Shipped in code so the signed ruleset is unchanged.
+   */
+  val CLASS_PAGER_APPS = setOf("snapchat")
 
   /** Pager widget classes preferred when a rule has no class filter. */
   val KNOWN_PAGER_CLASSES = setOf(
