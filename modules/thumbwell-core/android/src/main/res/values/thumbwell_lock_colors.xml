@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light values of the Figma semantic tokens (src/theme/tokens.ts). Night twins are in values-night. -->
+    <color name="thumbwell_lock_bg">#F4F1FF</color>
+    <color name="thumbwell_lock_chip_bg">#E6DEFF</color>
+    <color name="thumbwell_lock_chip_text">#4C33CC</color>
+    <color name="thumbwell_lock_title_text">#2A1C7A</color>
+    <color name="thumbwell_lock_body_text">#4A4378</color>
+    <color name="thumbwell_lock_muted_text">#6A6388</color>
+    <color name="thumbwell_lock_button_face">#6B4EFF</color>
+    <color name="thumbwell_lock_button_edge">#4C33CC</color>
+    <color name="thumbwell_lock_button_text">#FFFFFF</color>
+</resources>

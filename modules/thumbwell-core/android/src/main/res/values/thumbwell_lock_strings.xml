@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kept in step with the "lock" copy in src/i18n/locales/en.json (checked by a Jest test). -->
+    <string name="thumbwell_lock_chip">Daily limit reached</string>
+    <string name="thumbwell_lock_title">That\'s %1$d reels. Time for a break.</string>
+    <string name="thumbwell_lock_body">Reels, Shorts and TikTok are locked until %1$s. DMs and the rest of each app still work.</string>
+    <string name="thumbwell_lock_leave">Leave reels</string>
+    <string name="thumbwell_lock_today">Today: %1$d reels</string>
+    <string name="thumbwell_lock_home_toast">Taking you to your home screen</string>
+</resources>

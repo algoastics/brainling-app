@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="thumbwell_lock_bg">#0E0B1F</color>
+    <color name="thumbwell_lock_chip_bg">#2B2459</color>
+    <color name="thumbwell_lock_chip_text">#B7A8FF</color>
+    <color name="thumbwell_lock_title_text">#F4F1FF</color>
+    <color name="thumbwell_lock_body_text">#CFC8EA</color>
+    <color name="thumbwell_lock_muted_text">#B3ACCF</color>
+    <color name="thumbwell_lock_button_face">#6B4EFF</color>
+    <color name="thumbwell_lock_button_edge">#4126C0</color>
+    <color name="thumbwell_lock_button_text">#FFFFFF</color>
+</resources>
