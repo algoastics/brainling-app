@@ -156,6 +156,17 @@ Start over the limit (limit 5, count 5 or more). Do each check once on Instagram
 17. [ ] Samsung / Xiaomi / ColorOS launchers: repeat 14 and 15 on the phone's own launcher. If the
     lock lingers on an OEM, note its launcher package (`adb shell cmd package resolve-activity -a
     android.intent.action.MAIN -c android.intent.category.HOME`).
+18. [ ] **Audio stops (Samsung A15).** With the lock up on Instagram Reels and on TikTok, wait one
+    second: the app goes to the Home screen (toast-free) and nothing plays. Reopen it: the lock covers
+    again and Home follows (at most 3 times in a minute, then the lock stays up). Tap Leave reels: the
+    normal BACK flow runs, no extra Home. `adb logcat -s ThumbwellLock` shows `audio focus request
+    result=0` on Android 15 and up and `lock: home fallback`.
+19. [ ] **Notifications over the lock.** With the lock up, send a WhatsApp message or an Instagram DM
+    from another phone: the heads-up banner shows fully above the lock and can be tapped. The lock
+    starts below the banner area; the reel stays visible in that band (expected).
+20. [ ] **TikTok instant cover.** Kill TikTok from Recents, then open it while locked: no frame plays
+    and no sound, cold start (splash) and from Recents. Note any frame or sound you still get.
+21. [ ] The lock cannot cover the Recents card itself (system window); it must be gone when Recents opens.
 
 ## D. Settings
 

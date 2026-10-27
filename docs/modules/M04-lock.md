@@ -81,6 +81,37 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
   rule catches it; the class-name rule needs the class name, which only events carry (the service
   does not subscribe to launcher or SystemUI events).
 
+## Audio on Samsung, notifications, TikTok cover (second device round)
+
+- **Why the audio fix did not work (root cause).** Audio focus is only a request: the other app must
+  choose to stop, and on Android 15 and up an app that targets API 35 (Thumbwell does) may request
+  focus only as the top app or with a foreground service. An accessibility service is neither, so the
+  call returns `AUDIOFOCUS_REQUEST_FAILED` (now logged: `audio focus request result=0`) and Instagram
+  and TikTok are never told. The media PAUSE key only reaches an app with an active `MediaSession`;
+  reels players mostly have none. `MediaSessionManager.getActiveSessions` would need a notification
+  listener (or the system-only `MEDIA_CONTENT_CONTROL`): not used, no new permission is added.
+- **HOME fallback (`HomeFallback`).** Once the cover has been up 700 ms the service sends
+  `GLOBAL_ACTION_HOME`: the app goes to the background and its sound stops for certain; the watch
+  sees the launcher and hides the cover, and the lock returns on the next fresh reels entry while
+  still locked. Guards so the user is never trapped: not while "Leave reels" runs, 3 s between two,
+  at most 3 per 60 s; after that the lock stays up and the sound is best effort (focus and PAUSE).
+  Guaranteed: sound stops when HOME is sent. Best effort: focus and PAUSE (no sound for the first
+  700 ms is not guaranteed). The effect is that reopening TikTok while locked goes home again (up to
+  3 times a minute): that is the lock doing its job; Instagram's feed and DMs are not affected.
+- **Notifications over the lock.** A `TYPE_ACCESSIBILITY_OVERLAY` window is drawn above heads-up
+  banners. The cover now starts below a free band (status bar height plus 120 dp,
+  `OverlayGuard.HEADS_UP_BAND_DP`, one constant) and `FLAG_LAYOUT_NO_LIMITS` is off. Trade-off: about
+  the top 17% of a tall phone shows the reel under it, and a swipe that starts in that band still
+  reaches the app (nothing is counted while the lock is up, and the HOME fallback stops the sound).
+  Split screen and landscape keep the full cover when cutting would leave under half.
+- **TikTok cover on entry.** An event of a window-state change with no active window known yet (cold
+  start splash, return from Recents) now counts as the entry (`AppEntry.windowIsUp`), and events
+  that arrive while the seen state is still loading after a process start are replayed once it is
+  loaded, so the first frames are covered. Device-only: how many frames TikTok draws before the first
+  accessibility event (about 100 ms notification timeout), which no code can remove.
+- **Not possible: covering the Recents card.** The Recents window belongs to the system launcher; no
+  accessibility overlay can draw over or change it. The lock hides the moment Recents opens.
+
 ## Overlay safety (F07 item 10)
 
 The lock never stays over Android Settings, Accessibility settings or the package installer /
