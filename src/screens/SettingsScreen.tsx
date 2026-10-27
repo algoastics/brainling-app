@@ -150,6 +150,7 @@ export function SettingsScreen() {
             title={t('settings.badge.hide')}
             subtitle={t('settings.badge.hideHelp')}
             switchValue={badge.hideWhenResting}
+            switchDisabled={badge.displayTime === 'always'}
             onSwitchChange={(hideWhenResting) => void updateBadge({ hideWhenResting })}
           />
         </ListGroup>

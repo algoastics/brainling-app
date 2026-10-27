@@ -234,9 +234,32 @@ describe('settings (S43-P0)', () => {
     expect(screen.getByRole('button', { name: 'Badge display time, Always' })).toBeTruthy();
     expect(screen.getByText('Hide completely when resting')).toBeTruthy();
     expect(screen.getByTestId('row-badge-hide-switch').props.value).toBe(false);
+    // Always: the hide switch is dimmed and disabled, and its helper says when it applies
+    expect(screen.getByTestId('row-badge-hide-switch').props.disabled).toBe(true);
+    expect(
+      screen.getByText(
+        'Only applies when the display time is 1, 2 or 3 s. Hides the whole badge, Thumb and count, between counts instead of leaving your count on screen.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('enables the hide switch once the display time is 1, 2 or 3 s', async () => {
+    core.getBadgeSettings.mockResolvedValue({
+      enabled: true,
+      displayTime: '2s',
+      hideWhenResting: false,
+    });
+    await render(<SettingsScreen />);
+    await screen.findByText('Floating badge');
+    expect(screen.getByTestId('row-badge-hide-switch').props.disabled).toBe(false);
   });
 
   it('saves the badge switches natively', async () => {
+    core.getBadgeSettings.mockResolvedValue({
+      enabled: true,
+      displayTime: '2s',
+      hideWhenResting: false,
+    });
     await render(<SettingsScreen />);
     await fireEvent(await screen.findByTestId('row-badge-switch'), 'valueChange', false);
     await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ enabled: false }));
@@ -252,7 +275,7 @@ describe('settings (S43-P0)', () => {
     await fireEvent.press(await screen.findByTestId('row-badge-time'));
     expect(
       screen.getByText(
-        'How long the Thumb stays awake after a counted reel, before it settles to rest.',
+        'Always keeps the Thumb awake and your count visible while you are in a reels app. 1, 2 or 3 s lets the Thumb go to sleep after each reel; your count stays on screen.',
       ),
     ).toBeTruthy();
     await fireEvent.press(screen.getByTestId('badge-time-3s'));

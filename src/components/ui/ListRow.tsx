@@ -19,6 +19,8 @@ export type ListRowProps = {
   /** Makes the row a switch row (Figma 52x32 switch); `onSwitchChange` receives the new value. */
   switchValue?: boolean;
   onSwitchChange?: (value: boolean) => void;
+  /** Dims the row and turns the switch off for touch; the saved value is kept. */
+  switchDisabled?: boolean;
   onPress?: () => void;
   testID?: string;
 };
@@ -33,6 +35,7 @@ export function ListRow({
   danger = false,
   switchValue,
   onSwitchChange,
+  switchDisabled = false,
   onPress,
   testID,
 }: ListRowProps) {
@@ -65,6 +68,7 @@ export function ListRow({
           testID={testID ? `${testID}-switch` : undefined}
           accessibilityLabel={title}
           value={switchValue}
+          disabled={switchDisabled}
           onValueChange={onSwitchChange}
           trackColor={{ false: colors.borderStrong, true: colors.brandPrimary }}
           thumbColor="#FFFFFF"
@@ -77,7 +81,11 @@ export function ListRow({
   );
   if (!onPress) {
     return (
-      <View testID={testID} style={styles.row}>
+      <View
+        testID={testID}
+        style={[styles.row, switchDisabled && styles.dimmed]}
+        accessibilityState={switchDisabled ? { disabled: true } : undefined}
+      >
         {content}
       </View>
     );
@@ -130,6 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[16],
     paddingVertical: space[12],
   },
+  dimmed: { opacity: 0.45 },
   tile: {
     width: 40,
     height: 40,
