@@ -64,6 +64,12 @@ class DailyLimitTest {
   }
 
   @Test
+  fun theFirstChoiceAppliesAtOnceEvenWhenHigherThanTheDefault() {
+    assertEquals(LimitState(100), DailyLimit.initial(100))
+    assertTrue(runCatching { DailyLimit.initial(5000) }.isFailure)
+  }
+
+  @Test
   fun mapShape() {
     val m = LimitState(60, 100, tomorrow).toMap()
     assertEquals(60, m["effective"])

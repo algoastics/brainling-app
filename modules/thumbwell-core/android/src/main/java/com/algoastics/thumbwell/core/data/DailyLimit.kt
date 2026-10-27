@@ -24,6 +24,12 @@ object DailyLimit {
 
   fun valid(value: Int): Boolean = value in MIN..MAX
 
+  /** The first limit the user ever sets: applies at once, whatever the default was. */
+  fun initial(value: Int): LimitState {
+    require(valid(value)) { "daily limit out of range" }
+    return LimitState(value)
+  }
+
   /** Promotes a pending limit once [todayKey] has reached its start day. */
   fun resolve(state: LimitState, todayKey: String): LimitState {
     val pending = state.pending ?: return state

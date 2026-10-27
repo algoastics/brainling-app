@@ -79,10 +79,15 @@ class CorePrefs private constructor(context: Context) {
     return resolved
   }
 
-  /** Lowering applies now; raising applies from [nextDayKey]. Returns the new state. */
+  /** Lowering applies now; raising applies from [nextDayKey]; the first-ever set applies now. */
   @Synchronized
   fun setDailyLimit(value: Int, todayKey: String, nextDayKey: String): LimitState {
-    val next = DailyLimit.set(dailyLimit(todayKey), value, todayKey, nextDayKey)
+    // The very first choice (onboarding) is not a raise: nothing was set before it.
+    val next = if (prefs.contains(KEY_LIMIT)) {
+      DailyLimit.set(dailyLimit(todayKey), value, todayKey, nextDayKey)
+    } else {
+      DailyLimit.initial(value)
+    }
     writeLimit(next)
     return next
   }

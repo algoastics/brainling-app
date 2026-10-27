@@ -55,6 +55,19 @@ export type CountingStatus = {
   flags: { facebook: boolean; snapchat: boolean; countBadge: boolean };
 };
 
+/**
+ * The daily limit (F06). Lowering applies at once; raising applies from the next logical day and
+ * shows up as `pending` until then. The very first choice (onboarding) applies at once.
+ */
+export type DailyLimit = {
+  /** The limit in force today. */
+  effective: number;
+  /** A higher limit waiting for `pendingFromDay`, or null. */
+  pending: number | null;
+  /** First logical day (yyyy-MM-dd) the pending limit applies, or null. */
+  pendingFromDay: string | null;
+};
+
 export type ServiceState = 'ok' | 'disabled' | 'not_running';
 
 export type HealthStatus = {
@@ -138,6 +151,16 @@ declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
   /** Minutes after local midnight (0 to 1439) at which the day starts. Returns today's counts. */
   setDayStartMinutes(minutes: number): Promise<DayCounts>;
   getDayStartMinutes(): Promise<number>;
+  /**
+   * The installed app's own launcher icon as a base64 PNG (`sizePx` default 96), or null when it
+   * is not installed. Only Instagram, YouTube and TikTok packages can be asked for.
+   */
+  getAppIcon(packageName: string, sizePx?: number): Promise<string | null>;
+  getDailyLimit(): Promise<DailyLimit>;
+  /** Sets the limit (0 to 1000) with the lower-now, raise-tomorrow rule; returns the new state. */
+  setDailyLimit(value: number): Promise<DailyLimit>;
+  /** Deletes all counts, events, seen state, consent, limit and day start. */
+  clearAllData(): Promise<void>;
   getHealth(): Promise<HealthStatus>;
   getRulesStatus(): Promise<RulesStatus>;
   /** Null in release builds. */
