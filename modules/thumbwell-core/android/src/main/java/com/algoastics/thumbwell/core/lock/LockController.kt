@@ -9,12 +9,13 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import android.view.accessibility.AccessibilityNodeInfo
 import com.algoastics.thumbwell.core.R
 import com.algoastics.thumbwell.core.data.CorePrefs
-import com.algoastics.thumbwell.core.detection.OverlaySafetyPackages
+import com.algoastics.thumbwell.core.detection.BadgeForeground
 import java.util.TimeZone
 
 /**
@@ -43,6 +44,7 @@ class LockController(
   private var surfaceBounds: Box? = null
   private var overlayPackage: String? = null
   private var started = false
+  private val foreground = BadgeForeground()
 
   private val stateListener: (LockState) -> Unit = { state -> handler.post { onState(state) } }
 
@@ -56,14 +58,14 @@ class LockController(
     override fun run() {
       val pkg = overlayPackage
       val activePkg = service.rootInActiveWindow?.packageName?.toString()
-      val stillHere = pkg != null && activePkg == pkg
       if (!overlay.isShown) return
-      if (OverlaySafetyPackages.matches(activePkg)) {
-        onSafetyWindow()
-      } else if (!stillHere || !LockRules.activeAt(engine.state, System.currentTimeMillis())) {
-        hide()
-      } else {
-        handler.postDelayed(this, WATCH_MS)
+      // Never hide on one sample of another window: it must stay in front for the debounce.
+      val verdict = foreground.check(activePkg, pkg.orEmpty(), SystemClock.elapsedRealtime())
+      val active = LockRules.activeAt(engine.state, System.currentTimeMillis())
+      when (LockWatch.decide(active, verdict)) {
+        LockWatch.Action.SAFETY_HIDE -> onSafetyWindow()
+        LockWatch.Action.HIDE -> hide()
+        LockWatch.Action.KEEP -> handler.postDelayed(this, WATCH_MS)
       }
     }
   }
@@ -184,6 +186,7 @@ class LockController(
         overlay.show(OverlayGuard.coverBox(surface, app, screenW, screenH), content(state))
         if (overlay.isShown) {
           overlay.setBusy(flow.busy)
+          foreground.reset()
           handler.removeCallbacks(watch)
           handler.postDelayed(watch, WATCH_MS)
           Log.i(TAG, "lock shown app=$pkg")
