@@ -231,14 +231,16 @@ mailto and privacy link handoff, and battery.
 Needs the accessibility service on and the disclosure accepted. Settings -> Floating badge is on by
 default. Check each on Instagram Reels, YouTube Shorts and TikTok:
 
-1. Open the reels surface: a sleeping Thumb (half off the right edge, faint) appears. No platform icon.
-2. Swipe to a counted reel: the Thumb pops out, flicks and the count rolls. Swipe again within the
-   display time: only the changed digits roll. The count equals that app's count on Home.
-3. After 2 s (default) with no new reel the Thumb goes to sleep: eyes closed, half past the screen edge
+1. Open the reels surface. Default display time is **Always**: the Thumb pops out awake (with the
+   flick) next to the white count pill and stays. No platform icon.
+2. Swipe to a counted reel: in Always only the changed digits roll (no pop). Leave the app and come
+   back: the Thumb pops and flicks again. The count equals that app's count on Home. In Always the
+   bob stops after about 10 s (the Thumb then stays still) and the blink continues every 3 to 5 s.
+3. Set Badge display time to 2 s. After 2 s with no new reel the Thumb goes to sleep: eyes closed, half past the screen edge
    at about 40% opacity, **and the white count pill stays on screen at about 70% opacity right next
    to it, still showing the count.** Bob and blink stop and nothing moves while it rests.
    Awake: the Thumb is fully visible **in front of** the pill's left end, never hidden behind it.
-4. Settings -> Badge display time: try 1 s, 3 s, Always. In Always the bob stops after about 10 s.
+4. Settings -> Badge display time: try 1 s, 3 s, then back to Always. 1 s, 2 s and 3 s pop out on a counted reel (rolling the digits) and then sleep with the 70% pill; a swipe within the time only rolls the digits.
 5. Settings -> Hide completely when resting on: the whole badge (Thumb and count) disappears between counts instead of resting. "Always" never rests.
 6. Drag the badge: it lifts, follows the finger and snaps to the nearer edge. Kill and reopen the
    app: the position is kept. Tap or drag the resting badge (Thumb or pill): it wakes, no roll. Tap an awake badge: Thumbwell opens.
@@ -273,12 +275,18 @@ reels surface and once with the lock showing (limit reached; or limit 0):
 7. [ ] Other-OEM phones (not on the Samsung RF8X605YFVM): repeat on Xiaomi, OPPO/realme, vivo, Huawei
    or Honor if you have one. Note the real package of any screen where the overlay still shows, and
    add it to `OverlaySafetyPackages`. (`adb shell dumpsys window | grep mCurrentFocus` while on it.)
-8. [ ] Pull down the notification shade and the quick settings over a reels app: no badge or lock over
-   them (SystemUI is in the list).
+8. [ ] Pull down the notification shade over a reels app: the badge goes after about half a second (a
+   normal leave) and comes back when you close it. SystemUI is deliberately not in the safety list,
+   so it cannot make the badge flicker while you scroll.
 
 Known limit: the service config only lists the tracked apps, so it gets no events from Settings
 itself. The guard therefore checks the active window on every event from a tracked app and every
 250 ms while an overlay is up, not on Settings' own window events.
+
+9. [ ] **No hide while scrolling (Always, the default).** Scroll Reels, Shorts and TikTok for a minute,
+   with the volume buttons and a notification arriving: the Thumb and the count stay on screen the
+   whole time, with no flicker or re-pop. It hides only when you leave the app (about 0.4 s later),
+   focus a text field, open Settings/an installer, or counting is paused.
 
 ### I.2 Play and store text must match the build (F18)
 

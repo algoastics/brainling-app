@@ -23,7 +23,11 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
 - A counted reel: pop-out (200 ms) and flick (140 + 160 ms) from rest; when already awake only the
   changed digits roll (150 ms each, 30 ms stagger, ones first). Bob 1.6 s, plus or minus 2 dp, stops
   after 10 s in "Always". Blink about 120 ms every 3 to 5 s while awake.
-- After the display time (1 s, 2 s default, 3 s, Always) the Thumb settles (240 ms): it sleeps (eyes
+- Display time defaults to **Always** (PM decision): the Thumb pops out awake on arrival (and on return) and
+  stays awake with the count while a tracked app is in front; later reels only roll the digits. The bob
+  stops after 10 s, the blink continues. A leave hides it after a 400 ms debounce (`BadgeForeground`), so
+  a transient window never hides it while scrolling; a safety package hides at once.
+- After the display time (1 s, 2 s, 3 s) the Thumb settles (240 ms): it sleeps (eyes
   closed, 0.93 scale, 40% opacity) tucked half past the screen edge, and **the count pill stays on
   screen at 70% opacity** right beside it (PM decision, option B; the original spec hid the pill).
   Pill and sleeping Thumb touch and never overlap; the pill slides inward to make room. Each counted
@@ -43,13 +47,13 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
 Never over Android Settings, Accessibility settings or the package installer / uninstall dialog.
 `OverlaySafetyPackages` (pure, tested) holds the exact and prefix package list including OEM
 variants. The service checks it on every event, on window changes against the active window, and
-every 250 ms while the badge is up (`BadgeGate.visible(..., safetyWindow)`); a match hides the badge
+every 500 ms while the badge is up (`BadgeGate.visible(..., safetyWindow)`); a match hides the badge
 at once. Only the foreground package name is read.
 
 ## Settings and API
 
 Stored in `CorePrefs`: `badge_enabled` (default true), `badge_display_time` (`1s`/`2s`/`3s`/`always`,
-default `2s`), `badge_hide_when_resting` (false), `badge_side`, `badge_y_dp`.
+default `always`), `badge_hide_when_resting` (false), `badge_side`, `badge_y_dp`.
 JS (`thumbwell-core`): `getBadgeSettings()` and `setBadgeSettings(patch)` (typed `BadgeSettings`).
 S43-P0 rows: "Floating badge", "Badge display time" (chips dialog), "Hide completely when resting".
 `FeatureFlags.countBadgeEnabled` is on; `THUMBWELL_TESTER_MODE` no longer gates the badge.
