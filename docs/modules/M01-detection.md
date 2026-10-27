@@ -138,6 +138,18 @@ JS API (`thumbwell-core`): `getTodayCounts()` (total, `apps`, `ads`), `getDailyC
 flags), `setConsent(version)`, `getConsent()`, `get/setDayStartMinutes(minutes)`; hook
 `useCountingStatus()`. Sentry is off: the `@sentry/react-native` plugin is out of `app.json`.
 
+## Settings and data API (M2)
+
+All are `AsyncFunction`s on `ThumbwellCore`:
+
+- `getAppIcon(packageName, sizePx = 96)`: base64 PNG of the installed app's launcher icon, or
+  `null`. Only the Instagram, YouTube and TikTok packages are allowed; `<queries>` entries are added
+  by the config plugin.
+- `getDailyLimit()` / `setDailyLimit(n)`: `{ effective, pending, pendingFromDay }`. Lower applies
+  now, higher from the next logical day, the first ever set applies now (`data/DailyLimit.kt`).
+- `clearAllData()`: wipes Room, consent, limit, day start, salt and the in-memory seen state.
+
+
 ## Room schema
 
 `ksp { arg("room.schemaLocation", "$projectDir/schemas") }` exports to
