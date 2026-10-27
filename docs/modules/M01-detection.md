@@ -131,7 +131,7 @@ release.
   day start.
 - **Consent gate**: nothing counts until `setConsent(version)` has logged a timestamp for
   `Disclosure.CURRENT_VERSION` (mirror: `DISCLOSURE_VERSION` in `src/onboarding/disclosure.ts`).
-- **Count badge** (and the old mascot PNGs) are behind `FeatureFlags.countBadgeEnabled`, default off.
+- **Count badge**: the floating Thumb, see `M03b-badge.md`. On (`FeatureFlags.countBadgeEnabled`) and user-controlled in Settings.
 
 JS API (`thumbwell-core`): `getTodayCounts()` (total, `apps`, `ads`), `getDailyCounts(limit?)`,
 `getCountingStatus()` (paused, pausedReason, service, consent, per-app enabled, dayStartMinutes,

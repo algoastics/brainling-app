@@ -6,7 +6,7 @@ branch `thumbwell/phase0`.
 
 Per-case detail for the counting engine (IG-1, YT-1, TT-1 and so on) is in
 `docs/phone-test-cases.md`. It predates the 1 s threshold (it says 0.75 s) and mentions the
-badge, which is off in Phase 0. Use this file for the pass/fail.
+badge, which is now the floating Thumb (see section H). Use this file for the pass/fail.
 
 ## 0. Build and install on your own phone (not EAS)
 
@@ -37,7 +37,8 @@ Notes:
   in `package.json` but nothing initialises it and the config plugin is gone.
 - No signing config to add: `release` uses `signingConfigs.debug`. A Play upload would need a
   real upload key; that is out of scope here.
-- `THUMBWELL_TESTER_MODE` has no effect in Phase 0 (the count badge flag is off).
+- `THUMBWELL_TESTER_MODE` no longer gates the badge: it is on in every build and controlled by
+  Settings -> Floating badge.
 - Release builds have R8 minify and resource shrinking on (`app.json`). If the release app
   crashes at launch and debug does not, suspect missing keep rules and tell me the logcat.
 - `THUMBWELL_RULES_URL` (https only) is optional remote rules; leave it unset for these tests.
@@ -174,8 +175,8 @@ Record the Android version, OEM skin and the Instagram, YouTube and TikTok versi
 8. Full charge, `adb shell dumpsys batterystats --reset`, use the phone normally for a day with
    Thumbwell on, unplug throughout. Then `adb shell dumpsys batterystats --charged com.algoastics.thumbwell`
    and read the estimated power use in mAh; divide by the battery capacity. Cross-check with
-   Settings -> Battery usage -> Thumbwell. The scope says "with the badge on"; the badge is off in
-   Phase 0, so this is the no-badge number.
+   Settings -> Battery usage -> Thumbwell. The scope says "with the badge on": leave Floating badge
+   on for this run, then repeat one day with it off and compare the two numbers.
 
 **Result table** (copy per phone):
 
@@ -198,12 +199,10 @@ The closed-track criteria (≥ 12 testers, crash-free ≥ 99.5%) are measured in
   different user, a different package visibility and are not expected to count or lock.
 - **Other forks:** only `com.instagram.android`, `com.google.android.youtube` and the two main
   TikTok packages are in the service config. YouTube Kids, ReVanced and Lite apps are not.
-- **Count badge is off** (`FeatureFlags.countBadgeEnabled = false`) and there are no badge
-  settings (on/off, display time, hide when resting). Scope exit criterion 7 (S50-P0) cannot
-  be tested in this build.
+- **Badge has no keyboard-window check** (a focused text input hides it) and its animations are not
+  verified on a device; see section H.
 - **Placeholders:** privacy policy URL and support email in `src/config/appConfig.ts`.
 - **Sentry is not initialised**; crash data comes only from logcat.
-- "Today: 1 reels" on the lock caption still uses the plural form (title is fixed).
 - **Dev key:** rules are signed with `brainling-dev-2026-10`; replace with an offline production key
   before release.
 
@@ -213,3 +212,23 @@ focus, screen off/on and rotation, TalkBack, the day roll, boot persistence, the
 build, "Allow restricted settings" after `adb install`, the disclosure and guide flow on a real
 Accessibility settings screen, Instagram, YouTube and TikTok counting at current app versions,
 mailto and privacy link handoff, and battery.
+
+## H. Floating Thumb badge (F07, S50-P0)
+
+Needs the accessibility service on and the disclosure accepted. Settings -> Floating badge is on by
+default. Check each on Instagram Reels, YouTube Shorts and TikTok:
+
+1. Open the reels surface: a sleeping Thumb (half off the right edge, faint) appears. No platform icon.
+2. Swipe to a counted reel: the Thumb pops out, flicks and the count rolls. Swipe again within the
+   display time: only the changed digits roll. The count equals that app's count on Home.
+3. After 2 s (default) with no new reel the Thumb settles back to the edge. Bob and blink stop.
+4. Settings -> Badge display time: try 1 s, 3 s, Always. In Always the bob stops after about 10 s.
+5. Settings -> Hide completely when resting on: the Thumb disappears between counts instead of resting.
+6. Drag the badge: it lifts, follows the finger and snaps to the nearer edge. Kill and reopen the
+   app: the position is kept. Tap a resting Thumb: it wakes. Tap an awake badge: Thumbwell opens.
+7. Hidden: home screen, another app, DMs inside Instagram, a focused text field or keyboard, counting
+   paused (accessibility off or no consent), Floating badge off, and while the lock overlay shows.
+8. Android Settings -> Accessibility -> remove animations (or animator scale 0): the badge fades and
+   swaps instantly, no bob, blink or roll.
+9. Frame check (optional): record at 60 fps during a count; the roll and pop-out should not drop frames.
+10. Battery with the badge on: section F, step 8.
