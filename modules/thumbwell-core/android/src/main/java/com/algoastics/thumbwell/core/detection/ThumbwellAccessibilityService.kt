@@ -59,7 +59,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     override fun run() {
       val pkg = badgePackage ?: return
       // Events only arrive from target apps, so leaving to another app is noticed here.
-      if (rootInActiveWindow?.packageName?.toString() != pkg) hideBadge()
+      val activePkg = rootInActiveWindow?.packageName?.toString()
+      if (guardSafetyWindow(activePkg)) return
+      if (activePkg != pkg) hideBadge()
       else handler.postDelayed(this, BADGE_WATCH_MS)
     }
   }
@@ -192,6 +194,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       PENDING_STATES.clear()
       if (::limitEngine.isInitialized) limitEngine.refresh()
     }
+    guardSafetyWindowOnEvent(event)
     val active = rules ?: return
     val packageName = event.packageName?.toString() ?: return
     val rule = active.ruleFor(packageName) ?: return
@@ -285,6 +288,27 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     return OverlayGuard.isTextInput(focused.isEditable, focused.className?.toString())
   }
 
+  /**
+   * F07 item 10: the badge and the lock never show over Settings, Accessibility settings or the
+   * package installer (including OEM variants, see [OverlaySafetyPackages]). Returns true when
+   * [packageName] is such a window and both overlays were hidden. Hide only, nothing is pressed.
+   */
+  private fun guardSafetyWindow(packageName: String?): Boolean {
+    if (!OverlaySafetyPackages.matches(packageName)) return false
+    hideBadge()
+    if (::lock.isInitialized) lock.onSafetyWindow()
+    return true
+  }
+
+  /** Every event, before any other work: its package, and for window changes the active window. */
+  private fun guardSafetyWindowOnEvent(event: AccessibilityEvent) {
+    if (guardSafetyWindow(event.packageName?.toString())) return
+    val windowChange = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+      event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
+    val overlaysUp = badgePackage != null || (::lock.isInitialized && lock.isShowing)
+    if (windowChange && overlaysUp) guardSafetyWindow(rootInActiveWindow?.packageName?.toString())
+  }
+
   private fun hideBadge() {
     handler.removeCallbacks(badgeWatch)
     badgePackage = null
@@ -343,7 +367,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
 
     if (root == null || surface == null) {
       lock.onSurfaceGone(packageName)
-      if (badgePackage == packageName) leaveBadge()
+      if (guardSafetyWindow(activeRoot?.packageName?.toString())) {
+        // Settings, Accessibility settings or an installer dialog is on top: hidden at once.
+      } else if (badgePackage == packageName) leaveBadge()
       val exit = when {
         root != null -> ReelSession.Exit.CLOSED
         activeRoot == null -> ReelSession.Exit.COVERED
@@ -536,7 +562,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     private const val DAY_CHECK_MS = 15_000L
     private const val TAG = "ThumbwellDetect"
     private const val THROTTLE_MS = 250L
-    private const val BADGE_WATCH_MS = 1_000L
+    private const val BADGE_WATCH_MS = 250L
 
     /** Set by "delete my data": the service drops its in-memory players on the next event. */
     @Volatile private var clearRequested = false

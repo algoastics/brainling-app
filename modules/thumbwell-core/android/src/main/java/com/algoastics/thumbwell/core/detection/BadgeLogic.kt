@@ -68,7 +68,10 @@ object BadgeGate {
     onReelsSurface: Boolean,
     lockShowing: Boolean,
     textInputOrKeyboard: Boolean,
-  ): Boolean = enabled && countingAllowed && onReelsSurface && !lockShowing && !textInputOrKeyboard
+    /** The foreground window is Settings, Accessibility settings or an installer (F07-10). */
+    safetyWindow: Boolean = false,
+  ): Boolean =
+    enabled && countingAllowed && onReelsSurface && !lockShowing && !textInputOrKeyboard && !safetyWindow
 }
 
 /** One digit slot of the odometer: [fromRight] is the slot index (0 = ones) in the new text. */

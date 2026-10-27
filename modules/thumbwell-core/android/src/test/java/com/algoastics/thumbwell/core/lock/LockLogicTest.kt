@@ -243,4 +243,15 @@ class LockLogicTest {
       s["thumbwell_lock_body"],
     )
   }
+
+  @Test fun afterASafetyWindowTheLockOnlyReturnsOnANewSurfaceEntry() {
+    // Lock appeared mid-play and waits for the swipe; the user opens Settings (hidden, surface
+    // forgotten), comes back: arriving counts as a new entry, so it shows at once, not before.
+    val trigger = LockTrigger()
+    trigger.onState(locked = true, onSurface = true)
+    assertFalse(trigger.mayShow(locked = true, onSurface = false))
+    trigger.onSurfaceEntered()
+    assertTrue(trigger.mayShow(locked = true, onSurface = true))
+    assertFalse(trigger.mayShow(locked = true, onSurface = false))
+  }
 }

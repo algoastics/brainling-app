@@ -14,6 +14,7 @@ import android.widget.Toast
 import android.view.accessibility.AccessibilityNodeInfo
 import com.algoastics.thumbwell.core.R
 import com.algoastics.thumbwell.core.data.CorePrefs
+import com.algoastics.thumbwell.core.detection.OverlaySafetyPackages
 import java.util.TimeZone
 
 /**
@@ -54,9 +55,12 @@ class LockController(
   private val watch = object : Runnable {
     override fun run() {
       val pkg = overlayPackage
-      val stillHere = pkg != null && service.rootInActiveWindow?.packageName?.toString() == pkg
+      val activePkg = service.rootInActiveWindow?.packageName?.toString()
+      val stillHere = pkg != null && activePkg == pkg
       if (!overlay.isShown) return
-      if (!stillHere || !LockRules.activeAt(engine.state, System.currentTimeMillis())) {
+      if (OverlaySafetyPackages.matches(activePkg)) {
+        onSafetyWindow()
+      } else if (!stillHere || !LockRules.activeAt(engine.state, System.currentTimeMillis())) {
         hide()
       } else {
         handler.postDelayed(this, WATCH_MS)
@@ -101,6 +105,17 @@ class LockController(
     handler.removeCallbacks(watch)
     overlay.hide()
     overlayPackage = null
+  }
+
+  /**
+   * The foreground window is Settings, Accessibility settings or an installer dialog (F07-10).
+   * Hide only: no BACK, no HOME. The surface is forgotten, so nothing re-shows until a tracked
+   * reels surface is on screen again (the next [onSurface] counts as a new entry).
+   */
+  fun onSafetyWindow() {
+    surfacePackage = null
+    surfaceBounds = null
+    hide()
   }
 
   /**
@@ -233,6 +248,6 @@ class LockController(
 
   private companion object {
     const val TAG = "ThumbwellLock"
-    const val WATCH_MS = 500L
+    const val WATCH_MS = 250L
   }
 }

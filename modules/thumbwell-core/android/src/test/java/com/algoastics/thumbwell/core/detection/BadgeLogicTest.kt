@@ -166,6 +166,16 @@ class BadgeLogicTest {
     assertFalse(BadgeGate.visible(true, true, true, false, true))
   }
 
+  @Test fun gateHidesOverSettingsAccessibilityAndInstallerWindows() {
+    assertTrue(BadgeGate.visible(true, true, true, false, false, safetyWindow = false))
+    assertFalse(BadgeGate.visible(true, true, true, false, false, safetyWindow = true))
+    listOf("com.android.settings", "com.samsung.accessibility", "com.google.android.packageinstaller")
+      .forEach { pkg ->
+        val safety = com.algoastics.thumbwell.core.detection.OverlaySafetyPackages.matches(pkg)
+        assertFalse(BadgeGate.visible(true, true, true, false, false, safetyWindow = safety))
+      }
+  }
+
   @Test fun odometerRollsOnlyChangedDigitsWithAStagger() {
     assertEquals(listOf(DigitRoll(0, '2', '3', 0L)), Odometer.plan(12, 13).filter { it.fromRight == 0 })
     // 12 -> 13: only the ones digit.
