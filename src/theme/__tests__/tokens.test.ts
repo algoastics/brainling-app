@@ -22,16 +22,16 @@ describe('color tokens', () => {
   it.each([
     ['light', lightColors],
     ['dark', darkColors],
-  ] as const)('%s: ink, ink2 and muted reach AA (4.5:1) on bg and surfaces', (_, c) => {
-    for (const fg of [c.ink, c.ink2, c.muted]) {
-      for (const bg of [c.bg, c.surface, c.surface2]) {
+  ] as const)('%s: text tokens reach AA (4.5:1) on bg and surfaces', (_, c) => {
+    for (const fg of [c.textPrimary, c.textSecondary, c.textMuted]) {
+      for (const bg of [c.bgScreen, c.bgSurface, c.bgSurface2]) {
         expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
       }
     }
   });
 
   it('keeps the primary colour readable on light backgrounds', () => {
-    expect(contrast(lightColors.primary, lightColors.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(lightColors.brandPrimary, lightColors.bgScreen)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
