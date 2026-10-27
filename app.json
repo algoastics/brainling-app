@@ -80,7 +80,6 @@
         }
       ],
       "expo-sharing",
-      "@sentry/react-native",
       [
         "./plugins/withGradleJvmArgs",
         {
