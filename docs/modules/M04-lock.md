@@ -7,7 +7,7 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 |---|---|
 | `LockLogic.kt` | Pure rules, unit-tested on the JVM: `LockRules` (limit boundary, zero mode, active window), `LockClock` (locked-until), `LockTrigger` (when to show), `OverlayGuard` (text input, multi-window, cover area), `LeaveFlow` (BACK / cooldown / HOME). |
 | `LimitEngine.kt` | Today's total (counter store, Room) against the effective daily limit (`DailyLimit`: lower applies now, raise from the next logical day). Fires only on change. |
-| `LockOverlay.kt` | The S22-P0 view, a `TYPE_ACCESSIBILITY_OVERLAY` window (no `SYSTEM_ALERT_WINDOW`). |
+| `LockOverlay.kt` | The S22-P0 view. A `TYPE_APPLICATION_OVERLAY` window when "Display over other apps" is granted, else the `TYPE_ACCESSIBILITY_OVERLAY` fallback (see "Lock window" below). |
 | `LockController.kt` | Glue inside the service: when to cover, guards, "Leave reels", watchdog, screen-off. |
 | `LockAudio.kt` | Stops the sound while the lock is up: `LockAudio` (pure, over an `AudioPort`) and `SystemAudioPort` (AudioManager). |
 | `LockEntry.kt` | `AppEntry` (first event of an opened app) and `EarlyCover` (which apps are covered on entry). |
@@ -105,7 +105,7 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
   banners (AOSP window layers: accessibility overlay 31, status bar 15, notification shade 17), so a
   banner can only show if the lock does not cover its area: layering "under" banners is not possible
   with this window type, and `TYPE_APPLICATION_OVERLAY` (which would be below) needs
-  `SYSTEM_ALERT_WINDOW`, excluded by design. So the opaque lock starts below a see-through strip: status bar
+  `SYSTEM_ALERT_WINDOW`. **This is the fallback now** (permission not granted; see "Lock window" below). The opaque lock starts below a see-through strip: status bar
   height plus 96 dp (`OverlayGuard.HEADS_UP_BAND_DP`, one constant, the only place to change it). The
   strip is full width, the lock's top corners are rounded (20 dp), and no
   window inset moves it (`setFitInsetsTypes(0)`), so it reads as the lock's top edge, not a gap.
@@ -126,6 +126,77 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 - **Not possible: covering the Recents card.** The Recents window belongs to the system launcher; no
   accessibility overlay can draw over or change it. The lock hides the moment Recents opens.
 
+## Lock window: "Display over other apps" (SYSTEM_ALERT_WINDOW) and the fallback
+
+Decision (Ahsan): the lock uses `TYPE_APPLICATION_OVERLAY`. This replaces the earlier "no
+`SYSTEM_ALERT_WINDOW`" design. The accessibility service stays for detection only; the badge stays on
+its accessibility overlay unchanged. All of it is unverified on device.
+
+- **Why.** AOSP layers: application overlay 11, status bar 15, notification shade 17, navigation bar
+  24, accessibility overlay 31. A layer-11 lock is below banners and the shade, so banners show and
+  stay tappable and the shade pull-down is unaffected, while the lock itself can be fully opaque and
+  edge to edge with no see-through strip.
+- **Window (permission granted, API 26+).** Type `TYPE_APPLICATION_OVERLAY`; flags
+  `FLAG_NOT_FOCUSABLE | FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS | FLAG_HARDWARE_ACCELERATED`
+  (no `FLAG_NOT_TOUCHABLE`, so every touch is absorbed); `PixelFormat.OPAQUE`; gravity `TOP|START`;
+  `layoutInDisplayCutoutMode` ALWAYS (API 30+, `SHORT_EDGES` before); `setFitInsetsTypes(0)` (API 30+).
+  Frame: x and width from the reels container, **y = 0** (status bar area included) down to the top of
+  the bottom tab bar (container bounds from the accessibility tree, as before), clamped to the
+  display bounds (`maximumWindowMetrics` on API 30+). The tab bar stays free. No strip, no top gap.
+  Square corners; the strip's rounded top is for the fallback only.
+- **Window context.** The service's own `WindowManager` carries the accessibility window token, so
+  the application overlay is added through a window context (`createWindowContext(display,
+  TYPE_APPLICATION_OVERLAY, null)` on API 30+, the application context before). `hide()` removes the
+  view through the manager that added it.
+- **Choice (`LockWindowChoice.choose(canDrawOverlays, sdk)`, pure, tested).** Application overlay when
+  the permission is granted and the API level is 26 or more, else the accessibility overlay. The
+  permission is read with `Settings.canDrawOverlays` through `OverlayPermissionProbe` (cached 1.5 s).
+  The choice is made each time the lock is shown, and re-checked on the watch tick while it shows.
+- **Fallback (permission not granted, or the add is refused).** The previous behaviour, unchanged:
+  `TYPE_ACCESSIBILITY_OVERLAY`, status bar height plus 96 dp touch-absorbing see-through strip,
+  rounded top. Limits: banners and heads-up are visible through the strip but cannot be tapped while
+  the lock is up. If adding the application overlay throws (the permission is refused at add time),
+  the probe reads as denied for 30 s (`DENY_MS`) and the fallback window is added at once, so the two
+  types never flicker.
+- **Revoked while showing.** The watch tick sees the permission gone, removes the view through the
+  manager that added it, and shows the fallback on the same frame. A single window is alive at any
+  time. Safety packages, leave (Home, Recents, another app), screen off and service destroy hide the
+  overlay exactly as before, whichever type it is.
+- **Permission plumbing.** `SYSTEM_ALERT_WINDOW` is added by the thumbwell-core config plugin
+  (`withOverlayPermission` in `modules/thumbwell-core/app.plugin.js`), so every prebuild regenerates
+  it in the manifest; `android/` is not edited by hand. It is no longer blocked in release
+  (`plugins/withReleaseBlockedPermissions` has nothing to block, and removes a stale release manifest
+  left by an earlier prebuild). Bridge: `canDrawOverlays(): Promise<boolean>` and
+  `openOverlaySettings()` (`Settings.ACTION_MANAGE_OVERLAY_PERMISSION` for the package, app info as a
+  fallback).
+- **Onboarding step** (`src/screens/OverlayPermissionStep.tsx`, shown by the Guide screen). After
+  Accessibility is on, onboarding is marked complete and, unless the permission is already granted,
+  the step "Show the lock under your notifications" explains what it is for (only drawing the lock
+  over reels; it does not read other apps; can be turned off in Settings), what happens if skipped,
+  and the path in system settings. "Open settings" opens the system page for Thumbwell. On return the
+  permission is re-read (app foreground, and every 1.5 s while the user is away); granted shows a
+  success state with "Continue", still off shows "Still off". "Skip for now" goes Home.
+- **Settings entry.** Settings, Lock section, row "Display over other apps" (`row-overlay`): value
+  Allowed or Not allowed, an explanation, and a tap that opens the same system page, which is the
+  way to turn it off. Re-read on focus and on return.
+- **In-app fallback note.** While the permission is not granted, Home shows a note (`overlay-notice`)
+  that notifications may be hidden or not tappable while locked, with an "Allow" button to the system
+  page. It has no dismiss; it goes away when the permission is granted.
+- **Disclosure.** The permission is explained in its own onboarding step and in Settings, outside the
+  S06 text. The S06 disclosure text and its version are not changed (no bump): the lock's behaviour
+  and the data handled are the same, and the new permission collects nothing. Flag for review: if
+  Play or legal wants the S06 text to name the overlay permission, that is a version 3 bump
+  (`src/consent/version.ts` and native `Disclosure.CURRENT_VERSION` together, with a re-consent).
+- **Play declaration note (SYSTEM_ALERT_WINDOW).** Play Console, App content: declare the
+  "Display over other apps" permission use and the matching Permissions declaration if the form asks.
+  Wording to propose: "Thumbwell shows a full-screen lock over Instagram Reels, YouTube Shorts and
+  TikTok after the user reaches the daily limit they set. The window is drawn below system
+  notifications so they stay usable. The user grants the permission in a dedicated onboarding step,
+  can skip it (a limited fallback is used) and can turn it off in Settings. Nothing is collected or
+  sent." Also add this to the demo video (grant step, lock over the reels, banner on top, revoke in
+  Settings) and to the Accessibility declaration's core-feature text. Wording is proposed, pending
+  Ahsan's and legal review. Keep the release manifest audit: `SYSTEM_ALERT_WINDOW` is now expected.
+
 ## Overlay safety (F07 item 10)
 
 The lock never stays over Android Settings, Accessibility settings or the package installer /
@@ -143,7 +214,7 @@ is now 250 ms and checks the list on each tick: a safety package hides at once, 
 
 ## Must be verified on a device
 
-Overlay appears under 500 ms after the swipe past the limit reel on Instagram, YouTube and TikTok;
+The device checks for the lock window and the permission are in `docs/TESTING-phase0.md` section J. Overlay appears under 500 ms after the swipe past the limit reel on Instagram, YouTube and TikTok;
 covers the surface bounds correctly on each (and not the tab bar); never over a focused comment field
 or keyboard; "Leave reels" goes to the Home tab in Instagram and YouTube (no auto-exit, no HOME), BACK in TikTok; the strip at the top is even and a banner shows in it; split
 screen behaviour; light and dark twins; rotate; screen off and on; day roll; TalkBack reads the

@@ -72,7 +72,8 @@ Android 13 or newer if you have one.
    Accessibility -> Thumbwell ON. Note whether this was needed after an `adb install`.
 8. [ ] Return to Thumbwell: success screen "Thumbwell is on". Before switching it on, a check
    without it shows "Still off, try again".
-9. [ ] "Go to Home": counts show 0 for each app, total vs limit 30, banner gone.
+9. [ ] "Continue": the "Show the lock under your notifications" step shows (when "Display over other apps"
+   is off; section J.1 covers it). Skip it: counts show 0 for each app, total vs limit 30, banner gone.
 10. [ ] Stopwatch: first launch after install to the first reel counted on Home must be under 3
     minutes (also recorded in F).
 11. [ ] Kill and relaunch: straight to Home (no onboarding).
@@ -374,3 +375,48 @@ itself. The guard therefore checks the active window on every event from a track
    **the badge appearing and updating inside a reels app, then switching it off in Settings ->
    Floating badge and showing it removed**, and the lock overlay.
 4. [ ] Data safety answers unchanged (the counter shows numbers already on the phone).
+
+## J. Lock window: Display over other apps (SYSTEM_ALERT_WINDOW)
+
+Device checks for Ahsan on the SM-A155F. None of this has been run on a device. Needs a fresh
+prebuild so the manifest has the permission (`docs/BUILD-local.md`). Tick only what you saw.
+
+### J.1 Permission flow
+
+1. [ ] Fresh install, finish onboarding to Accessibility on: tap "Continue". The step "Show the lock
+   under your notifications" shows with the explanation and the settings path.
+2. [ ] "Open settings" opens the "Display over other apps" page for Thumbwell. Switch it on, go back:
+   the step shows "Notifications stay available" and "Continue" goes Home. No Home note.
+3. [ ] Repeat with "Skip for now" (and with the switch left off after returning: "Still off" shows):
+   Home shows the note "Notifications may be hidden while locked" with an "Allow" button that opens
+   the same page.
+4. [ ] Settings -> Lock -> "Display over other apps": Allowed when on, Not allowed when off. Tapping
+   opens the system page; turning it off there and coming back updates the row and shows the Home note.
+
+### J.2 Window (permission granted)
+
+Reach the limit (limit 1 or 0 is quickest) in Instagram Reels, YouTube Shorts and TikTok:
+
+1. [ ] The lock covers the video edge to edge: no gap at the top (status bar area included), no
+   see-through strip, sides to the screen edges, down to the top of the bottom tab bar.
+2. [ ] The bottom tab bar is free and works (Home tab).
+3. [ ] The lock is opaque and nothing behind it scrolls or taps, including the top area.
+4. [ ] Send yourself a notification: the heads-up banner shows ABOVE the lock and can be tapped and
+   swiped away.
+5. [ ] Pull the notification shade and quick settings down over the lock: it works normally.
+6. [ ] HOME, BACK and Recents: the lock hides at once on HOME and Recents; BACK and the gesture work.
+7. [ ] Gesture navigation and 3-button navigation: the lock does not cover the nav bar.
+8. [ ] Rotate to landscape and back: the lock re-fits with no leftover window and no top gap.
+9. [ ] Status bar icons (time, battery) stay readable over the lock in light and dark theme. Note it
+   if not (the lock is opaque under the status bar now).
+10. [ ] "Leave reels" still works; the camera cutout area is covered.
+
+### J.3 Revoke and fallback
+
+1. [ ] With the lock showing, open Settings -> Display over other apps and turn it off, then return:
+   the lock is shown again with the fallback window (strip at the top), once, with no double window.
+2. [ ] Permission off from the start: the lock shows with the see-through top strip as before, a
+   banner is visible but cannot be tapped, and the strip absorbs touches (the reel does not scroll).
+3. [ ] Turn the permission on again: the next lock uses the full window.
+4. [ ] Opening Android Settings or the uninstall dialog hides the lock (both window types).
+5. [ ] Turning Accessibility off removes the lock and the badge.

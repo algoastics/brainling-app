@@ -1,7 +1,7 @@
 # Thumbwell — Module-by-Module Development Plan (v1, 21 Oct 2026)
 
 Inputs: `build-plan.md`, `feasibility-research.md`, `brainling-design/docs/handoff.md`, scope doc FINAL v1.0.
-Locked decisions: Android-first, Expo SDK 58 / RN 0.88 (already scaffolded); squads (S37–S38, A22, N09, M14) and Chrome reels (S47) out of MVP; launch apps = **Instagram Reels + YouTube Shorts** (TikTok, FB/FB Lite, Snapchat, IG Lite behind remote flags in the signed ruleset); lock = native `TYPE_ACCESSIBILITY_OVERLAY` (no `SYSTEM_ALERT_WINDOW` in the normal path, **no foreground service**); all counting + locking in Kotlin; personal Play account → closed test with ≥12 testers × 14 continuous days.
+Locked decisions: Android-first, Expo SDK 58 / RN 0.88 (already scaffolded); squads (S37–S38, A22, N09, M14) and Chrome reels (S47) out of MVP; launch apps = **Instagram Reels + YouTube Shorts** (TikTok, FB/FB Lite, Snapchat, IG Lite behind remote flags in the signed ruleset); lock = native `TYPE_APPLICATION_OVERLAY` with the user-granted `SYSTEM_ALERT_WINDOW`, falling back to `TYPE_ACCESSIBILITY_OVERLAY` when it is not granted (**no foreground service**); all counting + locking in Kotlin; personal Play account → closed test with ≥12 testers × 14 continuous days.
 
 Goal of this plan: **the leanest MVP that passes Play review fastest.** Every feature that adds backend, a policy declaration or review surface without helping approval moves to v1.1.
 
@@ -15,7 +15,7 @@ Goal of this plan: **the leanest MVP that passes Play review fastest.** Every fe
 | **Backend in MVP** | None beyond static hosting: signed ruleset JSON + `game_config` on a CDN/Supabase Storage public bucket, RevenueCat, Sentry, PostHog. No Postgres tables. | Zero-server MVP; nothing to pause. |
 | **Social / duels / friend unlock** | v1.1 (needs auth, Realtime, FCM). | Biggest backend chunk; not required for approval. |
 | **Strict lock without friends** | MVP strict lock (S45, M18) unlocks only by: end of schedule/day, or **1 emergency code per week** (scope A.5). Friend unlock (S46, M06, M07) = v1.1. | Keeps the "real lock" USP without a server. |
-| **Overlay** | `TYPE_ACCESSIBILITY_OVERLAY` from the AccessibilityService. S11 (SYSTEM_ALERT_WINDOW) only as fallback after S13-fail — **recommend dropping S11 from MVP entirely** if spike shows overlay works on all 6 test phones (one less sensitive permission). | Fewer permissions = faster review. |
+| **Overlay** | Lock: `TYPE_APPLICATION_OVERLAY` (user-granted "Display over other apps"), so banners and the shade stay above it; `TYPE_ACCESSIBILITY_OVERLAY` is the fallback when it is not granted. Badge: accessibility overlay. See `docs/modules/M04-lock.md`. | Decision by Ahsan: notifications must stay usable while locked. |
 | **N01 persistent counter** | No FGS → no persistent FGS notification. N01 is v1.1 as an *optional* low-priority ongoing notification, off by default. | Avoids FGS-type declaration. |
 | **Accessibility config** | Follow scope: `typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled`, `packageNames` = flagged-on apps only, `canRetrieveWindowContent=true`, GLOBAL_ACTION_BACK/HOME only for lock fallback; no text stored. | Matches the Play Accessibility declaration. |
 | **Out-of-MVP links in design** | S32→S38, S18→S47, S14→S32/S35 entry points are hidden behind remote flags (not "coming soon") in MVP. | Reviewers flag dead-end UI. |
@@ -96,7 +96,7 @@ Days = dev-days for one dev. A = Android/Kotlin dev, B = RN dev.
 - **Native vs JS:** S22/M02/M03/M04 = native Kotlin Views via `TYPE_ACCESSIBILITY_OVERLAY` (fixed dark-violet, theme-independent); LimitEngine, ScheduleEngine (AlarmManager exact-not-required windows), StrictState + weekly emergency code all in Kotlin/Room. Settings screens JS (B, 3 d).
 - **Deps:** M1; M8 entitlement for Pro gating (stub `isPro` until then).
 - **DoD:** lock appears <500 ms after limit reel on 6 phones; always offers "Leave reels" (GLOBAL_ACTION_BACK/HOME fallback); Free never hard-locks (M03 only); strict lock survives app kill/reboot/clear-from-recents; emergency code 1/week enforced.
-- **Security DoD:** lock/strict state only writable in Kotlin; bridge validates intents (cannot clear strict lock from JS/deep link); emergency code generated and rate-limited natively; overlay always has exit; no SYSTEM_ALERT_WINDOW unless fallback kept.
+- **Security DoD:** lock/strict state only writable in Kotlin; bridge validates intents (cannot clear strict lock from JS/deep link); emergency code generated and rate-limited natively; overlay always has exit; SYSTEM_ALERT_WINDOW is user-granted, revocable in Settings, and the lock falls back without it.
 
 ### M5 — Mascot + progression (5 d, MVP)
 - **Screens:** S15 (+S15-zombie), S30 (Level & XP), S31 (Badges), S42 (Shop, 12 cosmetics, coins only).

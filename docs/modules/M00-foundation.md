@@ -23,7 +23,7 @@ Branch: `module/00-foundation`. Tracks the M0 Definition of Done from `docs/MODU
 | `<Mascot>`: static art for all 7 health states + ghost from the design kit mascot sheet (no fallbacks needed) | `src/components/mascot/` |
 | S01 native splash, app icon, adaptive icon; in-app S01 with A01 logo pop + blink; S01-error retry | `assets/`, `app.json`, `src/components/brand/` |
 | Zustand + MMKV (AES-256, key in Android Keystore via expo-secure-store) | `src/storage/`, `src/state/` |
-| `com.algoastics.thumbwell`; allowBackup off, cleartext off, R8 + shrink in release; minimal permissions (SYSTEM_ALERT_WINDOW, storage, mic blocked) | `app.json` |
+| `com.algoastics.thumbwell`; allowBackup off, cleartext off, R8 + shrink in release; minimal permissions (storage and mic blocked; SYSTEM_ALERT_WINDOW is declared by the thumbwell-core plugin for the lock, see M04) | `app.json` |
 | All MVP native libraries installed up front (list below) | `package.json` |
 | `modules/thumbwell-core` local Expo Module skeleton (Android, autolinked) | `modules/thumbwell-core/` |
 | Debug dev-client APK (arm64-v8a) builds from this branch | `thumbwell-builds/thumbwell-m0-debug-v2.apk` (not in repo) |

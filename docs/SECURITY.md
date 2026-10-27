@@ -48,7 +48,7 @@ Target baseline: **OWASP MASVS v2 Level 1 (MASVS-L1)** for every release. MVP is
 - Release: **R8/ProGuard** minify + obfuscation, `debuggable=false`, no `console.log` (babel strip), Hermes bytecode.
 - `usesCleartextTraffic=false`; **network security config**: no user CAs in release, cleartext disabled for all domains.
 - **Cert pinning: not in MVP** (risk of bricking on cert rotation; data is low-sensitivity, rules are signature-verified). Revisit for v1.1 Supabase domain with backup pins.
-- Minimum permissions; audit merged manifest each release (no SYSTEM_ALERT_WINDOW unless S11 fallback kept; no FGS).
+- Minimum permissions; audit merged manifest each release (SYSTEM_ALERT_WINDOW is expected, for the lock window, user-granted and revocable in Settings; no FGS).
 
 ## 9. Deep links
 - App Links for `getbrainling.app` with `assetlinks.json` (autoVerify). Custom scheme only for OAuth callback.

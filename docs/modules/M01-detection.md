@@ -162,8 +162,8 @@ schema JSON, add a migration test. There is no destructive fallback.
 
 ## Release manifest
 
-- No `SYSTEM_ALERT_WINDOW` in release (removed by `plugins/withReleaseBlockedPermissions`; debug
-  keeps it for the RN dev menu).
+- `SYSTEM_ALERT_WINDOW` is declared in every build by the thumbwell-core plugin, for the lock window
+  (see `M04-lock.md`, "Lock window"); it is not blocked in release any more.
 - No foreground service in any build: the plugin removes WorkManager's
   `SystemForegroundService` and `FOREGROUND_SERVICE*` permissions with `tools:node="remove"`.
 - Service: `exported=false`, `permission=BIND_ACCESSIBILITY_SERVICE`.
