@@ -6,6 +6,9 @@ export type ThumbState = 'glowing' | 'happy' | 'meh' | 'tired' | 'fried';
 export const THUMB_STATES: readonly ThumbState[] = ['glowing', 'happy', 'meh', 'tired', 'fried'];
 
 /**
+ * PHASE 1: nothing in the Phase 0 app calls `thumbStateForHealth` or `thumbStateFor`. Phase 0
+ * Home shows one fixed Thumb (S14-P0). Kept, tested and unused until the health bands ship.
+ *
  * Figma "Mascot states" bands on the health score (scope F14 formula): glowing 90 to 100,
  * happy 70 to 89, meh 45 to 69, tired 35 to 44, fried below 35.
  */

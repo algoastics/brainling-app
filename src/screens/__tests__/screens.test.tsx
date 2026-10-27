@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { AppState, Linking, type AppStateStatus } from 'react-native';
 
 import { core, dayCounts, resetCore, runningStatus } from '../../../test/thumbwellCoreMock';
 import { resetRouter, router } from '../../../test/routerMock';
 import { useAppStore } from '@/state/appStore';
 
+import { Thumb } from '@/components/mascot';
 import { resetAppIconCache } from '@/detection';
 
 import { AboutScreen } from '../AboutScreen';
@@ -41,6 +42,8 @@ beforeEach(() => {
 afterEach(() => {
   jest.restoreAllMocks();
 });
+
+type ArtNode = { props: Record<string, unknown>; children: (string | ArtNode)[] };
 
 describe('guide (S07)', () => {
   it('hands back to the disclosure when consent is not logged', async () => {
@@ -95,6 +98,30 @@ describe('home (S14)', () => {
     expect(screen.getByLabelText('YouTube, Shorts today, 3')).toBeTruthy();
     expect(screen.getByLabelText('TikTok, Videos today, 2')).toBeTruthy();
     expect(screen.queryByTestId('paused-banner')).toBeNull();
+  });
+
+  it('shows one fixed "happy" Thumb whatever the count (health bands are Phase 1)', async () => {
+    // The art's own shape data (path `d`, `fill`, `stroke`), so any other pose differs.
+    const art = (node: ArtNode): string =>
+      [node.props.d, node.props.fill, node.props.stroke]
+        .filter((v): v is string => typeof v === 'string')
+        .join('|') + node.children.map((c) => (typeof c === 'string' ? c : art(c))).join('');
+    const thumbArt = () => art(screen.getByLabelText('Thumb, the Thumbwell mascot'));
+    await render(<Thumb pose="happy" width={156} />);
+    const happy = thumbArt();
+    await cleanup();
+    await render(<Thumb pose="fried" width={156} />);
+    expect(thumbArt()).not.toBe(happy);
+    await cleanup();
+    for (const total of [0, 30, 59, 200]) {
+      core.getTodayCounts.mockResolvedValue(dayCounts(total, { instagram: total }));
+      await render(<HomeScreen />);
+      await waitFor(() =>
+        expect(screen.getByTestId('total-count')).toHaveTextContent(String(total)),
+      );
+      expect(thumbArt()).toBe(happy);
+      await cleanup();
+    }
   });
 
   it('draws the installed app icon, and a neutral name tile when the app is not installed', async () => {
@@ -252,8 +279,10 @@ describe('about and lock preview', () => {
       <LockView limit={1} until="04:00" today={1} onLeave={jest.fn()} />,
     );
     expect(screen.getByText("That's 1 reel. Time for a break.")).toBeTruthy();
+    expect(screen.getByText('Today: 1 reel')).toBeTruthy();
     await unmount();
     await render(<LockView limit={0} until="04:00" today={0} onLeave={jest.fn()} />);
     expect(screen.getByText("That's 0 reels. Time for a break.")).toBeTruthy();
+    expect(screen.getByText('Today: 0 reels')).toBeTruthy();
   });
 });
