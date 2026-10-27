@@ -234,11 +234,14 @@ default. Check each on Instagram Reels, YouTube Shorts and TikTok:
 1. Open the reels surface: a sleeping Thumb (half off the right edge, faint) appears. No platform icon.
 2. Swipe to a counted reel: the Thumb pops out, flicks and the count rolls. Swipe again within the
    display time: only the changed digits roll. The count equals that app's count on Home.
-3. After 2 s (default) with no new reel the Thumb settles back to the edge. Bob and blink stop.
+3. After 2 s (default) with no new reel the Thumb goes to sleep: eyes closed, half past the screen edge
+   at about 40% opacity, **and the white count pill stays on screen at about 70% opacity right next
+   to it, still showing the count.** Bob and blink stop and nothing moves while it rests.
+   Awake: the Thumb is fully visible **in front of** the pill's left end, never hidden behind it.
 4. Settings -> Badge display time: try 1 s, 3 s, Always. In Always the bob stops after about 10 s.
-5. Settings -> Hide completely when resting on: the Thumb disappears between counts instead of resting.
+5. Settings -> Hide completely when resting on: the whole badge (Thumb and count) disappears between counts instead of resting. "Always" never rests.
 6. Drag the badge: it lifts, follows the finger and snaps to the nearer edge. Kill and reopen the
-   app: the position is kept. Tap a resting Thumb: it wakes. Tap an awake badge: Thumbwell opens.
+   app: the position is kept. Tap or drag the resting badge (Thumb or pill): it wakes, no roll. Tap an awake badge: Thumbwell opens.
 7. Hidden: Android Settings, Accessibility settings and the uninstall dialog (section I), home screen, another app, DMs inside Instagram, a focused text field or keyboard, counting
    paused (accessibility off or no consent), Floating badge off, and while the lock overlay shows.
 8. Android Settings -> Accessibility -> remove animations (or animator scale 0): the badge fades and
