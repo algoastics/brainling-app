@@ -42,7 +42,7 @@ export const core = {
   addListener: jest.fn(() => ({ remove: jest.fn() })),
 };
 
-let badge: BadgeSettings = { enabled: true, displayTime: '2s', hideWhenResting: false };
+let badge: BadgeSettings = { enabled: true, displayTime: 'always', hideWhenResting: false };
 
 export function resetCore() {
   for (const fn of Object.values(core)) fn.mockReset();
@@ -56,7 +56,7 @@ export function resetCore() {
   }));
   core.getDayStartMinutes.mockResolvedValue(240);
   core.setDayStartMinutes.mockResolvedValue(dayCounts(0));
-  badge = { enabled: true, displayTime: '2s', hideWhenResting: false };
+  badge = { enabled: true, displayTime: 'always', hideWhenResting: false };
   core.getBadgeSettings.mockImplementation(async () => ({ ...badge }));
   core.setBadgeSettings.mockImplementation(async (patch) => {
     badge = { ...badge, ...patch };

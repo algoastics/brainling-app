@@ -35,7 +35,6 @@ class OverlaySafetyPackagesTest {
     "com.lbe.security.miui",
     "com.huawei.systemmanager",
     "com.huawei.android.settings",
-    "com.android.systemui",
   )
 
   @Test fun oppoRealmeVivoPrefixes() = assertMatches(
@@ -68,6 +67,7 @@ class OverlaySafetyPackagesTest {
     "com.android.setting",
     "com.oplusfoo",
     "com.colorosx.app",
+    "com.android.systemui", // transient system windows are a debounced leave, not a safety hide
     "com.android.systemuix",
     "com.android.vending",
     "com.algoastics.thumbwell",

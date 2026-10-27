@@ -1,7 +1,11 @@
 package com.algoastics.thumbwell.core.detection
 
 import android.accessibilityservice.AccessibilityService
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
@@ -55,14 +59,28 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       if (!prefs.badgeSettings().enabled) hideBadge() else badge?.settingsChanged()
     }
   }
+  private var screenOffRegistered = false
+  private val foreground = BadgeForeground()
+  private val screenOff = object : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+      hideBadge()
+    }
+  }
   private val badgeWatch = object : Runnable {
     override fun run() {
       val pkg = badgePackage ?: return
       // Events only arrive from target apps, so leaving to another app is noticed here.
       val activePkg = rootInActiveWindow?.packageName?.toString()
       if (guardSafetyWindow(activePkg)) return
-      if (activePkg != pkg) hideBadge()
-      else handler.postDelayed(this, BADGE_WATCH_MS)
+      // One sample of another window (system UI, a popup, a null root) must not hide the badge
+      // while reels are scrolling: it hides only after another window stays in front.
+      when (foreground.check(activePkg, pkg, SystemClock.elapsedRealtime())) {
+        BadgeForeground.Verdict.HIDE, BadgeForeground.Verdict.HIDE_NOW -> {
+          debugLog("badge hide: $pkg left the foreground (active=$activePkg)")
+          hideBadge()
+        }
+        else -> handler.postDelayed(this, BADGE_WATCH_MS)
+      }
     }
   }
 
@@ -106,6 +124,14 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     limitEngine = LimitEngine.get(this)
     lock = LockController(this, limitEngine, prefs, ::isOnReels)
     lock.start()
+    // Screen off: remove the badge and every timer it runs (blink, bob). It returns on the next event.
+    val screenOffFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+    if (Build.VERSION.SDK_INT >= 33) {
+      registerReceiver(screenOff, screenOffFilter, Context.RECEIVER_NOT_EXPORTED)
+    } else {
+      registerReceiver(screenOff, screenOffFilter)
+    }
+    screenOffRegistered = true
     if (FeatureFlags.countBadgeEnabled) {
       badge = CountBadge(this, prefs, ::openThumbwell)
       prefs.addBadgeListener(badgeSettingsListener)
@@ -273,6 +299,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       return
     }
     val wasShown = pill.isShown && badgePackage == packageName
+    foreground.reset()
     badgePackage = packageName
     badgeAppKey = appKey
     pill.show(todayCounts[appKey] ?: 0)
@@ -531,6 +558,14 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     if (!connected) return
     connected = false
     hideBadge()
+    if (screenOffRegistered) {
+      screenOffRegistered = false
+      try {
+        unregisterReceiver(screenOff)
+      } catch (e: IllegalArgumentException) {
+        Log.w(TAG, "screen receiver was not registered")
+      }
+    }
     if (::lock.isInitialized) lock.stop()
     if (::counts.isInitialized) {
       val now = SystemClock.elapsedRealtime()
@@ -562,7 +597,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     private const val DAY_CHECK_MS = 15_000L
     private const val TAG = "ThumbwellDetect"
     private const val THROTTLE_MS = 250L
-    private const val BADGE_WATCH_MS = 250L
+    private const val BADGE_WATCH_MS = 500L
 
     /** Set by "delete my data": the service drops its in-memory players on the next event. */
     @Volatile private var clearRequested = false

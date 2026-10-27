@@ -30,8 +30,8 @@ object OverlaySafetyPackages {
     "com.huawei.systemmanager",
     // TalkBack and the Accessibility Menu.
     "com.google.android.marvin.talkback",
-    // Notification shade, quick settings, accessibility shortcut and system confirmation dialogs.
-    "com.android.systemui",
+    // Not com.android.systemui: transient SystemUI windows (volume panel, shade) pass in front of a
+    // reels app while it scrolls and must not make the badge vanish. They hide it as a normal leave.
   )
 
   /** Prefix patterns. Each ends with a dot, so "com.oplus." never matches "com.oplusfoo". */

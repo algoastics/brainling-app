@@ -231,7 +231,7 @@ describe('settings (S43-P0)', () => {
     expect(await screen.findByText('Floating badge')).toBeTruthy();
     expect(screen.getByText('Shows today’s count over Instagram, YouTube and TikTok')).toBeTruthy();
     expect(screen.getByTestId('row-badge-switch').props.value).toBe(true);
-    expect(screen.getByRole('button', { name: 'Badge display time, 2 s' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Badge display time, Always' })).toBeTruthy();
     expect(screen.getByText('Hide completely when resting')).toBeTruthy();
     expect(screen.getByTestId('row-badge-hide-switch').props.value).toBe(false);
   });
@@ -255,12 +255,10 @@ describe('settings (S43-P0)', () => {
         'How long the Thumb stays awake after a counted reel, before it settles to rest.',
       ),
     ).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('badge-time-always'));
+    await fireEvent.press(screen.getByTestId('badge-time-3s'));
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
-    await waitFor(() =>
-      expect(core.setBadgeSettings).toHaveBeenCalledWith({ displayTime: 'always' }),
-    );
-    expect(await screen.findByRole('button', { name: 'Badge display time, Always' })).toBeTruthy();
+    await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ displayTime: '3s' }));
+    expect(await screen.findByRole('button', { name: 'Badge display time, 3 s' })).toBeTruthy();
   });
 
   it('sends the user to the disclosure to fix paused counting', async () => {

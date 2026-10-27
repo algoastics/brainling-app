@@ -128,7 +128,7 @@ class ThumbwellCoreModule : Module() {
 
     /**
      * Floating badge settings (S43-P0): `{enabled, displayTime: '1s'|'2s'|'3s'|'always',
-     * hideWhenResting}`. Defaults: on, '2s', false. Stored natively; the badge reads them live.
+     * hideWhenResting}`. Defaults: on, 'always', false. Stored natively; the badge reads them live.
      */
     AsyncFunction("getBadgeSettings") {
       badgeMap(CorePrefs.get(context).badgeSettings())

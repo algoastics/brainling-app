@@ -3,7 +3,7 @@ import { NativeModule, requireNativeModule } from 'expo';
 /** How long the floating Thumb stays awake after a counted reel before it rests. */
 export type BadgeDisplayTime = '1s' | '2s' | '3s' | 'always';
 
-/** Floating Thumb badge settings (S43-P0), stored natively. Defaults: on, '2s', false. */
+/** Floating Thumb badge settings (S43-P0), stored natively. Defaults: on, 'always', false. */
 export type BadgeSettings = {
   /** The "Floating badge" switch. */
   enabled: boolean;

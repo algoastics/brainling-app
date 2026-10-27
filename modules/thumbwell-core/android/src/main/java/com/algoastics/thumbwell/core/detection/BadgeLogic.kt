@@ -7,12 +7,16 @@ enum class BadgeDisplayTime(val key: String, val ms: Long?) {
   ONE("1s", 1_000L),
   TWO("2s", 2_000L),
   THREE("3s", 3_000L),
-  /** Never rests (the bob still stops after [BadgeTiming.BOB_STOP_ALWAYS_MS]). */
+  /**
+   * Never rests: awake and visible while a tracked app is in front. The bob stops after
+   * [BadgeTiming.BOB_STOP_ALWAYS_MS]; the blink continues (3 to 5 s).
+   */
   ALWAYS("always", null),
   ;
 
   companion object {
-    val DEFAULT = TWO
+    /** PM decision: the count stays visible the whole time a tracked app is in front. */
+    val DEFAULT = ALWAYS
     fun fromKey(key: String?): BadgeDisplayTime = entries.firstOrNull { it.key == key } ?: DEFAULT
   }
 }
@@ -63,6 +67,9 @@ object BadgeTiming {
   const val FADE_MS = 150L
   const val REDUCED_FADE_MS = 120L
   const val LEAVE_DELAY_MS = 600L
+
+  /** A non-tracked window must stay in front this long before the badge hides (transient windows). */
+  const val LEAVE_FOREGROUND_DEBOUNCE_MS = 400L
   const val SNAP_MS = 220L
 
   /** Next blink after 3000 + nextInt(2001) ms; [jitter] is the random draw in 0 until 2001. */
@@ -73,6 +80,46 @@ object BadgeTiming {
 object ReducedMotion {
   fun isReduced(animatorScale: Float, transitionScale: Float): Boolean =
     animatorScale <= 0f || transitionScale <= 0f
+}
+
+/**
+ * Decides, from each foreground-package sample, whether the badge hides. One sample of another
+ * package (a system window, the app's own popup, a null root while the screen redraws) must not
+ * hide it: that is what made the badge vanish and come back while scrolling. Rules:
+ * - a safety package ([OverlaySafetyPackages]) hides at once;
+ * - the tracked app in front keeps it;
+ * - anything else hides only after staying in front for [debounceMs];
+ * - one hide per show: [Verdict.HIDE] / [Verdict.HIDE_NOW] come once, then [Verdict.ALREADY_HIDDEN]
+ *   until [reset] (called when the badge is shown again).
+ */
+class BadgeForeground(private val debounceMs: Long = BadgeTiming.LEAVE_FOREGROUND_DEBOUNCE_MS) {
+  enum class Verdict { KEEP, HIDE_NOW, HIDE, ALREADY_HIDDEN }
+
+  private var awaySince: Long? = null
+  private var hidden = false
+
+  fun reset() {
+    awaySince = null
+    hidden = false
+  }
+
+  fun check(activePackage: String?, trackedPackage: String, nowMs: Long): Verdict {
+    if (hidden) return Verdict.ALREADY_HIDDEN
+    if (OverlaySafetyPackages.matches(activePackage)) {
+      hidden = true
+      awaySince = null
+      return Verdict.HIDE_NOW
+    }
+    if (activePackage == trackedPackage) {
+      awaySince = null
+      return Verdict.KEEP
+    }
+    val since = awaySince ?: nowMs.also { awaySince = it }
+    if (nowMs - since < debounceMs) return Verdict.KEEP
+    hidden = true
+    awaySince = null
+    return Verdict.HIDE
+  }
 }
 
 /** When the badge may be on screen at all. Pure; the service feeds it the live facts. */
@@ -221,7 +268,13 @@ class BadgeMachine(settings: BadgeSettings = BadgeSettings()) {
       }
       if (mode == Mode.GONE) {
         shownCount = count
-        if (!settings.hideWhenResting) {
+        if (settings.displayTime == BadgeDisplayTime.ALWAYS) {
+          // Always: no resting. Arriving on the surface pops the Thumb out awake with the count.
+          mode = Mode.AWAKE
+          out.add(BadgeAction.Add(count))
+          out.add(BadgeAction.PopOut(flick = !reducedMotion, fromGone = true, reduced = reducedMotion))
+          out.addAll(awakeTail())
+        } else if (!settings.hideWhenResting) {
           mode = Mode.RESTING
           out.add(BadgeAction.Add(count))
           out.add(BadgeAction.FadeInResting)
@@ -349,7 +402,18 @@ class BadgeMachine(settings: BadgeSettings = BadgeSettings()) {
         )
       }
     }
-    if (next.hideWhenResting != prev.hideWhenResting && visible) {
+    if (next.displayTime == BadgeDisplayTime.ALWAYS && prev.displayTime != BadgeDisplayTime.ALWAYS && visible) {
+      // Switched to Always while resting or hidden: wake it and keep it awake.
+      if (mode == Mode.RESTING) {
+        out.addAll(wake())
+      } else if (mode == Mode.GONE) {
+        mode = Mode.AWAKE
+        out.add(BadgeAction.Add(shownCount))
+        out.add(BadgeAction.PopOut(flick = !reducedMotion, fromGone = true, reduced = reducedMotion))
+        out.addAll(awakeTail())
+      }
+    }
+    if (next.hideWhenResting != prev.hideWhenResting && visible && next.displayTime != BadgeDisplayTime.ALWAYS) {
       if (next.hideWhenResting && mode == Mode.RESTING) {
         mode = Mode.GONE
         out.add(BadgeAction.FadeOutRemove)
