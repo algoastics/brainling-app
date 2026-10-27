@@ -15,6 +15,8 @@ import com.algoastics.thumbwell.core.data.CountRepository
 import com.algoastics.thumbwell.core.data.CountedReel
 import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.health.HealthMonitor
+import com.algoastics.thumbwell.core.lock.LimitEngine
+import com.algoastics.thumbwell.core.lock.LockController
 import com.algoastics.thumbwell.core.rules.AppRule
 import com.algoastics.thumbwell.core.rules.RuleSet
 import com.algoastics.thumbwell.core.rules.RulesManager
@@ -29,6 +31,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   private lateinit var counts: CountRepository
   private lateinit var prefs: CorePrefs
   private lateinit var health: HealthMonitor
+  private lateinit var limitEngine: LimitEngine
+  private lateinit var lock: LockController
   private var rulesManager: RulesManager? = null
   private var rules: RuleSet? = null
   // Process-wide: Android rebinds the service (another accessibility client or UiAutomation
@@ -90,6 +94,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     loadSeenStates()
     health = HealthMonitor.get(this)
     health.onServiceConnected()
+    limitEngine = LimitEngine.get(this)
+    lock = LockController(this, limitEngine, prefs, ::isOnReels)
+    lock.start()
     if (FeatureFlags.countBadgeEnabled && BuildConfig.TESTER_MODE) {
       badge = CountBadge(this)
       counts.addListener(countsListener)
@@ -135,6 +142,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     sessionDay = day
     if (previous != null && previous != day) {
       Log.i(TAG, "day rollover: seen state cleared")
+      limitEngine.refresh()
       sessions.values.forEach { it.reels.clearHistory() }
       PENDING_STATES.clear()
       counts.clearSeenStates()
@@ -174,6 +182,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       clearRequested = false
       sessions.clear()
       PENDING_STATES.clear()
+      if (::limitEngine.isInitialized) limitEngine.refresh()
     }
     val active = rules ?: return
     val packageName = event.packageName?.toString() ?: return
@@ -185,6 +194,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
         val verdict = if (session.onSurface) onScrolled(session, rule, event) else "off-surface"
+        // Swiping to the next item releases a lock that waits for it (see LockController).
+        if (verdict == "pager" || verdict == "movement") lock.onSwipe(packageName)
         DetectionDebug.logEvent(this, packageName, event, verdict)
       }
       AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
@@ -285,6 +296,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     val surface = root?.let { NodeInspector.findSurface(it, rule, packageName) }
 
     if (root == null || surface == null) {
+      lock.onSurfaceGone(packageName)
       if (badgePackage == packageName) hideBadge()
       val exit = when {
         root != null -> ReelSession.Exit.CLOSED
@@ -305,6 +317,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     session.retryStep = Int.MAX_VALUE
     showBadge(packageName, rule.key)
     session.onSurface = true
+    // The limit lock covers the surface: reels seen under it are not counted (Room is untouched).
+    if (lock.onSurface(packageName, surface.bounds, root)) return
     // Re-selected on every evaluation; a stale or invisible node is never kept.
     val pager = NodeInspector.findPager(root, rule, packageName, surface)
       ?.takeIf { it.node.refresh() && it.node.isVisibleToUser }
@@ -419,6 +433,14 @@ class ThumbwellAccessibilityService : AccessibilityService() {
 
   override fun onInterrupt() {
     hideBadge()
+    if (::lock.isInitialized) lock.hide()
+  }
+
+  /** True while [packageName] is the foreground app with a reels surface on screen. */
+  private fun isOnReels(packageName: String): Boolean {
+    val rule = rules?.ruleFor(packageName) ?: return false
+    val root = rootInActiveWindow?.takeIf { it.packageName?.toString() == packageName } ?: return false
+    return NodeInspector.findSurface(root, rule, packageName) != null
   }
 
   override fun onUnbind(intent: Intent?): Boolean {
@@ -435,6 +457,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     if (!connected) return
     connected = false
     hideBadge()
+    if (::lock.isInitialized) lock.stop()
     if (::counts.isInitialized) {
       val now = SystemClock.elapsedRealtime()
       sessions.forEach { (pkg, s) -> closeDwell(s, now); persist(pkg, s) }

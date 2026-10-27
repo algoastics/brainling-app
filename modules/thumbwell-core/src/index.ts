@@ -68,6 +68,18 @@ export type DailyLimit = {
   pendingFromDay: string | null;
 };
 
+/**
+ * The limit lock (F06, S22-P0), computed natively next to the accessibility service. `locked` is
+ * true once today's total reaches the effective limit (a limit of 0 is locked from the start) and
+ * until the next day start; `lockedUntilMs` is that moment, or null while not locked.
+ */
+export type LockState = {
+  locked: boolean;
+  limit: number;
+  total: number;
+  lockedUntilMs: number | null;
+};
+
 export type ServiceState = 'ok' | 'disabled' | 'not_running';
 
 export type HealthStatus = {
@@ -131,6 +143,8 @@ export type DebugState = {
 type ThumbwellCoreEvents = {
   onCountChange: (counts: DayCounts) => void;
   onHealthChange: (status: HealthStatus) => void;
+  /** Fires when the lock state changes (limit reached, limit or day start changed, day rolled). */
+  lockStateChanged: (state: LockState) => void;
 };
 
 declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
@@ -159,6 +173,8 @@ declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
   getDailyLimit(): Promise<DailyLimit>;
   /** Sets the limit (0 to 1000) with the lower-now, raise-tomorrow rule; returns the new state. */
   setDailyLimit(value: number): Promise<DailyLimit>;
+  /** The limit lock state, recomputed from Room and the limit rule at call time. */
+  getLockState(): Promise<LockState>;
   /** Deletes all counts, events, seen state, consent, limit and day start. */
   clearAllData(): Promise<void>;
   getHealth(): Promise<HealthStatus>;

@@ -12,6 +12,8 @@ import com.algoastics.thumbwell.core.detection.DetectionDebug
 import com.algoastics.thumbwell.core.detection.ThumbwellAccessibilityService
 import com.algoastics.thumbwell.core.health.HealthMonitor
 import com.algoastics.thumbwell.core.health.HealthStatus
+import com.algoastics.thumbwell.core.lock.LimitEngine
+import com.algoastics.thumbwell.core.lock.LockState
 import com.algoastics.thumbwell.core.rules.RulesManager
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.functions.Queues
@@ -35,10 +37,14 @@ class ThumbwellCoreModule : Module() {
     sendEvent(HEALTH_EVENT, status.toMap())
   }
 
+  private val lockListener: (LockState) -> Unit = { state ->
+    sendEvent(LOCK_EVENT, state.toMap())
+  }
+
   override fun definition() = ModuleDefinition {
     Name("ThumbwellCore")
 
-    Events(COUNT_EVENT, HEALTH_EVENT)
+    Events(COUNT_EVENT, HEALTH_EVENT, LOCK_EVENT)
 
     OnCreate {
       appContext.reactContext?.let(ThumbwellWork::onAppOpen)
@@ -84,6 +90,7 @@ class ThumbwellCoreModule : Module() {
 
     AsyncFunction("setDayStartMinutes") { minutes: Int ->
       CorePrefs.get(context).setDayStartMinutes(minutes)
+      LimitEngine.get(context).refreshBlocking()
       CountRepository.get(context).today().toMap()
     }
 
@@ -111,7 +118,10 @@ class ThumbwellCoreModule : Module() {
       val start = prefs.dayStartMinutes()
       val today = prefs.currentDayKey(now, zone)
       val next = ThumbwellDay.key(ThumbwellDay.nextCloseMs(now, zone, start), zone, start)
-      prefs.setDailyLimit(value, today, next).toMap()
+      val limit = prefs.setDailyLimit(value, today, next)
+      // Lowering applies now, so the lock may start (or, never, end) right away.
+      LimitEngine.get(context).refreshBlocking()
+      limit.toMap()
     }
 
     /** Deletes all counts, events, ad tallies, seen state, consent, limit and day start. */
@@ -119,6 +129,15 @@ class ThumbwellCoreModule : Module() {
       ThumbwellAccessibilityService.requestClear()
       CountRepository.get(context).clearAll()
       CorePrefs.get(context).clearAll()
+      LimitEngine.get(context).refreshBlocking()
+    }
+
+    /**
+     * The limit lock: `{locked, limit, total, lockedUntilMs}` (`lockedUntilMs` is null when not
+     * locked). Computed natively; the overlay itself never depends on JS.
+     */
+    AsyncFunction("getLockState") {
+      LimitEngine.get(context).refreshBlocking().toMap()
     }
 
     AsyncFunction("getHealth") {
@@ -149,6 +168,14 @@ class ThumbwellCoreModule : Module() {
       CountRepository.get(context).removeListener(countListener)
     }
 
+    OnStartObserving(LOCK_EVENT) {
+      LimitEngine.get(context).addListener(lockListener)
+    }
+
+    OnStopObserving(LOCK_EVENT) {
+      LimitEngine.get(context).removeListener(lockListener)
+    }
+
     OnStartObserving(HEALTH_EVENT) {
       HealthMonitor.get(context).addListener(healthListener)
     }
@@ -161,6 +188,7 @@ class ThumbwellCoreModule : Module() {
   companion object {
     private const val COUNT_EVENT = "onCountChange"
     private const val HEALTH_EVENT = "onHealthChange"
+    private const val LOCK_EVENT = "lockStateChanged"
     private const val DEFAULT_HISTORY_DAYS = 30
     private const val DEFAULT_ICON_PX = 96
   }
