@@ -152,6 +152,27 @@ object OverlayGuard {
 }
 
 /**
+ * The ONE window of the lock: the [cover] drawn by the lock plus a see-through strip above it
+ * that absorbs touches, so a reel cannot be scrolled through the free top strip. [window] runs from
+ * the bottom of the status bar (or the cover's own top when that is higher) to the cover's bottom;
+ * the status bar area stays out of it, because SystemUI's own window already receives touches there
+ * (it shows no reel input) and the notification shade pull-down must keep working. [strip] is the
+ * height of the absorbing part at the top of [window]. One window means the strip exists exactly
+ * while the lock exists: no second add or remove path to leak.
+ */
+data class LockFrame(val window: Box, val strip: Int) {
+  /** The cover part of the window, in screen coordinates. */
+  val cover: Box get() = Box(window.left, window.top + strip, window.right, window.bottom)
+
+  companion object {
+    fun of(cover: Box, statusBarPx: Int): LockFrame {
+      val top = minOf(cover.top, maxOf(statusBarPx, 0))
+      return LockFrame(Box(cover.left, top, cover.right, cover.bottom), cover.top - top)
+    }
+  }
+}
+
+/**
  * The "Leave reels" button as a small state machine (LOCK-B). First press: tap the app's Home tab
  * when it has one ([Action.TAB]), else BACK. If after [TAB_CHECK_MS] the user is still on a reels
  * surface (tab not found or not clickable), BACK is tried. If after [BACK_CHECK_MS] the user is

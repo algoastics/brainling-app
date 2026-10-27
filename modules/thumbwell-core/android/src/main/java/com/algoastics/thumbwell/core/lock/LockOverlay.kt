@@ -1,6 +1,7 @@
 package com.algoastics.thumbwell.core.lock
 
 import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.graphics.Typeface
@@ -26,8 +27,8 @@ data class LockContent(val limit: Int, val today: Int, val untilLabel: String)
 
 /**
  * S22-P0 lock screen drawn by the accessibility service as a TYPE_ACCESSIBILITY_OVERLAY window
- * (no SYSTEM_ALERT_WINDOW). Covers the [Box] it is given, is touchable (the button works, swipes
- * underneath are blocked) but never takes focus, so the system BACK gesture and the keyboard
+ * (no SYSTEM_ALERT_WINDOW). Covers the [Box] it is given plus a see-through, touch-absorbing strip above it (one
+ * window, see [LockFrame]); it is touchable (the button works, every swipe underneath is blocked) but never takes focus, so the system BACK gesture and the keyboard
  * keep working. Main thread only; [show] and [hide] are idempotent. Colours and strings are
  * resources (values and values-night), matching the Figma light and dark frames. The mascot is
  * the fried Thumb. Fonts are the system sans (Nunito and Inter are loaded by JS only).
@@ -36,7 +37,11 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
   private val windowManager = service.getSystemService(WindowManager::class.java)
   private val density = service.resources.displayMetrics.density
   private var root: View? = null
-  private var shownBox: Box? = null
+  private var shownFrame: LockFrame? = null
+  private val statusBarPx: Int = run {
+    val id = service.resources.getIdentifier("status_bar_height", "dimen", "android")
+    if (id > 0) service.resources.getDimensionPixelSize(id) else 0
+  }
   private var shownContent: LockContent? = null
   private var title: TextView? = null
   private var body: TextView? = null
@@ -46,13 +51,14 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
   val isShown: Boolean get() = root != null
 
   fun show(box: Box, content: LockContent) {
+    val frame = LockFrame.of(box, if (statusBarPx > 0) statusBarPx else dp(STATUS_BAR_FALLBACK_DP))
     val existing = root
     if (existing != null) {
-      if (box != shownBox) {
+      if (frame != shownFrame) {
         try {
-          windowManager.updateViewLayout(existing, params(box))
-          shape(existing, box)
-          shownBox = box
+          windowManager.updateViewLayout(existing, params(frame))
+          arrange(existing, frame)
+          shownFrame = frame
         } catch (e: Exception) {
           Log.w(TAG, "overlay relayout failed: ${e.javaClass.simpleName}")
           hide()
@@ -62,16 +68,16 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       bind(content)
       return
     }
-    val view = build(box)
+    val view = build(frame)
     try {
-      windowManager.addView(view, params(box))
+      windowManager.addView(view, params(frame))
     } catch (e: Exception) {
       // Never leave a half-added view behind; the lock simply does not show this time.
       Log.w(TAG, "overlay add failed: ${e.javaClass.simpleName}")
       return
     }
     root = view
-    shownBox = box
+    shownFrame = frame
     bind(content)
   }
 
@@ -94,7 +100,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
   fun hide() {
     val view = root ?: return
     root = null
-    shownBox = null
+    shownFrame = null
     shownContent = null
     title = null
     body = null
@@ -107,34 +113,39 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     }
   }
 
-  private fun params(box: Box): WindowManager.LayoutParams =
+  private fun params(frame: LockFrame): WindowManager.LayoutParams =
     WindowManager.LayoutParams(
-      box.width,
-      box.height,
+      frame.window.width,
+      frame.window.height,
       WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-      // No FLAG_LAYOUT_NO_LIMITS: the window never extends past the screen or up into the free top
-      // strip (OverlayGuard.topBandPx), where heads-up notification banners show. A window of
-      // this type is drawn ABOVE the status bar and heads-up banners (layer 31 against 15 and 17),
-      // so the strip is the only way to keep a banner visible.
+      // No FLAG_LAYOUT_NO_LIMITS and no FLAG_NOT_TOUCHABLE: the window starts below the status bar
+      // and every touch in it, including the see-through strip at the top, is absorbed. A window of
+      // this type is drawn ABOVE the status bar and heads-up banners (layer 31 against 15 and 17):
+      // a banner is visible through the transparent strip, but a touch on it lands on this window,
+      // not on the banner.
       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
       PixelFormat.TRANSLUCENT,
     ).apply {
       gravity = Gravity.TOP or Gravity.START
-      x = box.left
-      y = box.top
+      x = frame.window.left
+      y = frame.window.top
       title = "Thumbwell lock"
       // The box is in screen coordinates already; no system bar inset may move or shrink it.
       if (Build.VERSION.SDK_INT >= 30) setFitInsetsTypes(0)
     }
 
   /**
-   * Square when the lock fills the reels edge to edge. When a free strip is left above it (for
-   * banners) the top corners are rounded, so the strip reads as a deliberate edge, not a gap.
+   * Positions the cover below the see-through strip and shapes it. Square when the lock fills the
+   * reels edge to edge. When a free strip is left above it the top corners are rounded, so the
+   * strip reads as a deliberate edge, not a gap.
    */
-  private fun shape(view: View, box: Box) {
-    val radius = if (box.top > 0) dp(TOP_RADIUS_DP).toFloat() else 0f
-    view.background = GradientDrawable().apply {
+  private fun arrange(view: View, frame: LockFrame) {
+    val cover = view.findViewWithTag<View>(COVER_TAG) ?: return
+    (cover.layoutParams as FrameLayout.LayoutParams).topMargin = frame.strip
+    cover.requestLayout()
+    val radius = if (frame.cover.top > 0) dp(TOP_RADIUS_DP).toFloat() else 0f
+    cover.background = GradientDrawable().apply {
       setColor(color(R.color.thumbwell_lock_bg))
       cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
     }
@@ -144,8 +155,13 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
 
   private fun color(id: Int): Int = service.getColor(id)
 
-  private fun build(box: Box): View {
+  @SuppressLint("ClickableViewAccessibility")
+  private fun build(lockFrame: LockFrame): View {
+    val box = lockFrame.cover
     val frame = FrameLayout(service).apply {
+      // The window's own surface is transparent; the cover below draws the colour. Every touch
+      // that no child handles (the strip, the cover's empty areas) ends here and is consumed.
+      setOnTouchListener { _, _ -> true }
       clipChildren = false
       clipToPadding = false
       importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -153,6 +169,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
         accessibilityPaneTitle = service.getString(R.string.thumbwell_lock_chip)
       }
     }
+    val cover = FrameLayout(service).apply { tag = COVER_TAG }
     val column = LinearLayout(service).apply {
       orientation = LinearLayout.VERTICAL
       setPadding(dp(24), dp(32), dp(24), dp(32))
@@ -212,13 +229,14 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     val todayView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_today, 0, 0), 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
       R.color.thumbwell_lock_muted_text)
     column.addView(todayView, spaced(12))
-    frame.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+    cover.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+    frame.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
     title = titleView
     body = bodyView
     today = todayView
     leave = button
-    shape(frame, box)
+    arrange(frame, lockFrame)
     return frame
   }
 
@@ -253,5 +271,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
   private companion object {
     const val TAG = "ThumbwellLock"
     const val TOP_RADIUS_DP = 20
+    const val COVER_TAG = "thumbwell-lock-cover"
+    const val STATUS_BAR_FALLBACK_DP = OverlayGuard.STATUS_BAR_FALLBACK_DP
   }
 }
