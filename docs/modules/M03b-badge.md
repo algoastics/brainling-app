@@ -5,7 +5,7 @@ Native, inside the accessibility service process. Code:
 
 | File | Role |
 |---|---|
-| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restShift`: Figma A42 rest offsets), `BadgeRest` (resting look constants), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
+| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restShift`: Figma A42 rest offsets), `BadgeRest` (resting look constants, `NODE_ALPHA` 0.7), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
 | `CountBadge.kt` | One `TYPE_ACCESSIBILITY_OVERLAY` window. Turns `BadgeAction`s into framework animators and timers on one main `Handler`. Drag, snap, tap. |
 | `OdometerView.kt` | The count: one clipped slot per character, rolling digits. |
 | `ThumbwellAccessibilityService.kt` | Decides the gate (`updateBadge`), feeds the count, hides on lock / input / surface gone. |
@@ -28,8 +28,9 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
   stops after 10 s, the blink continues. A leave hides it after a 400 ms debounce (`BadgeForeground`), so
   a transient window never hides it while scrolling; a safety package hides at once.
 - After the display time (1 s, 2 s, 3 s) the Thumb settles (240 ms): it sleeps (eyes
-  closed, 0.93 scale, 40% opacity) half past the screen edge, and **the count pill stays on screen
-  at 70% opacity** (PM decision, option B; the original spec hid the pill). Geometry is the Figma
+  closed, 0.93 scale) half past the screen edge, and **the count pill stays on screen**, the whole
+  resting node (Thumb and pill) at **70% opacity** as one group (PM decision, option B; the original
+  spec hid the pill and dimmed the Thumb to 40%). Geometry is the Figma
   A42 frames (57:977, 57:996, rule 74:1952): the pill never changes size or position; the Thumb
   slides ONTO the pill's edge end (about +63 dp on the right edge, -21 dp on the left, centre on the
   screen edge, centred vertically on the pill) over the pill's 46 dp socket, in front of it; on the
@@ -58,7 +59,7 @@ at once. Only the foreground package name is read.
 Stored in `CorePrefs`: `badge_enabled` (default true), `badge_display_time` (`1s`/`2s`/`3s`/`always`,
 default `always`), `badge_hide_when_resting` (false), `badge_side`, `badge_y_dp`.
 JS (`thumbwell-core`): `getBadgeSettings()` and `setBadgeSettings(patch)` (typed `BadgeSettings`).
-S43-P0 rows: "Floating badge", "Badge display time" (chips dialog), "Hide completely when resting".
+S43-P0 rows: "Floating badge", "Badge display time" (chips dialog with a "Default: Always" caption), "Hide completely when resting" (dimmed and disabled while the time is Always).
 `FeatureFlags.countBadgeEnabled` is on; `THUMBWELL_TESTER_MODE` no longer gates the badge.
 
 ## Lifecycle

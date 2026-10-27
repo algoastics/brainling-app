@@ -39,7 +39,7 @@ import java.util.Random
  *
  * Two window layouts, switched once per mode (never per frame): awake (pill and Thumb, pill flush
  * with the edge it is snapped to; the Thumb sits in front of the pill's left socket) and resting
- * (the count pill at [BadgeRest.PILL_ALPHA] with the sleeping Thumb on its edge end, half past the screen
+ * (the whole node at [BadgeRest.NODE_ALPHA] with the sleeping Thumb on its edge end, half past the screen
  * edge; [BadgeRest.PILL_VISIBLE] false gives the Thumb alone). Nothing animates or has a timer
  * while resting. The window is touchable but never focusable.
  */
@@ -172,7 +172,6 @@ class CountBadge(
       gravity = Gravity.CENTER_VERTICAL
       setPadding(dp(46f), 0, dp(16f), 0)
       elevation = dp(PILL_ELEVATION).toFloat()
-      alpha = 0f
       addView(counter, LinearLayout.LayoutParams(-2, -2))
     }
     val art = ImageView(service).apply {
@@ -184,7 +183,6 @@ class CountBadge(
       addView(art, FrameLayout.LayoutParams(-1, -1))
       scaleX = REST_SCALE
       scaleY = REST_SCALE
-      alpha = 0f
       // Android draws by elevation first and child order second. The pill has an elevation, so the
       // Thumb needs a higher one or it is drawn BEHIND the pill (device bug, M3b). Keep it above
       // every pill elevation, including the lifted one while dragging.
@@ -192,6 +190,8 @@ class CountBadge(
     }
     val holder = FrameLayout(service).apply {
       clipChildren = false
+      // The group alpha: 0.7 for the whole resting node, 1 awake (Thumb and pill fade as one).
+      alpha = 0f
       addView(capsule, FrameLayout.LayoutParams(-2, dp(PILL_H)))
       addView(box, FrameLayout.LayoutParams(dp(THUMB_W), dp(THUMB_H)))
     }
@@ -315,7 +315,6 @@ class CountBadge(
   private fun layoutResting(commit: Boolean) {
     restingLayout = true
     pill?.visibility = if (BadgeRest.PILL_VISIBLE) View.VISIBLE else View.INVISIBLE
-    pill?.alpha = restPillAlpha()
     applyGeometry(awakeGeometry(), commit)
     applyRestTransforms()
   }
@@ -328,17 +327,15 @@ class CountBadge(
     )
   }
 
-  /** Puts the Thumb, its scale and alpha, the count and the pill in the A42 end state. */
+  /** Puts the Thumb, its scale, the count and the pill in the A42 end state (alpha is the group's). */
   private fun applyRestTransforms() {
     val box = thumbBox ?: return
     val shift = restShift()
     box.translationX = shift.thumbDx; box.translationY = shift.thumbDy
-    box.scaleX = REST_SCALE; box.scaleY = REST_SCALE; box.alpha = REST_ALPHA
+    box.scaleX = REST_SCALE; box.scaleY = REST_SCALE
     odometer?.translationX = shift.countDx
     pill?.translationX = 0f
   }
-
-  private fun restPillAlpha(): Float = if (BadgeRest.PILL_VISIBLE) BadgeRest.PILL_ALPHA else 0f
 
   private fun layoutAwake(commit: Boolean) {
     restingLayout = false
@@ -390,18 +387,12 @@ class CountBadge(
   private fun setEyes(res: Int) = thumb?.setImageResource(res)
 
   private fun fadeInResting() {
-    val box = thumbBox ?: return
-    val capsule = pill
+    val group = content ?: return
     if (machine.reducedMotion) {
-      box.alpha = REST_ALPHA
-      capsule?.alpha = restPillAlpha()
+      group.alpha = REST_ALPHA
       return
     }
-    val ease = PathInterpolator(0.4f, 0f, 0.2f, 1f)
-    animate(box, View.ALPHA, REST_ALPHA, BadgeTiming.FADE_MS, ease, from = 0f)
-    if (capsule != null && BadgeRest.PILL_VISIBLE) {
-      animate(capsule, View.ALPHA, BadgeRest.PILL_ALPHA, BadgeTiming.FADE_MS, ease, from = 0f)
-    }
+    animate(group, View.ALPHA, REST_ALPHA, BadgeTiming.FADE_MS, PathInterpolator(0.4f, 0f, 0.2f, 1f), from = 0f)
   }
 
   /** A40a pop-out and A40b flick. */
@@ -413,19 +404,23 @@ class CountBadge(
     val shift = if (a.fromGone || wasResting) restShift() else null
     val delta = (shift?.thumbDx ?: 0f) to (shift?.thumbDy ?: 0f)
     val countDx = shift?.countDx ?: 0f
-    val pillStartAlpha = if (a.fromGone || !BadgeRest.PILL_VISIBLE) 0f else BadgeRest.PILL_ALPHA
+    val group = content ?: return
+    // With the pill hidden at rest it fades in with the pop; otherwise it is part of the group.
+    val pillStartAlpha = if (BadgeRest.PILL_VISIBLE) 1f else 0f
     cancelAnimators()
     handler.removeCallbacks(eyeOpen)
     if (wasResting) layoutAwake(commit = true)
-    val startAlpha = if (a.fromGone) 0f else REST_ALPHA
+    val startAlpha = if (a.fromGone) 0f else if (wasResting) REST_ALPHA else 1f
     if (a.reduced) {
       setEyes(R.drawable.ic_thumb_badge_open)
       box.translationX = 0f; box.translationY = 0f; box.scaleX = 1f; box.scaleY = 1f
       capsule.scaleX = 1f
       capsule.translationX = 0f
       odometer?.translationX = 0f
-      animate(box, View.ALPHA, 1f, REDUCED_FADE_IN_MS, LinearInterpolator(), from = startAlpha)
-      animate(capsule, View.ALPHA, 1f, REDUCED_FADE_IN_MS, LinearInterpolator(), from = pillStartAlpha)
+      box.alpha = 1f
+      capsule.alpha = pillStartAlpha
+      animate(group, View.ALPHA, 1f, REDUCED_FADE_IN_MS, LinearInterpolator(), from = startAlpha)
+      if (pillStartAlpha < 1f) animate(capsule, View.ALPHA, 1f, REDUCED_FADE_IN_MS, LinearInterpolator())
       return
     }
     val spring = OvershootInterpolator(1.1f)
@@ -438,12 +433,13 @@ class CountBadge(
     animate(box, View.TRANSLATION_Y, 0f, BadgeTiming.POP_MS, spring)
     animate(box, View.SCALE_X, 1f, BadgeTiming.POP_MS, spring)
     animate(box, View.SCALE_Y, 1f, BadgeTiming.POP_MS, spring)
-    animate(box, View.ALPHA, 1f, BadgeTiming.POP_MS, DecelerateInterpolator(), from = startAlpha)
-    // The pill stays put (already on screen, at 70 percent) and fills to full; the count slides back.
+    box.alpha = 1f
+    animate(group, View.ALPHA, 1f, BadgeTiming.POP_MS, DecelerateInterpolator(), from = startAlpha)
+    // The pill stays put (already on screen, in the 70 percent group) and the group fills to full.
     capsule.scaleX = 1f
     capsule.translationX = 0f
     capsule.alpha = pillStartAlpha
-    animate(capsule, View.ALPHA, 1f, BadgeTiming.POP_MS, DecelerateInterpolator())
+    if (pillStartAlpha < 1f) animate(capsule, View.ALPHA, 1f, BadgeTiming.POP_MS, DecelerateInterpolator())
     odometer?.let {
       it.translationX = countDx
       animate(it, View.TRANSLATION_X, 0f, BadgeTiming.POP_MS, spring)
@@ -536,6 +532,7 @@ class CountBadge(
   private fun settle(reduced: Boolean) {
     val box = thumbBox ?: return
     val capsule = pill ?: return
+    val group = content ?: return
     cancelAnimators()
     handler.removeCallbacks(bobStop)
     handler.removeCallbacks(blinkStart)
@@ -545,14 +542,14 @@ class CountBadge(
     val end = { finishSettle() }
     val shift = restShift()
     if (reduced) {
-      animate(capsule, View.ALPHA, restPillAlpha(), BadgeTiming.REDUCED_FADE_MS, LinearInterpolator())
-      animate(box, View.ALPHA, REST_ALPHA, BadgeTiming.REDUCED_FADE_MS, LinearInterpolator(), onEnd = end)
+      if (!BadgeRest.PILL_VISIBLE) animate(capsule, View.ALPHA, 0f, BadgeTiming.REDUCED_FADE_MS, LinearInterpolator())
+      animate(group, View.ALPHA, REST_ALPHA, BadgeTiming.REDUCED_FADE_MS, LinearInterpolator(), onEnd = end)
       return
     }
     val ease = PathInterpolator(0.4f, 0f, 0.2f, 1f)
-    // The pill stays where it is and dims to 70 percent; the Thumb slides onto its edge end, the
+    // The pill stays where it is and the whole node dims to 70 percent; the Thumb slides onto its edge end, the
     // count moves inward on the right edge (translate + alpha only, 240 ms).
-    animate(capsule, View.ALPHA, restPillAlpha(), BadgeTiming.SETTLE_MS, ease)
+    if (!BadgeRest.PILL_VISIBLE) animate(capsule, View.ALPHA, 0f, BadgeTiming.SETTLE_MS, ease)
     odometer?.let { animate(it, View.TRANSLATION_X, shift.countDx, BadgeTiming.SETTLE_MS, ease) }
     handler.postDelayed({ setEyes(R.drawable.ic_thumb_badge_half) }, BadgeTiming.BLINK_STEP_MS)
     handler.postDelayed({ setEyes(R.drawable.ic_thumb_badge_closed) }, BadgeTiming.BLINK_STEP_MS * 2)
@@ -560,14 +557,14 @@ class CountBadge(
     animate(box, View.SCALE_Y, REST_SCALE, BadgeTiming.SETTLE_MS, ease)
     animate(box, View.TRANSLATION_X, shift.thumbDx, BadgeTiming.SETTLE_MS, ease)
     animate(box, View.TRANSLATION_Y, shift.thumbDy, BadgeTiming.SETTLE_MS, ease)
-    animate(box, View.ALPHA, REST_ALPHA, BadgeTiming.SETTLE_MS, ease, onEnd = end)
+    animate(group, View.ALPHA, REST_ALPHA, BadgeTiming.SETTLE_MS, ease, onEnd = end)
   }
 
   /** The end of A42: no animator or timer is left; the end values are applied once. */
   private fun finishSettle() {
-    val box = thumbBox ?: return
     cancelAll(keepHide = machine.leaving)
     setEyes(R.drawable.ic_thumb_badge_closed)
+    content?.alpha = REST_ALPHA
     layoutResting(commit = false)
   }
 
@@ -716,7 +713,7 @@ class CountBadge(
     const val PILL_ELEVATION = 2f
     const val PILL_LIFTED_ELEVATION = 3f
     const val THUMB_ELEVATION = 6f // above both pill elevations: the Thumb is in front of the pill
-    const val REST_ALPHA = BadgeRest.THUMB_ALPHA
+    const val REST_ALPHA = BadgeRest.NODE_ALPHA
     const val REST_SCALE = 0.93f
     const val KEEP_TOP = 96f
     const val KEEP_BOTTOM = 120f

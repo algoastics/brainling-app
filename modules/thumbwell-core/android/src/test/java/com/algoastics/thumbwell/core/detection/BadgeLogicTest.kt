@@ -211,8 +211,8 @@ class BadgeLogicTest {
 
   @Test fun restingPillIsOnByDefaultAtSeventyPercent() {
     assertTrue(BadgeRest.PILL_VISIBLE)
-    assertEquals(0.7f, BadgeRest.PILL_ALPHA, 0f)
-    assertEquals(0.4f, BadgeRest.THUMB_ALPHA, 0f)
+    // one 70% node for the Thumb and the pill together (Figma 57:977), not 40% for the Thumb
+    assertEquals(0.7f, BadgeRest.NODE_ALPHA, 0f)
   }
 
   @Test fun theCountIsNotDroppedWhileResting() {

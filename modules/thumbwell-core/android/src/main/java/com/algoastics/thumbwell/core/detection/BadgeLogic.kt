@@ -29,11 +29,12 @@ object BadgeRest {
   /** The count pill stays on screen next to the sleeping Thumb while resting. */
   const val PILL_VISIBLE = true
 
-  /** Opacity of the count pill while resting. */
-  const val PILL_ALPHA = 0.7f
-
-  /** Opacity of the sleeping Thumb. */
-  const val THUMB_ALPHA = 0.4f
+  /**
+   * Opacity of the WHOLE resting node, the sleeping Thumb and the count pill together (Figma
+   * resting-right 57:977: one 70% node). It is applied to the group, not to each part, so the Thumb
+   * is not see-through over the pill.
+   */
+  const val NODE_ALPHA = 0.7f
 }
 
 /** The three native-stored badge switches (S43-P0). */
@@ -212,7 +213,7 @@ object BadgePlacement {
 sealed interface BadgeAction {
   /** Adds the window (alpha 0) showing [count]. */
   data class Add(val count: Int) : BadgeAction
-  /** Fade the resting Thumb in (alpha 0 to 0.4, 150 ms; instant when reduced). */
+  /** Fade the resting Thumb in (group alpha 0 to 0.7, 150 ms; instant when reduced). */
   data object FadeInResting : BadgeAction
   /** A40a pop-out, then the A40b flick when [flick]. [fromGone]: starts from alpha 0. */
   data class PopOut(val flick: Boolean, val fromGone: Boolean, val reduced: Boolean) : BadgeAction

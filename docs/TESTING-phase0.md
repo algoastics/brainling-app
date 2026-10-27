@@ -237,8 +237,8 @@ default. Check each on Instagram Reels, YouTube Shorts and TikTok:
    back: the Thumb pops and flicks again. The count equals that app's count on Home. In Always the
    bob stops after about 10 s (the Thumb then stays still) and the blink continues every 3 to 5 s.
 3. Set Badge display time to 2 s. After 2 s with no new reel the Thumb goes to sleep: eyes closed, half past the screen edge
-   at about 40% opacity, **and the white count pill stays on screen at about 70% opacity, still
-   showing the count.** The pill does not move or resize; the Thumb slides onto its edge end (over
+   **and the white count pill stays on screen, still showing the count.** The whole resting badge
+   (Thumb and pill together) is at about 70% opacity. The pill does not move or resize; the Thumb slides onto its edge end (over
    the pill's end, half off screen), and on the right edge the count moves a little inward. Bob and
    blink stop and nothing moves while it rests. Compare with Figma 52:1000 / 52:1508.
    Awake: the Thumb is fully visible **in front of** the pill's left end, never hidden behind it.
