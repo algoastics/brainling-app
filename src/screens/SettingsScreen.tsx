@@ -123,7 +123,7 @@ export function SettingsScreen() {
         />
         <ListRow
           testID="row-day-start"
-          icon="clock"
+          icon="moon"
           title={t('settings.dayStart')}
           value={formatDayStart(dayStart)}
           onPress={() => open('dayStart')}
@@ -155,7 +155,7 @@ export function SettingsScreen() {
           />
           <ListRow
             testID="row-badge-hide"
-            icon="moon"
+            icon="eyeOff"
             title={t('settings.badge.hide')}
             subtitle={t('settings.badge.hideHelp')}
             switchValue={badge.hideWhenResting}
@@ -170,7 +170,7 @@ export function SettingsScreen() {
       >
         <ListRow
           testID="row-theme"
-          icon="sparkles"
+          icon="contrast"
           title={t('settings.theme.title')}
           value={t(`settings.theme.${themePreference}`)}
           onPress={() => open('theme')}

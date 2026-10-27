@@ -79,7 +79,12 @@ export function ListRow({
     <>
       {icon ? (
         <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
-          <Icon name={icon} size={24} color={danger ? 'statusDangerStrong' : 'brandAccentText'} />
+          <Icon
+            name={icon}
+            size={24}
+            color={danger ? 'statusDangerStrong' : 'brandAccentText'}
+            filled={!danger}
+          />
         </View>
       ) : null}
       <View style={styles.text}>

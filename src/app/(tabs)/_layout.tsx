@@ -16,11 +16,12 @@ export default function TabsLayout() {
           items={state.routes.map((route) => ({
             key: route.key,
             label: descriptors[route.key]?.options.title ?? route.name,
-            icon: ({ color }) => (
+            icon: ({ color, focused }) => (
               <Icon
                 name={ICONS[route.name as keyof typeof ICONS] ?? 'home'}
                 size={24}
                 color={color}
+                filled={focused}
               />
             ),
           }))}

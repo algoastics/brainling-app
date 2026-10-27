@@ -1,63 +1,100 @@
-import {
-  Accessibility,
-  ArrowLeft,
-  Check,
-  ChevronRight,
-  Clock,
-  ExternalLink,
-  Home,
-  Info,
-  Lock,
-  Minus,
-  Moon,
-  Plus,
-  RectangleHorizontal,
-  Settings,
-  Shield,
-  Sparkles,
-  Timer,
-  Trash2,
-  X,
-  type LucideIcon,
-} from 'lucide-react-native';
+import type { ComponentType } from 'react';
 
+import {
+  AccessibilityGlyph,
+  BackGlyph,
+  BadgeGlyph,
+  BellGlyph,
+  ChartGlyph,
+  CheckGlyph,
+  ChevronRightGlyph,
+  CloseGlyph,
+  ContrastGlyph,
+  ExternalGlyph,
+  EyeOffGlyph,
+  HomeGlyph,
+  InfoGlyph,
+  LockGlyph,
+  MinusGlyph,
+  MoonGlyph,
+  PlusGlyph,
+  ShieldGlyph,
+  SlidersGlyph,
+  SparkleGlyph,
+  TimerGlyph,
+  TrashGlyph,
+  type GlyphProps,
+} from '@/components/icons/glyphs';
 import { useTheme, type ColorTokens } from '@/theme';
 
-/** Lucide-style icon set used by the Phase 0 screens (Figma "icon/*"). */
+/** The 22 pebble glyphs of the Figma "Icon system" (names keep the earlier call sites working). */
 export const iconSet = {
-  home: Home,
-  lock: Lock,
-  settings: Settings,
-  minus: Minus,
-  plus: Plus,
-  external: ExternalLink,
-  trash: Trash2,
-  accessibility: Accessibility,
-  clock: Clock,
-  sparkles: Sparkles,
-  back: ArrowLeft,
-  check: Check,
-  info: Info,
-  chevron: ChevronRight,
-  close: X,
-  shield: Shield,
-  badge: RectangleHorizontal,
-  timer: Timer,
-  moon: Moon,
-} as const satisfies Record<string, LucideIcon>;
+  home: HomeGlyph,
+  lock: LockGlyph,
+  settings: SlidersGlyph,
+  sliders: SlidersGlyph,
+  minus: MinusGlyph,
+  plus: PlusGlyph,
+  external: ExternalGlyph,
+  trash: TrashGlyph,
+  accessibility: AccessibilityGlyph,
+  sparkles: SparkleGlyph,
+  back: BackGlyph,
+  check: CheckGlyph,
+  info: InfoGlyph,
+  chevron: ChevronRightGlyph,
+  close: CloseGlyph,
+  shield: ShieldGlyph,
+  badge: BadgeGlyph,
+  timer: TimerGlyph,
+  moon: MoonGlyph,
+  chart: ChartGlyph,
+  bell: BellGlyph,
+  eyeOff: EyeOffGlyph,
+  contrast: ContrastGlyph,
+} as const satisfies Record<string, ComponentType<GlyphProps>>;
 
 export type IconName = keyof typeof iconSet;
+
+/** Glyphs that carry a tint shape; the other seven (action glyphs) only change colour. */
+export const TINTED_ICONS: readonly IconName[] = [
+  'home',
+  'lock',
+  'settings',
+  'sliders',
+  'trash',
+  'accessibility',
+  'sparkles',
+  'info',
+  'shield',
+  'badge',
+  'timer',
+  'moon',
+  'chart',
+  'bell',
+  'eyeOff',
+  'contrast',
+];
 
 export type IconProps = {
   name: IconName;
   size?: number;
   /** A semantic color name, or a raw color string. Defaults to `textPrimary`. */
   color?: keyof ColorTokens | (string & {});
+  /** Stroke width in 24 dp units; the Figma set uses 2 at every size. */
   strokeWidth?: number;
+  /** Active state: tint colour on the enclosed shape (colour-only glyphs just change colour). */
+  filled?: boolean;
 };
 
 /** Decorative by default (hidden from accessibility); the parent control carries the label. */
-export function Icon({ name, size = 24, color = 'textPrimary', strokeWidth = 2 }: IconProps) {
+export function Icon({
+  name,
+  size = 24,
+  color = 'textPrimary',
+  strokeWidth = 2,
+  filled = false,
+}: IconProps) {
   const { colors } = useTheme();
   const Glyph = iconSet[name];
   const resolved = color in colors ? colors[color as keyof ColorTokens] : color;
@@ -65,9 +102,9 @@ export function Icon({ name, size = 24, color = 'textPrimary', strokeWidth = 2 }
     <Glyph
       size={size}
       color={resolved}
+      tint={colors.brandLilac}
+      filled={filled}
       strokeWidth={strokeWidth}
-      importantForAccessibility="no"
-      accessibilityElementsHidden
     />
   );
 }
