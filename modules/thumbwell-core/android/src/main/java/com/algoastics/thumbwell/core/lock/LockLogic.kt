@@ -172,6 +172,77 @@ data class LockFrame(val window: Box, val strip: Int) {
   }
 }
 
+/** Which window type the lock is drawn in. */
+enum class LockWindowKind {
+  /**
+   * TYPE_APPLICATION_OVERLAY (layer 11), needs "Display over other apps". Below heads-up banners
+   * (17), the status bar (15) and the navigation bar (24), so banners show and stay tappable and the
+   * shade pull-down is untouched. Edge to edge, opaque.
+   */
+  APPLICATION_OVERLAY,
+
+  /**
+   * TYPE_ACCESSIBILITY_OVERLAY (layer 31), the fallback without the permission. Above banners, so
+   * the lock leaves a see-through, touch-absorbing strip at the top ([LockFrame]).
+   */
+  ACCESSIBILITY_OVERLAY,
+}
+
+/** Picks the window type at lock show time, and the frame each type needs. Pure. */
+object LockWindowChoice {
+  /** TYPE_APPLICATION_OVERLAY exists from API 26 (Android 8). */
+  const val MIN_SDK_APPLICATION_OVERLAY = 26
+
+  fun choose(canDrawOverlays: Boolean, sdk: Int): LockWindowKind =
+    if (canDrawOverlays && sdk >= MIN_SDK_APPLICATION_OVERLAY) {
+      LockWindowKind.APPLICATION_OVERLAY
+    } else {
+      LockWindowKind.ACCESSIBILITY_OVERLAY
+    }
+
+  /**
+   * The window frame for [picked] (the reels container minus the tab bar, from [LockBounds]).
+   * APPLICATION_OVERLAY: from the very top of the screen (status bar area included) to the bottom of
+   * [picked], no strip. ACCESSIBILITY_OVERLAY: the free-strip frame ([OverlayGuard.leaveTopBand],
+   * [LockFrame.of]).
+   */
+  fun frame(kind: LockWindowKind, picked: Box, statusBarPx: Int, bandPx: Int): LockFrame =
+    when (kind) {
+      LockWindowKind.APPLICATION_OVERLAY ->
+        LockFrame(Box(picked.left, 0, picked.right, picked.bottom), 0)
+      LockWindowKind.ACCESSIBILITY_OVERLAY ->
+        LockFrame.of(OverlayGuard.leaveTopBand(picked, bandPx), statusBarPx)
+    }
+}
+
+/**
+ * The "Display over other apps" state, read at most every [ttlMs] so a busy event stream does not
+ * ask the system each time. A refused add of an application overlay ([denied]) makes it read as not
+ * granted for [DENY_MS], so the fallback is used at once and the two window types do not flicker.
+ */
+class OverlayPermissionProbe(private val ttlMs: Long = 1500L) {
+  private var value = false
+  private var readAt = Long.MIN_VALUE
+  private var deniedUntil = Long.MIN_VALUE
+
+  fun granted(now: Long, read: () -> Boolean): Boolean {
+    if (now < deniedUntil) return false
+    if (readAt == Long.MIN_VALUE || now - readAt >= ttlMs || now < readAt) {
+      value = read()
+      readAt = now
+    }
+    return value
+  }
+
+  fun denied(now: Long) {
+    deniedUntil = now + DENY_MS
+  }
+
+  companion object {
+    const val DENY_MS = 30_000L
+  }
+}
+
 /**
  * The "Leave reels" button as a small state machine (LOCK-B). First press: tap the app's Home tab
  * when it has one ([Action.TAB]), else BACK. If after [TAB_CHECK_MS] the user is still on a reels
