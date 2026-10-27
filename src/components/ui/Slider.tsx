@@ -1,12 +1,27 @@
-import { useMemo, useState } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { bezier, haptics, useReducedMotion } from '@/motion';
-import { motion, radius, sizes, useTheme } from '@/theme';
+import { elevationStyle, elevations, motion, radius, sizes, useTheme } from '@/theme';
 
+import {
+  dragOffset,
+  markCenter,
+  offsetForTap,
+  offsetOfValue,
+  snapToStep,
+  thumbTravel,
+  valueAtOffset,
+} from './sliderMath';
 import { useGetter } from './useGetter';
-import { positionOfValue, snapToStep, valueAtPosition } from './sliderMath';
 
 export type SliderProps = {
   value: number;
@@ -15,17 +30,49 @@ export type SliderProps = {
   step: number;
   onChange: (value: number) => void;
   accessibilityLabel: string;
+  /** Snap marks drawn on the track (Figma "Snap 30 / 60 / 100 / 150"). */
+  marks?: readonly number[];
   testID?: string;
 };
 
-const GRAB_EASING = bezier(motion.easing.decelerate);
+/** Figma pressed state: 32 dp thumb on a 52 dp halo, against 28 dp at rest. */
+const PRESSED_THUMB = 32;
+const HALO = 52;
+const MARK_SIZE = 4;
 const TICK_GAP_MS = 30;
-const clockMs = () => Date.now();
+const SETTLE_EASING = bezier(motion.easing.decelerate);
+
+function Mark({
+  center,
+  offset,
+  onFill,
+  rest,
+}: {
+  center: number;
+  offset: SharedValue<number>;
+  onFill: string;
+  rest: string;
+}) {
+  const style = useAnimatedStyle(() => ({
+    backgroundColor: center <= offset.get() + sizes.sliderThumb / 2 ? onFill : rest,
+  }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.mark, { left: center - MARK_SIZE / 2 }, style]}
+    />
+  );
+}
 
 /**
- * Slider (Figma "Slider": 8 dp track, 28 dp thumb, 48 dp touch height, A57). Follows the finger
- * and snaps to steps, with a selection tick per step crossed (at most one per 30 ms) and a light
- * impact at either end. The thumb grows to 1.15 on grab. Values outside the range pin to an end.
+ * Slider (Figma "Slider", 328 x 48: 8 dp track, 28 dp white thumb with a 4 dp brand ring, snap
+ * marks, pressed state with a 52 dp halo; A57). The thumb follows the finger 1:1 on the UI thread
+ * (Gesture Handler pan, Reanimated shared values): the offset is the offset at touch-down plus
+ * the finger's travel, clamped to the track, so nothing jumps on touch-down and the thumb can
+ * never run ahead of the finger. React state changes only when the stepped value changes, with
+ * a selection tick per step (at most one per 30 ms) and a light impact at either end. A tap on
+ * the track moves the thumb there. On release the thumb settles on the step. The vertical
+ * scroll of a parent still wins when the first move is mostly vertical.
  */
 export function Slider({
   value,
@@ -34,90 +81,196 @@ export function Slider({
   step,
   onChange,
   accessibilityLabel,
+  marks,
   testID,
 }: SliderProps) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
-  const grab = useSharedValue(1);
+  const offset = useSharedValue(0);
+  const travel = useSharedValue(0);
+  const startOffset = useSharedValue(0);
+  const stepped = useSharedValue(snapToStep(value, min, max, step));
+  const dragging = useSharedValue(false);
+  const grab = useSharedValue(0);
+  const getProps = useGetter({ onChange, reduced });
+  const settleMs = reduced ? 0 : motion.duration.fast;
+
+  // React side of a step change: haptic tick, then the new value.
   const lastTick = useSharedValue(0);
-  const getProps = useGetter({ width, min, max, step, onChange, value });
+  const commit = useCallback(
+    (next: number) => {
+      const now = Date.now();
+      if (next === min || next === max) haptics.light();
+      else if (now - lastTick.get() >= TICK_GAP_MS) haptics.selection();
+      lastTick.set(now);
+      getProps().onChange(next);
+    },
+    [getProps, lastTick, min, max],
+  );
 
-  const pan = useMemo(() => {
-    const moveTo = (x: number) => {
-      const { width: w, min: lo, max: hi, step: s, onChange: emit, value: now } = getProps();
-      const next = valueAtPosition(x, w, lo, hi, s);
-      if (next === snapToStep(now, lo, hi, s)) return;
-      const time = clockMs();
-      if (next === lo || next === hi) haptics.light();
-      else if (time - lastTick.get() >= TICK_GAP_MS) haptics.selection();
-      lastTick.set(time);
-      emit(next);
-    };
-    const release = () => grab.set(withTiming(1, { duration: reduced ? 0 : 100 }));
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (e) => {
-        grab.set(withTiming(1.15, { duration: reduced ? 0 : 100, easing: GRAB_EASING }));
-        moveTo(e.nativeEvent.locationX);
-      },
-      onPanResponderMove: (e) => moveTo(e.nativeEvent.locationX),
-      onPanResponderRelease: release,
-      onPanResponderTerminate: release,
-    });
-  }, [grab, reduced, getProps, lastTick]);
+  // Measured width, then a value change from outside (steppers, presets): move the thumb unless
+  // the finger is on it.
+  useEffect(() => {
+    const t = thumbTravel(width, sizes.sliderThumb);
+    const first = travel.get() === 0 && t > 0;
+    travel.set(t);
+    // While the finger is down the UI thread owns both the offset and the stepped value; React's
+    // copy of the value only catches up, so it must not overwrite them.
+    if (dragging.get()) return;
+    stepped.set(snapToStep(value, min, max, step));
+    const target = offsetOfValue(value, min, max, t);
+    offset.set(first || getProps().reduced ? target : withTiming(target, { duration: settleMs }));
+  }, [width, value, min, max, step, travel, stepped, dragging, offset, getProps, settleMs]);
 
-  const fraction = positionOfValue(value, min, max);
-  const thumbX = fraction * Math.max(0, width - sizes.sliderThumb);
-  const thumbStyle = useAnimatedStyle(() => ({ transform: [{ scale: grab.value }] }));
+  const gesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .activeOffsetX([-4, 4])
+      .failOffsetY([-16, 16])
+      .onStart(() => {
+        'worklet';
+        startOffset.set(offset.get());
+        dragging.set(true);
+        grab.set(withTiming(1, { duration: settleMs, easing: SETTLE_EASING }));
+      })
+      .onUpdate((e) => {
+        'worklet';
+        const next = dragOffset(startOffset.get(), e.translationX, travel.get());
+        offset.set(next);
+        const v = valueAtOffset(next, travel.get(), min, max, step);
+        if (v !== stepped.get()) {
+          stepped.set(v);
+          scheduleOnRN(commit, v);
+        }
+      })
+      .onFinalize(() => {
+        'worklet';
+        if (!dragging.get()) return;
+        dragging.set(false);
+        grab.set(withTiming(0, { duration: settleMs }));
+        offset.set(
+          withTiming(offsetOfValue(stepped.get(), min, max, travel.get()), { duration: settleMs }),
+        );
+      });
+    const tap = Gesture.Tap()
+      .maxDistance(8)
+      .onEnd((e, success) => {
+        'worklet';
+        if (!success) return;
+        const to = offsetForTap(e.x, travel.get(), sizes.sliderThumb);
+        const v = valueAtOffset(to, travel.get(), min, max, step);
+        offset.set(withTiming(offsetOfValue(v, min, max, travel.get()), { duration: settleMs }));
+        if (v !== stepped.get()) {
+          stepped.set(v);
+          scheduleOnRN(commit, v);
+        }
+      });
+    return Gesture.Race(pan, tap);
+  }, [offset, travel, startOffset, stepped, dragging, grab, settleMs, commit, min, max, step]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: offset.get() + sizes.sliderThumb / 2 }));
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: offset.get() },
+      { scale: 1 + grab.get() * (PRESSED_THUMB / sizes.sliderThumb - 1) },
+    ],
+  }));
+  const haloStyle = useAnimatedStyle(() => ({
+    opacity: grab.get(),
+    transform: [
+      { translateX: offset.get() - (HALO - sizes.sliderThumb) / 2 },
+      { scale: 0.5 + grab.get() * 0.5 },
+    ],
+  }));
 
   return (
-    <View
-      testID={testID}
-      accessible
-      accessibilityRole="adjustable"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ min, max, now: snapToStep(value, min, max, step) }}
-      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(e) => {
-        const dir = e.nativeEvent.actionName === 'increment' ? 1 : -1;
-        onChange(snapToStep(value + dir * step, min, max, step));
-      }}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      style={styles.root}
-      {...pan.panHandlers}
-    >
-      <View style={[styles.track, { backgroundColor: colors.borderStrong }]} pointerEvents="none">
+    <GestureDetector gesture={gesture}>
+      <View
+        testID={testID}
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityValue={{ min, max, now: snapToStep(value, min, max, step) }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={(e) => {
+          const dir = e.nativeEvent.actionName === 'increment' ? 1 : -1;
+          onChange(snapToStep(value + dir * step, min, max, step));
+        }}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        style={styles.root}
+      >
         <View
           style={[
-            styles.active,
-            { width: thumbX + sizes.sliderThumb / 2, backgroundColor: colors.brandPrimary },
+            styles.track,
+            { backgroundColor: colors.bgPrimarySoft, borderColor: colors.borderDefault },
+          ]}
+          pointerEvents="none"
+        />
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.fill, { backgroundColor: colors.brandPrimary }, fillStyle]}
+        />
+        {width > 0
+          ? (marks ?? []).map((m) => (
+              <Mark
+                key={m}
+                center={markCenter(m, min, max, width, sizes.sliderThumb)}
+                offset={offset}
+                onFill={colors.brandOnPrimary}
+                rest={colors.textMuted}
+              />
+            ))
+          : null}
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.halo, { backgroundColor: colors.brandPrimary }, haloStyle]}
+        />
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.thumb,
+            elevationStyle(elevations.card),
+            { backgroundColor: '#FFFFFF', borderColor: colors.brandPrimary },
+            thumbStyle,
           ]}
         />
       </View>
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.thumb,
-          { left: thumbX, backgroundColor: colors.brandPrimary, borderColor: colors.bgSurface },
-          thumbStyle,
-        ]}
-      />
-    </View>
+    </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
   root: { height: sizes.touchMin, justifyContent: 'center', width: '100%' },
-  track: { height: sizes.sliderTrack, borderRadius: radius.pill, overflow: 'hidden' },
-  active: { height: sizes.sliderTrack, borderRadius: radius.pill },
+  track: { height: sizes.sliderTrack, borderRadius: radius.pill, borderWidth: 1 },
+  fill: {
+    position: 'absolute',
+    left: 0,
+    top: (sizes.touchMin - sizes.sliderTrack) / 2,
+    height: sizes.sliderTrack,
+    borderRadius: radius.pill,
+  },
+  mark: {
+    position: 'absolute',
+    top: (sizes.touchMin - MARK_SIZE) / 2,
+    width: MARK_SIZE,
+    height: MARK_SIZE,
+    borderRadius: MARK_SIZE / 2,
+  },
+  halo: {
+    position: 'absolute',
+    left: 0,
+    top: (sizes.touchMin - HALO) / 2,
+    width: HALO,
+    height: HALO,
+    borderRadius: HALO / 2,
+  },
   thumb: {
     position: 'absolute',
+    left: 0,
+    top: (sizes.touchMin - sizes.sliderThumb) / 2,
     width: sizes.sliderThumb,
     height: sizes.sliderThumb,
     borderRadius: sizes.sliderThumb / 2,
-    borderWidth: 3,
+    borderWidth: 4,
   },
 });

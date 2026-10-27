@@ -60,6 +60,9 @@ const reanimated = {
   useAnimatedStyle: (fn: () => object) => fn(),
   useAnimatedProps: (fn: () => object) => fn(),
   useReducedMotion: () => false,
+  // Gesture Handler's worklet bridge looks these up; tests never deliver gesture events through it.
+  useHandler: () => ({ context: {}, doDependenciesDiffer: false }),
+  useEvent: () => () => undefined,
   withTiming: identity,
   withSpring: identity,
   withDelay: (_delay: number, value: unknown) => value,

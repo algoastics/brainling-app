@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -16,6 +17,8 @@ export type LimitPickerProps = {
 export const SLIDER_MIN = 10;
 export const SLIDER_MAX = 200;
 export const SLIDER_STEP = 10;
+/** Snap marks drawn on the slider track (Figma "Snap 30 / 60 / 100 / 150"). */
+export const SLIDER_MARKS = [30, 60, 100, 150] as const;
 
 function StepButton({
   icon,
@@ -32,6 +35,7 @@ function StepButton({
 }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const press = (to: number) => {
@@ -46,15 +50,22 @@ function StepButton({
       disabled={disabled}
       onPressIn={() => {
         haptics.light();
+        setPressed(true);
         press(0.96);
       }}
-      onPressOut={() => press(1)}
+      onPressOut={() => {
+        setPressed(false);
+        press(1);
+      }}
       onPress={onPress}
     >
       <Animated.View
         style={[
           styles.step,
-          { borderColor: colors.borderControl, backgroundColor: colors.bgPrimarySoft },
+          {
+            borderColor: colors.borderControl,
+            backgroundColor: pressed ? colors.brandLilac : colors.bgPrimarySoft,
+          },
           disabled && { opacity: 0.4 },
           style,
         ]}
@@ -97,6 +108,7 @@ export function LimitPicker({ value, onChange }: LimitPickerProps) {
         min={SLIDER_MIN}
         max={SLIDER_MAX}
         step={SLIDER_STEP}
+        marks={SLIDER_MARKS}
         onChange={onChange}
       />
       <View accessibilityRole="radiogroup" style={styles.presets}>

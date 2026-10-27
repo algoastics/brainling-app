@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import {
-  Modal,
-  PanResponder,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -16,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { bezier, useReducedMotion } from '@/motion';
 import { elevationStyle, elevations, motion, radius, sizes, space, useTheme } from '@/theme';
@@ -44,8 +38,9 @@ const MIN_BOTTOM = space[32];
 /**
  * Bottom sheet (Figma "Bottom sheet", A56): slides up over a scrim, drags down to dismiss,
  * closes on Back and on a scrim tap. Reduced motion fades in 100 ms with no slide, and the drag
- * still works because it is direct manipulation. Built on Modal with RN's PanResponder, so it
- * needs no gesture root inside the Modal window.
+ * still works because it is direct manipulation. The drag is a Gesture Handler pan on the UI
+ * thread. A Modal is its own native window, so its content gets its own GestureHandlerRootView
+ * (the sliders and the drag need it).
  */
 export function BottomSheet({
   visible,
@@ -91,17 +86,24 @@ export function BottomSheet({
   const close = useCallback(() => getDismiss()(), [getDismiss]);
 
   const pan = useMemo(() => {
-    const snapBack = () => drag.set(withSpring(0, { stiffness: 400, damping: 28 }));
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 4,
-      onPanResponderMove: (_e, g) => drag.set(sheetDragOffset(g.dy)),
-      onPanResponderRelease: (_e, g) => {
-        if (shouldDismissSheet(g.dy, g.vy, sheetHeight.get())) close();
-        else snapBack();
-      },
-      onPanResponderTerminate: snapBack,
-    });
+    return Gesture.Pan()
+      .activeOffsetY([-4, 4])
+      .onUpdate((e) => {
+        'worklet';
+        drag.set(sheetDragOffset(e.translationY));
+      })
+      .onEnd((e) => {
+        'worklet';
+        if (shouldDismissSheet(e.translationY, e.velocityY / 1000, sheetHeight.get())) {
+          scheduleOnRN(close);
+        } else {
+          drag.set(withSpring(0, { stiffness: 400, damping: 28 }));
+        }
+      })
+      .onFinalize((_e, success) => {
+        'worklet';
+        if (!success) drag.set(withSpring(0, { stiffness: 400, damping: 28 }));
+      });
   }, [drag, close, sheetHeight]);
 
   const sheetStyle = useAnimatedStyle(() => {
@@ -126,7 +128,7 @@ export function BottomSheet({
       navigationBarTranslucent
       onRequestClose={close}
     >
-      <View style={styles.root}>
+      <GestureHandlerRootView style={styles.root}>
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlayScrim }, scrimStyle]}
         >
@@ -155,17 +157,19 @@ export function BottomSheet({
             sheetStyle,
           ]}
         >
-          <View {...pan.panHandlers} style={styles.dragZone}>
-            <View style={styles.handleArea}>
-              <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
+          <GestureDetector gesture={pan}>
+            <View style={styles.dragZone}>
+              <View style={styles.handleArea}>
+                <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
+              </View>
+              <View style={styles.header}>
+                <Text variant="h2" accessibilityRole="header">
+                  {title}
+                </Text>
+                {body ? <Text color="textSecondary">{body}</Text> : null}
+              </View>
             </View>
-            <View style={styles.header}>
-              <Text variant="h2" accessibilityRole="header">
-                {title}
-              </Text>
-              {body ? <Text color="textSecondary">{body}</Text> : null}
-            </View>
-          </View>
+          </GestureDetector>
           <ScrollView
             style={styles.content}
             contentContainerStyle={styles.contentInner}
@@ -176,7 +180,7 @@ export function BottomSheet({
           </ScrollView>
           {actions ? <View style={styles.actions}>{actions}</View> : null}
         </Animated.View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

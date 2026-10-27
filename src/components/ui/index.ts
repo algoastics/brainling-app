@@ -17,4 +17,4 @@ export * from './Switch';
 export * from './OdometerNumber';
 export { odometerSlots, odometerCellWidth, type OdometerSlot } from './odometer';
 export * from './Slider';
-export { snapToStep, valueAtPosition, positionOfValue } from './sliderMath';
+export { snapToStep, valueAtOffset, positionOfValue } from './sliderMath';
