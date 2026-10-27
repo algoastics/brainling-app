@@ -201,26 +201,133 @@ object BadgePlacement {
   data class RestShift(val thumbDx: Float, val thumbDy: Float, val countDx: Float)
 
   /**
-   * A42 as in the Figma frames (resting-right 57:977, resting-left 57:996, rule 74:1952): the pill
-   * never changes size or position. The sleeping Thumb slides ONTO the pill's edge end, its centre
-   * on the screen edge so half of it is off screen; it overlaps the pill's 46 dp socket there.
-   * RIGHT: Thumb moves right to the pill's right end (about +63 dp) and the count moves
-   * [socket] - [gap] (30 dp) inward. LEFT: Thumb moves about -21 dp to the left end; the count stays.
-   * The Thumb also drops so its centre sits on the pill's centre.
+   * A42 as in the Figma frames (resting-right 57:977, resting-left 57:996, rule 74:1952). The pill
+   * never changes size or position, and the Thumb stays on the side that faces the screen centre
+   * ([thumbLeftInPill]): RIGHT edge: Thumb on the pill's left end; LEFT edge: on the pill's right
+   * end. At rest its centre sits on that end of the pill (Figma "Thumb peek": the outer half shows,
+   * the inner half is tucked behind the pill, see [thumbClipLeft]); that is a move of
+   * `thumbW / 2 - nudge` (about 21.7 dp) away from the pill, mirrored on the two edges. The count
+   * stays on the pill's left at 16 dp in both frames: on the LEFT edge it never moves, on the RIGHT
+   * edge it leaves the Thumb's [socket] and moves [socket] - [gap] (30 dp) left. The Thumb also
+   * drops so its centre sits on the pill's centre.
    * [thumbLeft] is the awake Thumb's left edge relative to the pill's left edge.
    */
   fun restShift(
     side: BadgeSide, pillW: Float, pillH: Float, thumbW: Float, thumbH: Float,
     thumbLeft: Float, thumbRise: Float, socket: Float, gap: Float,
   ): RestShift {
-    val targetLeft = if (side == BadgeSide.RIGHT) pillW - thumbW / 2f else -thumbW / 2f
+    val targetLeft = if (side == BadgeSide.LEFT) pillW - thumbW / 2f else -thumbW / 2f
     val dy = pillH / 2f - (thumbH / 2f - thumbRise)
     val countDx = if (side == BadgeSide.RIGHT) -(socket - gap) else 0f
     return RestShift(targetLeft - thumbLeft, dy, countDx)
   }
 
+  /** The awake Thumb sits on the pill end that faces the screen centre. */
+  fun thumbOnLeftOfPill(side: BadgeSide): Boolean = side == BadgeSide.RIGHT
+
+  /** The Thumb's left edge relative to the pill's left edge; it sticks out of the pill end by [nudge]. */
+  fun thumbLeftInPill(side: BadgeSide, pillW: Float, thumbW: Float, nudge: Float): Float =
+    if (thumbOnLeftOfPill(side)) -nudge else pillW - thumbW + nudge
+
+  /** Pill padding (left, right): the socket for the Thumb is on the Thumb's side, the gap on the other. */
+  fun pillPadding(side: BadgeSide, socket: Float, gap: Float): Pair<Float, Float> =
+    if (thumbOnLeftOfPill(side)) socket to gap else gap to socket
+
+  /**
+   * Window padding (left, right) around the pill. The edge side keeps [edgePad]; the centre side
+   * gets [innerPad], room for the resting Thumb's outer half, which sticks out of the pill end. The
+   * sum is the same on both sides, so a side flip never changes the window size.
+   */
+  fun windowPads(side: BadgeSide, edgePad: Float, innerPad: Float): Pair<Float, Float> =
+    if (side == BadgeSide.RIGHT) innerPad to edgePad else edgePad to innerPad
+
+  /**
+   * 0 awake .. 1 at rest, from how far the Thumb has travelled ([translationX] of [restDx]).
+   * Drives the clip below, so the tuck follows the slide in both directions.
+   */
+  fun restProgress(translationX: Float, restDx: Float): Float =
+    if (restDx == 0f) 0f else (translationX / restDx).coerceIn(0f, 1f)
+
+  /**
+   * Left bound of the Thumb's visible area in its own coordinates (width [thumbW]). Awake nothing is
+   * clipped; at rest ([progress] 1) only the half outside the pill remains: LEFT edge keeps the right
+   * half, RIGHT edge the left half ([thumbClipRight]). Scale pivots on the Thumb's centre, which is
+   * the pill end at rest, so the bound is exact there.
+   */
+  fun thumbClipLeft(side: BadgeSide, thumbW: Float, progress: Float): Float =
+    if (side == BadgeSide.LEFT) thumbW / 2f * progress.coerceIn(0f, 1f) else 0f
+
+  fun thumbClipRight(side: BadgeSide, thumbW: Float, progress: Float): Float =
+    if (side == BadgeSide.RIGHT) thumbW - thumbW / 2f * progress.coerceIn(0f, 1f) else thumbW
+
   fun dpToPx(dp: Float, density: Float): Int = (dp * density + 0.5f).toInt()
   fun pxToDp(px: Int, density: Float): Float = px / density
+}
+
+/**
+ * Pill corners (A31 snap, A42 rest). Docked on an edge the corners on the screen-edge side are
+ * square (radius 0) and the inner ones fully round; while dragging all four are fully round. Android's
+ * `GradientDrawable.cornerRadii` order: TL, TR, BR, BL as x,y pairs. Arrays are passed in so the
+ * snap animation allocates nothing per frame.
+ */
+object BadgeCorners {
+  fun radii(docked: Boolean, side: BadgeSide, full: Float, out: FloatArray = FloatArray(8)): FloatArray {
+    val left = if (docked && side == BadgeSide.LEFT) 0f else full
+    val right = if (docked && side == BadgeSide.RIGHT) 0f else full
+    out[0] = left; out[1] = left // top-left
+    out[2] = right; out[3] = right // top-right
+    out[4] = right; out[5] = right // bottom-right
+    out[6] = left; out[7] = left // bottom-left
+    return out
+  }
+
+  /** [out] = from + (to - from) * [t], t clamped to 0..1. */
+  fun lerp(from: FloatArray, to: FloatArray, t: Float, out: FloatArray): FloatArray {
+    val k = t.coerceIn(0f, 1f)
+    for (i in 0 until 8) out[i] = from[i] + (to[i] - from[i]) * k
+    return out
+  }
+}
+
+/**
+ * One window update per display frame while dragging. Touch events arrive faster than frames (and
+ * several per frame on 120 Hz); each used to post its own `updateViewLayout`, which is an IPC to the
+ * window manager. [submit] stores the latest position and tells the caller whether it must schedule
+ * a frame callback (only for the first move of a frame); [take] runs in that callback and says
+ * whether the window really needs to move. No allocation per move.
+ */
+class FrameCoalescer {
+  var x = 0
+    private set
+  var y = 0
+    private set
+  private var appliedX = Int.MIN_VALUE
+  private var appliedY = Int.MIN_VALUE
+  private var pending = false
+
+  fun submit(x: Int, y: Int): Boolean {
+    this.x = x
+    this.y = y
+    if (pending) return false
+    pending = true
+    return true
+  }
+
+  /** In the frame callback: true when the window must be updated to ([x], [y]). */
+  fun take(): Boolean {
+    val had = pending
+    pending = false
+    if (!had || (x == appliedX && y == appliedY)) return false
+    appliedX = x
+    appliedY = y
+    return true
+  }
+
+  fun cancel() {
+    pending = false
+    appliedX = Int.MIN_VALUE
+    appliedY = Int.MIN_VALUE
+  }
 }
 
 sealed interface BadgeAction {

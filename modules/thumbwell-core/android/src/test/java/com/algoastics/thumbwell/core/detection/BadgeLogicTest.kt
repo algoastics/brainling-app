@@ -178,35 +178,113 @@ class BadgeLogicTest {
       }
   }
 
-  // Figma: resting-right 57:977 (pill 84 wide, count at 17, Thumb at 59), resting-left 57:996, A42 rule 74:1952
+  // Figma: resting-right 57:977 (pill 84 wide, count at 17, Thumb peek frame at -25) and resting-left
+  // 57:996 (count at 16, Thumb peek frame at 84). In both the Thumb is centred on the pill end that faces
+  // the screen centre and only its outer half shows; rule 74:1952.
+  private val pillW = 84f
+  private val thumbW = 53.333f
+  private fun awakeThumbLeft(side: BadgeSide) = BadgePlacement.thumbLeftInPill(side, pillW, thumbW, 5f)
   private fun figmaShift(side: BadgeSide) =
-    BadgePlacement.restShift(side, 84f, 38f, 53.333f, 60f, -5f, 18f, 46f, 16f)
+    BadgePlacement.restShift(side, pillW, 38f, thumbW, 60f, awakeThumbLeft(side), 18f, 46f, 16f)
+  private fun restCentre(side: BadgeSide) = awakeThumbLeft(side) + figmaShift(side).thumbDx + thumbW / 2f
 
-  @Test fun restingRightMovesTheThumbAboutSixtyThreeAndTheCountThirtyInward() {
+  @Test fun restingRightMovesTheThumbAboutMinusTwentyOneAndTheCountThirtyLeft() {
     val r = figmaShift(BadgeSide.RIGHT)
-    assertEquals(63f, r.thumbDx, 1f)
+    assertEquals(-21.67f, r.thumbDx, 0.05f)
     assertEquals(-30f, r.countDx, 0.01f)
-    // the Thumb centre lands on the pill's right end (the screen edge): half of it is off screen
-    assertEquals(84f, -5f + r.thumbDx + 53.333f / 2f, 0.01f)
+    // the Thumb centre lands on the pill's left end (the end facing the screen centre)
+    assertEquals(0f, restCentre(BadgeSide.RIGHT), 0.01f)
   }
 
-  @Test fun restingLeftMovesTheThumbAboutTwentyOneAndTheCountStays() {
+  @Test fun restingLeftMovesTheThumbAboutPlusTwentyOneAndTheCountStays() {
     val r = figmaShift(BadgeSide.LEFT)
-    assertEquals(-21f, r.thumbDx, 1f)
+    assertEquals(21.67f, r.thumbDx, 0.05f)
     assertEquals(0f, r.countDx, 0.01f)
-    assertEquals(0f, -5f + r.thumbDx + 53.333f / 2f, 0.01f)
+    // the Thumb centre lands on the pill's right end (Figma 57:996: peek frame at x = 84)
+    assertEquals(pillW, restCentre(BadgeSide.LEFT), 0.01f)
+  }
+
+  @Test fun restingMovesAreMirrorImagesForTheThumb() {
+    assertEquals(-figmaShift(BadgeSide.RIGHT).thumbDx, figmaShift(BadgeSide.LEFT).thumbDx, 0.01f)
+  }
+
+  @Test fun theCountSitsAtSixteenOnThePillsLeftAtRestOnBothEdges() {
+    // padding left: RIGHT 46 (+ the -30 rest move) and LEFT 16 (+ 0): Figma count x 17 and 16
+    val right = BadgePlacement.pillPadding(BadgeSide.RIGHT, 46f, 16f).first + figmaShift(BadgeSide.RIGHT).countDx
+    val left = BadgePlacement.pillPadding(BadgeSide.LEFT, 46f, 16f).first + figmaShift(BadgeSide.LEFT).countDx
+    assertEquals(16f, right, 0.01f)
+    assertEquals(16f, left, 0.01f)
   }
 
   @Test fun restingThumbIsCentredOnThePill() {
     // Figma rest Thumb centre y 19 vs awake 13: about +6 dp (centre of a 38 dp pill)
     assertEquals(6f, figmaShift(BadgeSide.RIGHT).thumbDy, 1.1f)
+    assertEquals(figmaShift(BadgeSide.RIGHT).thumbDy, figmaShift(BadgeSide.LEFT).thumbDy, 0f)
   }
 
-  @Test fun restingThumbOverlapsThePillSocketAndTheCountStaysClear() {
-    // right edge: count at 16..38, visible Thumb half 59..84 (never over the count)
-    val r = figmaShift(BadgeSide.RIGHT)
-    val thumbVisibleLeft = -5f + r.thumbDx + 53.333f / 2f - 25f
-    assertTrue(thumbVisibleLeft >= 16f + 22f)
+  @Test fun theClippedRestingThumbNeverCoversTheCount() {
+    // RIGHT: visible Thumb is its left half, ending at the pill's left end (x 0); the count starts at 16.
+    // LEFT: visible Thumb starts at the pill's right end (x 84); the count (about 22 wide) ends at 38.
+    val rightEnd = awakeThumbLeft(BadgeSide.RIGHT) + figmaShift(BadgeSide.RIGHT).thumbDx +
+      BadgePlacement.thumbClipRight(BadgeSide.RIGHT, thumbW, 1f)
+    assertEquals(0f, rightEnd, 0.01f)
+    assertTrue(rightEnd <= 16f)
+    val leftStart = awakeThumbLeft(BadgeSide.LEFT) + figmaShift(BadgeSide.LEFT).thumbDx +
+      BadgePlacement.thumbClipLeft(BadgeSide.LEFT, thumbW, 1f)
+    assertEquals(pillW, leftStart, 0.01f)
+    assertTrue(leftStart >= 16f + 22f)
+  }
+
+  @Test fun thumbFacesTheScreenCentre() {
+    assertTrue(BadgePlacement.thumbOnLeftOfPill(BadgeSide.RIGHT))
+    assertFalse(BadgePlacement.thumbOnLeftOfPill(BadgeSide.LEFT))
+    // RIGHT: sticks out 5 dp past the pill's left end; LEFT: 5 dp past the right end
+    assertEquals(-5f, BadgePlacement.thumbLeftInPill(BadgeSide.RIGHT, 84f, 53.333f, 5f), 0.001f)
+    assertEquals(84f - 53.333f + 5f, BadgePlacement.thumbLeftInPill(BadgeSide.LEFT, 84f, 53.333f, 5f), 0.001f)
+    assertEquals(84f + 5f, BadgePlacement.thumbLeftInPill(BadgeSide.LEFT, 84f, 53.333f, 5f) + 53.333f, 0.001f)
+  }
+
+  @Test fun pillPaddingPutsTheSocketOnTheThumbSide() {
+    assertEquals(46f to 16f, BadgePlacement.pillPadding(BadgeSide.RIGHT, 46f, 16f))
+    assertEquals(16f to 46f, BadgePlacement.pillPadding(BadgeSide.LEFT, 46f, 16f))
+  }
+
+  @Test fun windowPadsGiveTheCentreSideRoomAndKeepTheWidth() {
+    assertEquals(28f to 12f, BadgePlacement.windowPads(BadgeSide.RIGHT, 12f, 28f))
+    assertEquals(12f to 28f, BadgePlacement.windowPads(BadgeSide.LEFT, 12f, 28f))
+    val r = BadgePlacement.windowPads(BadgeSide.RIGHT, 12f, 28f)
+    val l = BadgePlacement.windowPads(BadgeSide.LEFT, 12f, 28f)
+    assertEquals(r.first + r.second, l.first + l.second, 0f)
+    // the resting Thumb (scale 0.93) sticks out half its width past the pill end: it fits the inner pad
+    assertTrue(thumbW * 0.93f / 2f < 28f)
+  }
+
+  @Test fun restProgressFollowsTheSlideBothWays() {
+    assertEquals(0f, BadgePlacement.restProgress(0f, -21.67f), 0f)
+    assertEquals(0.5f, BadgePlacement.restProgress(-10.835f, -21.67f), 0.001f)
+    assertEquals(1f, BadgePlacement.restProgress(-21.67f, -21.67f), 0f)
+    assertEquals(0.5f, BadgePlacement.restProgress(10.835f, 21.67f), 0.001f)
+    assertEquals(1f, BadgePlacement.restProgress(40f, 21.67f), 0f) // clamped
+    assertEquals(0f, BadgePlacement.restProgress(-3f, 21.67f), 0f) // wrong direction clamps to awake
+    assertEquals(0f, BadgePlacement.restProgress(5f, 0f), 0f) // no rest distance
+  }
+
+  @Test fun thumbClipKeepsTheOuterHalfAtRestAndNothingAwake() {
+    // awake: full width on both sides
+    assertEquals(0f, BadgePlacement.thumbClipLeft(BadgeSide.RIGHT, 50f, 0f), 0f)
+    assertEquals(50f, BadgePlacement.thumbClipRight(BadgeSide.RIGHT, 50f, 0f), 0f)
+    assertEquals(0f, BadgePlacement.thumbClipLeft(BadgeSide.LEFT, 50f, 0f), 0f)
+    assertEquals(50f, BadgePlacement.thumbClipRight(BadgeSide.LEFT, 50f, 0f), 0f)
+    // rest: RIGHT keeps the left half, LEFT keeps the right half
+    assertEquals(0f, BadgePlacement.thumbClipLeft(BadgeSide.RIGHT, 50f, 1f), 0f)
+    assertEquals(25f, BadgePlacement.thumbClipRight(BadgeSide.RIGHT, 50f, 1f), 0f)
+    assertEquals(25f, BadgePlacement.thumbClipLeft(BadgeSide.LEFT, 50f, 1f), 0f)
+    assertEquals(50f, BadgePlacement.thumbClipRight(BadgeSide.LEFT, 50f, 1f), 0f)
+    // halfway and clamped
+    assertEquals(37.5f, BadgePlacement.thumbClipRight(BadgeSide.RIGHT, 50f, 0.5f), 0.001f)
+    assertEquals(12.5f, BadgePlacement.thumbClipLeft(BadgeSide.LEFT, 50f, 0.5f), 0.001f)
+    assertEquals(25f, BadgePlacement.thumbClipRight(BadgeSide.RIGHT, 50f, 3f), 0f)
+    assertEquals(50f, BadgePlacement.thumbClipRight(BadgeSide.RIGHT, 50f, -1f), 0f)
   }
 
   @Test fun restingPillIsOnByDefaultAtSeventyPercent() {
