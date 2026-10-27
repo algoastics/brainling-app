@@ -59,6 +59,21 @@ describe('guide (S07)', () => {
     expect(core.openAccessibilitySettings).not.toHaveBeenCalled();
   });
 
+  it('treats consent logged for version 1 as missing and sends the user to the disclosure', async () => {
+    core.getCountingStatus.mockResolvedValue({
+      ...runningStatus,
+      consent: { atMs: 1, version: '1' },
+      consentLogged: false,
+      disclosureVersion: '2',
+      serviceEnabled: false,
+      paused: true,
+      pausedReason: 'consent_missing',
+    });
+    await render(<GuideScreen />);
+    expect(await screen.findByTestId('redirect')).toHaveTextContent(/\/disclosure/);
+    expect(core.openAccessibilitySettings).not.toHaveBeenCalled();
+  });
+
   it('opens the settings, then says "Still off, try again" when the service is still off', async () => {
     core.getCountingStatus.mockResolvedValue({
       ...runningStatus,

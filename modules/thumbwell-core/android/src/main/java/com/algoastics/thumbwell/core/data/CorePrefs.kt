@@ -12,7 +12,13 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** The accessibility disclosure the user must have accepted before anything is counted. */
 object Disclosure {
   /** Bump when the S06 disclosure text changes; consent for an older version stops counting. */
-  const val CURRENT_VERSION = "1"
+  const val CURRENT_VERSION = "2"
+
+  /**
+   * True only for consent logged for exactly [CURRENT_VERSION]. An older version (for example "1")
+   * is never migrated: the user is asked again and nothing is counted until then.
+   */
+  fun accepts(loggedVersion: String?): Boolean = loggedVersion == CURRENT_VERSION
 }
 
 /** Consent record kept by the native side: when, and which disclosure version. */
@@ -39,7 +45,7 @@ class CorePrefs private constructor(context: Context) {
   fun consent(): ConsentRecord? = consentCache
 
   /** True when consent is logged for the current disclosure version. */
-  fun consentValid(): Boolean = consentCache?.version == Disclosure.CURRENT_VERSION
+  fun consentValid(): Boolean = Disclosure.accepts(consentCache?.version)
 
   fun setConsent(version: String, nowMs: Long = System.currentTimeMillis()): ConsentRecord {
     require(version.isNotBlank() && version.length <= 32) { "bad disclosure version" }
