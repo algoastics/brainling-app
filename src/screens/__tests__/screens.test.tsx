@@ -5,6 +5,8 @@ import { AppState, Linking, type AppStateStatus } from 'react-native';
 import { core, dayCounts, resetCore, runningStatus } from '../../../test/thumbwellCoreMock';
 import { resetRouter, router } from '../../../test/routerMock';
 import { useAppStore } from '@/state/appStore';
+import { useThemePreference } from '@/theme';
+import type { BadgeSettings } from 'thumbwell-core';
 
 import { Thumb } from '@/components/mascot';
 import { resetAppIconCache } from '@/detection';
@@ -218,6 +220,36 @@ describe('settings (S43-P0)', () => {
     expect(await screen.findByText('100 reels from tomorrow')).toBeTruthy();
   });
 
+  it('groups the rows under the Figma section headers', async () => {
+    await render(<SettingsScreen />);
+    await screen.findByTestId('row-limit');
+    for (const header of ['COUNTING', 'FLOATING BADGE', 'APPEARANCE', 'ABOUT', 'DATA']) {
+      expect(screen.getByText(header)).toBeTruthy();
+    }
+    expect(screen.getByTestId('row-delete')).toBeTruthy();
+  });
+
+  it('applies the theme choice live, persists it and keeps the sheet open', async () => {
+    useThemePreference.setState({ preference: 'system' });
+    await render(<SettingsScreen />);
+    await fireEvent.press(await screen.findByTestId('row-theme'));
+    expect(screen.getByTestId('theme-system')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('theme-dark'));
+    expect(useThemePreference.getState().preference).toBe('dark');
+    expect(screen.getByTestId('theme-dark')).toBeChecked();
+    expect(screen.getByTestId('theme-system')).not.toBeChecked();
+    expect(screen.getByTestId('theme-sheet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Theme, Dark' })).toBeTruthy();
+  });
+
+  it('closes a picker sheet when the scrim is tapped', async () => {
+    await render(<SettingsScreen />);
+    await fireEvent.press(await screen.findByTestId('row-theme'));
+    // The open sheet is an accessibility modal, so the scrim is hidden from queries by design.
+    await fireEvent.press(screen.getByTestId('theme-sheet-scrim', { includeHiddenElements: true }));
+    await waitFor(() => expect(screen.queryByTestId('theme-sheet')).toBeNull());
+  });
+
   it('saves the day start', async () => {
     await render(<SettingsScreen />);
     await fireEvent.press(await screen.findByTestId('row-day-start'));
@@ -230,12 +262,12 @@ describe('settings (S43-P0)', () => {
     await render(<SettingsScreen />);
     expect(await screen.findByText('Floating badge')).toBeTruthy();
     expect(screen.getByText('Shows today’s count over Instagram, YouTube and TikTok')).toBeTruthy();
-    expect(screen.getByTestId('row-badge-switch').props.value).toBe(true);
+    expect(screen.getByTestId('row-badge-switch')).toBeChecked();
     expect(screen.getByRole('button', { name: 'Badge display time, Always' })).toBeTruthy();
     expect(screen.getByText('Hide completely when resting')).toBeTruthy();
-    expect(screen.getByTestId('row-badge-hide-switch').props.value).toBe(false);
+    expect(screen.getByTestId('row-badge-hide-switch')).not.toBeChecked();
     // Always: the hide switch is dimmed and disabled, and its helper says when it applies
-    expect(screen.getByTestId('row-badge-hide-switch').props.disabled).toBe(true);
+    expect(screen.getByTestId('row-badge-hide-switch')).toBeDisabled();
     expect(
       screen.getByText(
         'Only with 1–3 s: hides the Thumb and the count between reels instead of resting',
@@ -251,23 +283,24 @@ describe('settings (S43-P0)', () => {
     });
     await render(<SettingsScreen />);
     await screen.findByText('Floating badge');
-    expect(screen.getByTestId('row-badge-hide-switch').props.disabled).toBe(false);
+    expect(screen.getByTestId('row-badge-hide-switch')).toBeEnabled();
   });
 
   it('saves the badge switches natively', async () => {
-    core.getBadgeSettings.mockResolvedValue({
-      enabled: true,
-      displayTime: '2s',
-      hideWhenResting: false,
+    let saved: BadgeSettings = { enabled: true, displayTime: '2s', hideWhenResting: false };
+    core.getBadgeSettings.mockImplementation(async () => saved);
+    core.setBadgeSettings.mockImplementation(async (patch: Partial<BadgeSettings>) => {
+      saved = { ...saved, ...patch };
+      return saved;
     });
     await render(<SettingsScreen />);
-    await fireEvent(await screen.findByTestId('row-badge-switch'), 'valueChange', false);
+    await fireEvent.press(await screen.findByTestId('row-badge-switch'));
     await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ enabled: false }));
-    await fireEvent(screen.getByTestId('row-badge-hide-switch'), 'valueChange', true);
+    await fireEvent.press(screen.getByTestId('row-badge-hide-switch'));
     await waitFor(() =>
       expect(core.setBadgeSettings).toHaveBeenCalledWith({ hideWhenResting: true }),
     );
-    expect(screen.getByTestId('row-badge-switch').props.value).toBe(false);
+    expect(screen.getByTestId('row-badge-switch')).not.toBeChecked();
   });
 
   it('picks the badge display time from the chips', async () => {

@@ -55,11 +55,11 @@ describe('welcome and limit', () => {
 
   it('starts at 60, steps by 5, takes a preset and saves the limit natively', async () => {
     await render(<LimitScreen />);
-    expect(screen.getByTestId('limit-value')).toHaveTextContent('60');
+    expect(screen.getByTestId('limit-value')).toHaveAccessibilityValue({ text: '60' });
     await fireEvent.press(screen.getByTestId('limit-more'));
-    expect(screen.getByTestId('limit-value')).toHaveTextContent('65');
+    expect(screen.getByTestId('limit-value')).toHaveAccessibilityValue({ text: '65' });
     await fireEvent.press(screen.getByTestId('limit-preset-100'));
-    expect(screen.getByTestId('limit-value')).toHaveTextContent('100');
+    expect(screen.getByTestId('limit-value')).toHaveAccessibilityValue({ text: '100' });
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(core.setDailyLimit).toHaveBeenCalledWith(100));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/disclosure'));

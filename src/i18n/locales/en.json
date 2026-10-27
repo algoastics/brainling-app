@@ -179,6 +179,26 @@
     "dev": {
       "lockPreview": "Lock screen preview",
       "debug": "Detection debug"
+    },
+    "sections": {
+      "counting": "Counting",
+      "badge": "Floating badge",
+      "appearance": "Appearance",
+      "about": "About",
+      "data": "Data"
+    },
+    "footers": {
+      "counting": "Thumbwell counts reels on this phone. Nothing leaves your device.",
+      "badge": "Drag the badge anywhere. It snaps to the nearest screen edge.",
+      "appearance": "System follows your phone’s light or dark setting.",
+      "data": "Removes your counts, limit and settings from this phone. This can’t be undone."
+    },
+    "theme": {
+      "title": "Theme",
+      "body": "System follows your phone’s light or dark setting.",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
     }
   },
   "about": {

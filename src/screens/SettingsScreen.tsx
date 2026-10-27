@@ -5,7 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, StyleSheet } from 'react-native';
 
-import { Dialog, ListGroup, ListRow, Screen, Text, TopBar } from '@/components/ui';
+import { Dialog, ListGroup, ListRow, ListSection, Screen, Text, TopBar } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
 import {
   resetAppIconCache,
@@ -20,11 +20,11 @@ import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
 import { useAppStore } from '@/state/appStore';
 import { getStorage } from '@/storage';
 import { buildFeedbackMailto } from '@/support/feedback';
-import { space } from '@/theme';
+import { space, useThemePreference } from '@/theme';
 
-import { BadgeTimeDialog, DayStartDialog, LimitDialog } from './settings/dialogs';
+import { BadgeTimeSheet, DayStartSheet, LimitSheet, ThemeSheet } from './settings/sheets';
 
-type Editing = 'limit' | 'dayStart' | 'badgeTime' | 'delete' | null;
+type Editing = 'limit' | 'dayStart' | 'badgeTime' | 'theme' | 'delete' | null;
 
 /** S43-P0 Settings: limit, counting status, day start, privacy, feedback, about, delete data. */
 export function SettingsScreen() {
@@ -35,6 +35,7 @@ export function SettingsScreen() {
   const { settings: badge, refresh: refreshBadge, update: updateBadge } = useBadgeSettings();
   const resetApp = useAppStore((s) => s.resetApp);
   const [editing, setEditing] = useState<Editing>(null);
+  const [sheetKey, setSheetKey] = useState(0);
   const [deleteFailed, setDeleteFailed] = useState(false);
 
   useFocusEffect(
@@ -71,7 +72,7 @@ export function SettingsScreen() {
       getStorage().clearAll();
       resetAppIconCache();
       resetApp();
-      setEditing(null);
+      close();
       router.replace('/');
     } catch {
       setDeleteFailed(true);
@@ -82,9 +83,17 @@ export function SettingsScreen() {
   const countingValue =
     status === null ? '' : paused ? t('settings.countingPaused') : t('settings.countingOn');
 
+  const themePreference = useThemePreference((st) => st.preference);
+
+  const open = (sheet: Exclude<Editing, null>) => {
+    setSheetKey((k) => k + 1);
+    setEditing(sheet);
+  };
+  const close = () => setEditing(null);
+
   return (
     <Screen testID="settings" edges={['top']} header={<TopBar title={t('settings.title')} />}>
-      <ListGroup>
+      <ListSection title={t('settings.sections.counting')} footer={t('settings.footers.counting')}>
         <ListRow
           testID="row-limit"
           icon="lock"
@@ -95,7 +104,7 @@ export function SettingsScreen() {
               : undefined
           }
           value={t('settings.limitValue', { count: limit?.effective ?? DEFAULT_LIMIT })}
-          onPress={() => limit && setEditing('limit')}
+          onPress={() => limit && open('limit')}
         />
         <ListRow
           testID="row-counting"
@@ -117,7 +126,7 @@ export function SettingsScreen() {
           icon="clock"
           title={t('settings.dayStart')}
           value={formatDayStart(dayStart)}
-          onPress={() => setEditing('dayStart')}
+          onPress={() => open('dayStart')}
         />
         <ListRow
           testID="row-disclosure"
@@ -126,9 +135,9 @@ export function SettingsScreen() {
           trailing="chevron"
           onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
         />
-      </ListGroup>
+      </ListSection>
       {badge ? (
-        <ListGroup>
+        <ListSection title={t('settings.sections.badge')} footer={t('settings.footers.badge')}>
           <ListRow
             testID="row-badge"
             icon="badge"
@@ -142,7 +151,7 @@ export function SettingsScreen() {
             icon="timer"
             title={t('settings.badge.time')}
             value={t(`settings.badge.timeValue_${badge.displayTime}`)}
-            onPress={() => setEditing('badgeTime')}
+            onPress={() => open('badgeTime')}
           />
           <ListRow
             testID="row-badge-hide"
@@ -153,9 +162,21 @@ export function SettingsScreen() {
             switchDisabled={badge.displayTime === 'always'}
             onSwitchChange={(hideWhenResting) => void updateBadge({ hideWhenResting })}
           />
-        </ListGroup>
+        </ListSection>
       ) : null}
-      <ListGroup>
+      <ListSection
+        title={t('settings.sections.appearance')}
+        footer={t('settings.footers.appearance')}
+      >
+        <ListRow
+          testID="row-theme"
+          icon="sparkles"
+          title={t('settings.theme.title')}
+          value={t(`settings.theme.${themePreference}`)}
+          onPress={() => open('theme')}
+        />
+      </ListSection>
+      <ListSection title={t('settings.sections.about')}>
         <ListRow
           testID="row-privacy"
           icon="info"
@@ -178,18 +199,20 @@ export function SettingsScreen() {
           onPress={() => router.push('/about')}
         />
         <ListRow
-          testID="row-delete"
-          icon="trash"
-          title={t('settings.delete')}
-          danger
-          onPress={() => setEditing('delete')}
-        />
-        <ListRow
           testID="row-version"
           title={t('settings.version')}
           value={`${version} (${build})`}
         />
-      </ListGroup>
+      </ListSection>
+      <ListSection title={t('settings.sections.data')} footer={t('settings.footers.data')}>
+        <ListRow
+          testID="row-delete"
+          icon="trash"
+          title={t('settings.delete')}
+          danger
+          onPress={() => open('delete')}
+        />
+      </ListSection>
       {__DEV__ ? (
         <ListGroup>
           <ListRow
@@ -210,42 +233,47 @@ export function SettingsScreen() {
         {t('settings.disclaimer')}
       </Text>
 
-      {editing === 'limit' && limit ? (
-        <LimitDialog
+      {limit ? (
+        <LimitSheet
+          key={`limit-${sheetKey}`}
+          visible={editing === 'limit'}
           limit={limit}
           dayStartMinutes={dayStart}
-          onClose={() => setEditing(null)}
+          onClose={close}
           onSaved={() => void refreshLimit()}
         />
       ) : null}
-      {editing === 'dayStart' ? (
-        <DayStartDialog
-          minutes={dayStart}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            void refreshDayStart();
-            void refreshLimit();
-          }}
-        />
-      ) : null}
-      {editing === 'badgeTime' && badge ? (
-        <BadgeTimeDialog
+      <DayStartSheet
+        key={`day-${sheetKey}`}
+        visible={editing === 'dayStart'}
+        minutes={dayStart}
+        onClose={close}
+        onSaved={() => {
+          void refreshDayStart();
+          void refreshLimit();
+        }}
+      />
+      {badge ? (
+        <BadgeTimeSheet
+          key={`badge-${sheetKey}`}
+          visible={editing === 'badgeTime'}
           value={badge.displayTime}
           onSave={async (displayTime) => {
             await ThumbwellCore.setBadgeSettings({ displayTime });
             await refreshBadge();
           }}
-          onClose={() => setEditing(null)}
+          onClose={close}
         />
       ) : null}
+      <ThemeSheet visible={editing === 'theme'} onClose={close} />
       <Dialog
         visible={editing === 'delete'}
-        onDismiss={() => setEditing(null)}
+        onDismiss={close}
         title={t('settings.deleteDialog.title')}
         body={deleteFailed ? t('settings.deleteDialog.error') : t('settings.deleteDialog.body')}
         actions={[
           { label: t('settings.deleteDialog.confirm'), onPress: deleteData, kind: 'danger' },
-          { label: t('common.cancel'), onPress: () => setEditing(null), kind: 'text' },
+          { label: t('common.cancel'), onPress: close, kind: 'text' },
         ]}
       />
     </Screen>
