@@ -11,6 +11,10 @@ const {
 const SERVICE_CLASS = 'com.algoastics.thumbwell.core.detection.ThumbwellAccessibilityService';
 const XML_NAME = 'thumbwell_accessibility_service';
 const DESCRIPTION_KEY = 'thumbwell_accessibility_description';
+// F18 item 8 (Scope v3, D42), verbatim. Must stay consistent with the S06 text (disclosure version 2),
+// the Play declaration and the store listing.
+const SERVICE_DESCRIPTION =
+  'Thumbwell counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a small on-screen counter you can switch off, and, at your limit, covers the reels screen or goes back. Everything is processed on your phone.';
 const SIGNED_RULES_PATH = path.join(
   __dirname,
   'android/src/main/assets/thumbwell/rules.signed.json',
@@ -171,9 +175,7 @@ const withAppQueries = (config) =>
 
 /** Declares the reel-counting AccessibilityService and its configuration. */
 module.exports = function withThumbwellCore(config, props = {}) {
-  const description =
-    props.serviceDescription ??
-    'Thumbwell counts the short videos you watch in Instagram, YouTube and TikTok. It reads only which screen is open, never what is on it, and nothing leaves your phone.';
+  const description = props.serviceDescription ?? SERVICE_DESCRIPTION;
   config = withServiceXml(config);
   config = withDescription(config, description);
   config = withServiceDeclaration(config);

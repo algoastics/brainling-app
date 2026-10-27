@@ -37,4 +37,15 @@ describe('disclosure version 2 (F03, D42)', () => {
       'I understand and agree that Thumbwell uses the Accessibility service as described above.',
     );
   });
+
+  it('has the F18 service description in the plugin, matching the counter wording', () => {
+    const plugin = readFileSync(
+      join(__dirname, '../../../modules/thumbwell-core/app.plugin.js'),
+      'utf8',
+    );
+    expect(plugin).toContain(
+      "'Thumbwell counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a small on-screen counter you can switch off, and, at your limit, covers the reels screen or goes back. Everything is processed on your phone.'",
+    );
+    expect(plugin).toContain('props.serviceDescription ??\n    SERVICE_DESCRIPTION');
+  });
 });
