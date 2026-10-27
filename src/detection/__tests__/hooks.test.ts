@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, renderHook } from '@testing-library/react-native';
-import type { DayCounts } from 'thumbwell-core';
+import type { CountingStatus, DayCounts } from 'thumbwell-core';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { useServiceStatus, useTodayCounts } from '../hooks';
+import { useCountingStatus, useServiceStatus, useTodayCounts } from '../hooks';
 
 type CountListener = (c: DayCounts) => void;
 
@@ -11,6 +11,7 @@ const mockCore = {
   listeners: new Set<CountListener>(),
   getTodayCounts: jest.fn<() => Promise<DayCounts>>(),
   isServiceEnabled: jest.fn<() => Promise<boolean>>(),
+  getCountingStatus: jest.fn<() => Promise<CountingStatus>>(),
   addListener: jest.fn((_event: string, fn: CountListener) => {
     mockCore.listeners.add(fn);
     return { remove: () => mockCore.listeners.delete(fn) };
@@ -32,6 +33,7 @@ const day = (total: number, apps: Record<string, number> = {}): DayCounts => ({
   date: '2026-10-21',
   total,
   apps,
+  ads: {},
   nextCloseAtMs: 0,
   timeZone: 'Asia/Karachi',
 });
@@ -118,5 +120,32 @@ describe('useServiceStatus', () => {
     mockCore.isServiceEnabled.mockResolvedValue(true);
     await act(() => result.current.refresh());
     expect(result.current.enabled).toBe(true);
+  });
+});
+
+describe('useCountingStatus', () => {
+  const status = (paused: boolean): CountingStatus => ({
+    paused,
+    pausedReason: paused ? 'consent_missing' : null,
+    serviceEnabled: true,
+    serviceRunning: true,
+    consentLogged: !paused,
+    consent: null,
+    disclosureVersion: '1',
+    apps: { instagram: { enabled: true }, facebook: { enabled: false } },
+    dayStartMinutes: 240,
+    flags: { facebook: false, snapchat: false, countBadge: false },
+  });
+
+  it('reads on mount and re-reads on foreground and refresh()', async () => {
+    mockCore.getCountingStatus.mockResolvedValue(status(true));
+    const { result } = await renderHook(() => useCountingStatus());
+    expect(result.current.status?.pausedReason).toBe('consent_missing');
+    mockCore.getCountingStatus.mockResolvedValue(status(false));
+    await setAppState('active');
+    expect(result.current.status?.paused).toBe(false);
+    mockCore.getCountingStatus.mockResolvedValue(status(true));
+    await act(() => result.current.refresh());
+    expect(result.current.status?.paused).toBe(true);
   });
 });

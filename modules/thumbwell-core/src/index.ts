@@ -6,10 +6,53 @@ export type DayCounts = {
   total: number;
   /** Count per app rule key, e.g. `instagram`, `youtube`, `tiktok_lite`. */
   apps: Record<string, number>;
+  /**
+   * Sponsored reels seen per app today. They are excluded from `apps` and `total`; stored for
+   * a later "Ads seen" row and not shown in Phase 0.
+   */
+  ads: Record<string, number>;
   /** Epoch ms of the 04:00 local day close that ends this day. */
   nextCloseAtMs: number;
   /** IANA time zone the day was computed in. */
   timeZone: string;
+};
+
+/** One past (or current) Thumbwell day, from `getDailyCounts`. */
+export type DailyCounts = {
+  date: string;
+  total: number;
+  apps: Record<string, number>;
+  ads: Record<string, number>;
+};
+
+/** Why counting is paused; `null` in `CountingStatus.pausedReason` while it is running. */
+export type PausedReason =
+  'service_disabled' | 'service_not_running' | 'consent_missing' | 'no_rules';
+
+/** The accessibility disclosure consent kept by the native side. */
+export type ConsentRecord = {
+  /** Epoch ms the consent was logged. */
+  atMs: number;
+  /** Disclosure version the user accepted. */
+  version: string;
+};
+
+/** Everything the UI needs for the "counting paused" state. */
+export type CountingStatus = {
+  paused: boolean;
+  pausedReason: PausedReason | null;
+  serviceEnabled: boolean;
+  serviceRunning: boolean;
+  /** True when consent is logged for `disclosureVersion`. Nothing is counted without it. */
+  consentLogged: boolean;
+  consent: ConsentRecord | null;
+  /** The disclosure version this build requires. */
+  disclosureVersion: string;
+  /** Per app rule key; `false` for apps switched off in this build (Facebook, Snapchat). */
+  apps: Record<string, { enabled: boolean }>;
+  /** Minutes after local midnight at which the Thumbwell day starts (default 240 = 04:00). */
+  dayStartMinutes: number;
+  flags: { facebook: boolean; snapchat: boolean; countBadge: boolean };
 };
 
 export type ServiceState = 'ok' | 'disabled' | 'not_running';
@@ -82,6 +125,19 @@ declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
   /** Opens the system accessibility settings (started on the main thread). */
   openAccessibilitySettings(): Promise<void>;
   getTodayCounts(): Promise<DayCounts>;
+  /** Per-day counts and ads seen, newest first. `limit` defaults to 30 (max 400). */
+  getDailyCounts(limit?: number): Promise<DailyCounts[]>;
+  /** Service, consent and per-app state for the "counting paused" UI. */
+  getCountingStatus(): Promise<CountingStatus>;
+  /**
+   * Logs the user's consent (timestamp = now) for a disclosure `version`. Call from S06 when the
+   * user accepts; counting stays off until the version equals `CountingStatus.disclosureVersion`.
+   */
+  setConsent(version: string): Promise<ConsentRecord>;
+  getConsent(): Promise<ConsentRecord | null>;
+  /** Minutes after local midnight (0 to 1439) at which the day starts. Returns today's counts. */
+  setDayStartMinutes(minutes: number): Promise<DayCounts>;
+  getDayStartMinutes(): Promise<number>;
   getHealth(): Promise<HealthStatus>;
   getRulesStatus(): Promise<RulesStatus>;
   /** Null in release builds. */

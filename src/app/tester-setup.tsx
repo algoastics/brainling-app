@@ -7,6 +7,7 @@ import { useServiceStatus } from '@/detection';
 import { useT } from '@/i18n';
 import {
   DISCLOSURE_PARAGRAPHS,
+  DISCLOSURE_VERSION,
   DISCLOSURE_POINTS,
   disclosureParagraphKey,
   disclosurePointKey,
@@ -26,8 +27,11 @@ export default function TesterSetupScreen() {
   const complete = useAppStore((s) => s.completeTesterSetup);
   const openSettings = useCallback(() => void ThumbwellCore.openAccessibilitySettings(), []);
   const finish = useCallback(() => {
-    complete();
-    router.replace('/');
+    // Counting stays off until the native side has the consent record (timestamp + version).
+    void ThumbwellCore.setConsent(DISCLOSURE_VERSION).finally(() => {
+      complete();
+      router.replace('/');
+    });
   }, [complete]);
 
   const status =

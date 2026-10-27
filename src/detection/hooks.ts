@@ -1,4 +1,4 @@
-import ThumbwellCore, { type DayCounts } from 'thumbwell-core';
+import ThumbwellCore, { type CountingStatus, type DayCounts } from 'thumbwell-core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
@@ -74,4 +74,20 @@ export function useServiceStatus(): { enabled: boolean | null; refresh: () => Pr
   const refresh = useCallback(() => read(() => ThumbwellCore.isServiceEnabled()), [read]);
   useOnMountAndForeground(refresh);
   return { enabled, refresh };
+}
+
+/**
+ * Counting status for the "counting paused" state: service on, consent logged for the current
+ * disclosure version, per-app enabled. Re-read on mount and when the app returns to the foreground.
+ * `null` until the first read.
+ */
+export function useCountingStatus(): {
+  status: CountingStatus | null;
+  refresh: () => Promise<void>;
+} {
+  const [status, setStatus] = useState<CountingStatus | null>(null);
+  const { read } = useLatest(setStatus);
+  const refresh = useCallback(() => read(() => ThumbwellCore.getCountingStatus()), [read]);
+  useOnMountAndForeground(refresh);
+  return { status, refresh };
 }
