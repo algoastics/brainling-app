@@ -30,11 +30,18 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 - Colours: `values/thumbwell_lock_colors.xml` and `values-night/` carry the Figma light and dark
   semantic tokens. The mascot is the fried Thumb (`drawable-nodpi/thumbwell_lock_fried.png`, rendered
   from `assets/mascot/thumb-fried.svg`). Fonts are the system sans (Nunito and Inter are JS-only).
-- **Leave reels:** BACK. After 700 ms, if a reels surface of the app is still in front (BACK loops),
-  the button stays disabled for a 1.5 s cooldown, then HOME with a toast. Presses meanwhile are ignored.
-- The overlay covers the reels surface bounds when they are most of the screen (the tab bar below stays
-  tappable), else the app window, else the screen. It is touchable but not focusable, so the system
-  BACK gesture and the keyboard still work.
+- **Leave reels** (`LeaveFlow`, `HomeTab`, `LockTree`): taps the app's Home tab and stays in the app.
+  Instagram: `feed_tab`; YouTube: the first item of `pivot_bar` (rightmost in RTL); the ids are code
+  constants, so the signed rules are unchanged (moving them into the rules needs a schema bump and a
+  re-sign). TikTok has no Home tab: BACK. If the tab is not found, or after 700 ms a reels surface is
+  still in front, BACK; if BACK loops, a 1.5 s cooldown, then HOME with a toast. That chain is the last
+  resort, never the default for Instagram or YouTube. Presses meanwhile are ignored.
+- **Bounds** (`LockBounds`, pure, tested). The overlay covers the reels container bounds from the
+  accessibility tree, minus the bottom tab bar (known bar id, else a wide low row of 3+ clickables
+  near the bottom) and, in the whole-screen fallback only, the navigation bar. Fallbacks: the app
+  window minus a default 56 dp tab bar, then the screen. A cover that follows its container: when the
+  container bounds change (rotate, tab bar shown or hidden) it is fitted again. It is touchable but not
+  focusable, so the system BACK gesture, the keyboard and the tab bar still work.
 - **Safety:** never shown while a text input has input focus (node `isEditable` or an `EditText`
   class; the text is never read). Split screen or any window clearly smaller than the screen
   (under 90% wide or 75% tall) does not get an overlay; the service uses the same BACK-then-HOME flow
@@ -90,19 +97,19 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
   and TikTok are never told. The media PAUSE key only reaches an app with an active `MediaSession`;
   reels players mostly have none. `MediaSessionManager.getActiveSessions` would need a notification
   listener (or the system-only `MEDIA_CONTENT_CONTROL`): not used, no new permission is added.
-- **HOME fallback (`HomeFallback`).** Once the cover has been up 700 ms the service sends
-  `GLOBAL_ACTION_HOME`: the app goes to the background and its sound stops for certain; the watch
-  sees the launcher and hides the cover, and the lock returns on the next fresh reels entry while
-  still locked. Guards so the user is never trapped: not while "Leave reels" runs, 3 s between two,
-  at most 3 per 60 s; after that the lock stays up and the sound is best effort (focus and PAUSE).
-  Guaranteed: sound stops when HOME is sent. Best effort: focus and PAUSE (no sound for the first
-  700 ms is not guaranteed). The effect is that reopening TikTok while locked goes home again (up to
-  3 times a minute): that is the lock doing its job; Instagram's feed and DMs are not affected.
-- **Notifications over the lock.** A `TYPE_ACCESSIBILITY_OVERLAY` window is drawn above heads-up
-  banners. The cover now starts below a free band (status bar height plus 120 dp,
-  `OverlayGuard.HEADS_UP_BAND_DP`, one constant) and `FLAG_LAYOUT_NO_LIMITS` is off. Trade-off: about
-  the top 17% of a tall phone shows the reel under it, and a swipe that starts in that band still
-  reaches the app (nothing is counted while the lock is up, and the HOME fallback stops the sound).
+- **HOME fallback removed.** The 700 ms HOME after every cover (`HomeFallback`) closed the app by
+  itself and is gone. HOME remains only as the last step of Leave reels (see above). Sound is now
+  handled in place by the layers in `LockAudio` (in-app pause or mute control, focus plus PAUSE key,
+  then a music-stream mute with exact restore); none of them leaves the app. Unverified on device.
+- **Notifications over the lock.** A `TYPE_ACCESSIBILITY_OVERLAY` window is drawn ABOVE heads-up
+  banners (AOSP window layers: accessibility overlay 31, status bar 15, notification shade 17), so a
+  banner can only show if the lock does not cover its area: layering "under" banners is not possible
+  with this window type, and `TYPE_APPLICATION_OVERLAY` (which would be below) needs
+  `SYSTEM_ALERT_WINDOW`, excluded by design. So the lock starts below a free strip: status bar height
+  plus 96 dp (`OverlayGuard.HEADS_UP_BAND_DP`, one constant, the only place to change it). The strip is full width, the lock's top corners are rounded (20 dp), and no
+  window inset moves it (`setFitInsetsTypes(0)`), so it reads as the lock's top edge, not a gap. The
+  reel plays (muted or paused) in the strip; a swipe that starts there reaches the app and nothing is
+  counted while the lock is up. Edge to edge at the top was rejected because it would hide every banner.
   Split screen and landscape keep the full cover when cutting would leave under half.
 - **TikTok cover on entry.** An event of a window-state change with no active window known yet (cold
   start splash, return from Recents) now counts as the entry (`AppEntry.windowIsUp`), and events
@@ -131,6 +138,6 @@ is now 250 ms and checks the list on each tick: a safety package hides at once, 
 
 Overlay appears under 500 ms after the swipe past the limit reel on Instagram, YouTube and TikTok;
 covers the surface bounds correctly on each (and not the tab bar); never over a focused comment field
-or keyboard; "Leave reels" leaves in each app, and a BACK loop ends at HOME with the toast; split
+or keyboard; "Leave reels" goes to the Home tab in Instagram and YouTube (no auto-exit, no HOME), BACK in TikTok; the strip at the top is even and a banner shows in it; split
 screen behaviour; light and dark twins; rotate; screen off and on; day roll; TalkBack reads the
 title and button; no counts while covered.
