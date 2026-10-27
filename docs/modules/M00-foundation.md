@@ -18,7 +18,7 @@ Branch: `module/00-foundation`. Tracks the M0 Definition of Done from `docs/MODU
 | Dependabot: npm (Expo SDK group, dev tooling group) + github-actions, weekly | `.github/dependabot.yml` |
 | i18n: i18next + expo-localization, English only, typed keys; UI strings moved | `src/i18n/` |
 | Theme/tokens light + dark (light `muted` darkened to #6E6789 for AA body text) | `src/theme/` |
-| Fonts: Fredoka, Plus Jakarta Sans, JetBrains Mono | `src/theme/fonts.ts` |
+| Fonts: Nunito, Inter (was Fredoka, Plus Jakarta Sans, JetBrains Mono) | `src/theme/fonts.ts` |
 | Design system C01–C05, C09, C10 (+ ProTag, Screen) and a dev-only preview with light/dark switch | `src/components/ui/`, `src/app/design-system.tsx` |
 | `<Mascot>`: static art for all 7 health states + ghost from the design kit mascot sheet (no fallbacks needed) | `src/components/mascot/` |
 | S01 native splash, app icon, adaptive icon; in-app S01 with A01 logo pop + blink; S01-error retry | `assets/`, `app.json`, `src/components/brand/` |

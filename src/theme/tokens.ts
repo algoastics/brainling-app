@@ -1,61 +1,42 @@
 /**
- * Thumbwell design tokens, ported from brainling-design/code/theme.ts and
- * tokens/brainling.tokens.json. Never hard-code hex values in components; read them from here.
- *
- * Deviation from the kit: light `muted` is darkened from #7C7598 (4.1:1 on bg) to #6E6789
- * (5.0:1 on bg, 4.7:1 on surface2) so it can be used for body text (handoff §5).
+ * Thumbwell design tokens. Values come from the Figma file (page 02 Foundations); never hard-code
+ * hex values in components, read them from the theme.
  */
-export const palette = {
-  violet50: '#F4F1FF',
-  violet100: '#E7E1FF',
-  violet300: '#B7A8FF',
-  violet500: '#7B61FF',
-  violet600: '#6B4EFF',
-  violet700: '#5236E0',
-  violet900: '#2A1C7A',
-  pink50: '#FFF0F6',
-  pink100: '#FFD9E8',
-  pink300: '#FFB8D2',
-  pink500: '#FF8FB8',
-  pink600: '#F2588F',
-  pink800: '#B8335F',
-  mint50: '#E9FBF4',
-  mint100: '#CFF6E8',
-  mint500: '#22C993',
-  mint700: '#129A6E',
-  sun50: '#FFF9E6',
-  sun100: '#FFF0C2',
-  sun500: '#FFC233',
-  sun700: '#D99A00',
-  ember50: '#FFF1EC',
-  ember100: '#FFE0D5',
-  ember500: '#FF6B3D',
-  ember700: '#D9461A',
-  ember900: '#8A2A0E',
-  zombie300: '#C5D3BC',
-  zombie500: '#9BB08F',
-  zombie700: '#6E8463',
-  ice100: '#DDF2FF',
-  ice500: '#8FD3FF',
-  ice700: '#3E9BD6',
-  ink900: '#17122E',
-  ink700: '#3F3860',
-  ink500: '#7C7598',
-  ink300: '#BDB8D1',
-  ink200: '#E6E2F0',
-  ink100: '#F2EFFA',
-  ink50: '#FAF8FF',
-  white: '#FFFFFF',
-  night900: '#0E0B1F',
-  night800: '#1A1533',
-  night700: '#241E42',
-  night600: '#332C55',
-  outline: '#22183F',
-  gold: '#FFD45C',
-  gold700: '#C9971C',
-} as const;
+import { primitives as p } from './palette';
 
-export type ColorTokens = {
+export { palette, primitives } from './palette';
+
+/** Semantic colors, one set per mode (Figma "Semantic colours / Light" and "/ Dark"). */
+export type SemanticColors = {
+  bgScreen: string;
+  bgSurface: string;
+  bgSurface2: string;
+  bgPrimarySoft: string;
+  brandPrimary: string;
+  brandPrimaryEdge: string;
+  brandOnPrimary: string;
+  brandAccentText: string;
+  brandLilac: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  borderDefault: string;
+  borderStrong: string;
+  borderControl: string;
+  statusGood: string;
+  statusGoodText: string;
+  statusWarn: string;
+  statusDanger: string;
+  statusDangerStrong: string;
+  statusDangerEdge: string;
+  statusOnDanger: string;
+};
+
+/**
+ * Old Brainling key names, mapped onto the Thumbwell semantics so existing screens re-skin without
+ * edits. @deprecated: new code uses the semantic names above.
+ */
+export type LegacyColors = {
   bg: string;
   surface: string;
   surface2: string;
@@ -84,63 +65,92 @@ export type ColorTokens = {
   nav: string;
 };
 
-export const lightColors: ColorTokens = {
-  bg: '#FAF8FF',
-  surface: '#FFFFFF',
-  surface2: '#F2EFFA',
-  ink: '#17122E',
-  ink2: '#3F3860',
-  muted: '#6E6789',
-  line: '#E6E2F0',
-  primary: '#6B4EFF',
-  primary2: '#5236E0',
-  primarySoft: '#E7E1FF',
-  onPrimary: '#FFFFFF',
-  accent: '#FF8FB8',
-  accentSoft: '#FFD9E8',
-  good: '#22C993',
-  goodSoft: '#CFF6E8',
-  warn: '#FFC233',
-  warnSoft: '#FFF0C2',
-  bad: '#FF6B3D',
-  badSoft: '#FFE0D5',
-  info: '#3E9BD6',
-  infoSoft: '#DDF2FF',
-  coin: '#FFC233',
-  coinInk: '#D99A00',
-  scrim: '#17122E',
-  shadow: '#DCD6EE',
-  nav: '#FFFFFF',
+export type ColorTokens = SemanticColors & LegacyColors;
+
+const lightSemantic: SemanticColors = {
+  bgScreen: p.mist,
+  bgSurface: p.white,
+  bgSurface2: p.surface2Light,
+  bgPrimarySoft: p.lilac100,
+  brandPrimary: p.violet500,
+  brandPrimaryEdge: p.violet700,
+  brandOnPrimary: p.white,
+  brandAccentText: p.violet700,
+  brandLilac: p.lilac200,
+  textPrimary: p.plum900,
+  textSecondary: p.plum700,
+  textMuted: p.plum600,
+  borderDefault: p.lineLight,
+  borderStrong: p.lineStrongLight,
+  borderControl: p.plumControl,
+  statusGood: p.mint500,
+  statusGoodText: p.mint700,
+  statusWarn: p.sun500,
+  statusDanger: p.coral500,
+  statusDangerStrong: p.coral700,
+  statusDangerEdge: p.coral900,
+  statusOnDanger: p.white,
 };
 
-export const darkColors: ColorTokens = {
-  bg: '#0E0B1F',
-  surface: '#1A1533',
-  surface2: '#241E42',
-  ink: '#F4F1FF',
-  ink2: '#CFC8EA',
-  muted: '#9A93B8',
-  line: '#332C55',
-  primary: '#8C75FF',
-  primary2: '#A897FF',
-  primarySoft: '#2E2566',
-  onPrimary: '#FFFFFF',
-  accent: '#FF8FB8',
-  accentSoft: '#45213A',
-  good: '#3ADBA6',
-  goodSoft: '#123D33',
-  warn: '#FFCC55',
-  warnSoft: '#3D3214',
-  bad: '#FF825C',
-  badSoft: '#43221A',
-  info: '#8FD3FF',
-  infoSoft: '#16324A',
-  coin: '#FFC233',
-  coinInk: '#D99A00',
-  scrim: '#000000',
-  shadow: '#07050F',
-  nav: '#1A1533',
+const darkSemantic: SemanticColors = {
+  bgScreen: p.nightBg,
+  bgSurface: p.nightSurface,
+  bgSurface2: p.nightSurface2,
+  bgPrimarySoft: p.nightVioletSoft,
+  brandPrimary: p.violet500,
+  brandPrimaryEdge: p.violet800,
+  brandOnPrimary: p.white,
+  brandAccentText: p.lilacDark,
+  brandLilac: p.lilacDark,
+  textPrimary: p.moon,
+  textSecondary: p.moonInk2,
+  textMuted: p.moonMuted,
+  borderDefault: p.lineDark,
+  borderStrong: p.lineStrongDark,
+  borderControl: p.nightControl,
+  statusGood: p.mint300,
+  statusGoodText: p.mint300,
+  statusWarn: p.sun500,
+  statusDanger: p.coral300,
+  statusDangerStrong: p.coral300,
+  statusDangerEdge: p.coral400,
+  statusOnDanger: p.nightBg,
 };
+
+function withLegacy(s: SemanticColors, dark: boolean): ColorTokens {
+  return {
+    ...s,
+    bg: s.bgScreen,
+    surface: s.bgSurface,
+    surface2: s.bgSurface2,
+    ink: s.textPrimary,
+    ink2: s.textSecondary,
+    muted: s.textMuted,
+    line: s.borderDefault,
+    primary: s.brandPrimary,
+    primary2: s.brandPrimaryEdge,
+    primarySoft: s.bgPrimarySoft,
+    onPrimary: s.brandOnPrimary,
+    accent: s.brandLilac,
+    accentSoft: s.bgPrimarySoft,
+    good: s.statusGood,
+    goodSoft: dark ? '#123D33' : '#D5F3E9',
+    warn: s.statusWarn,
+    warnSoft: dark ? '#3D3214' : '#FDEBC8',
+    bad: s.statusDanger,
+    badSoft: dark ? '#43221A' : '#FBE0D5',
+    info: dark ? '#8FD3FF' : '#3E9BD6',
+    infoSoft: dark ? '#16324A' : '#DDF2FF',
+    coin: '#FFC233',
+    coinInk: '#D99A00',
+    scrim: dark ? '#000000' : p.plum900,
+    shadow: dark ? '#07050F' : p.lineStrongLight,
+    nav: s.bgSurface,
+  };
+}
+
+export const lightColors: ColorTokens = withLegacy(lightSemantic, false);
+export const darkColors: ColorTokens = withLegacy(darkSemantic, true);
 
 export type MascotState =
   'glowing' | 'happy' | 'meh' | 'fried' | 'zombie' | 'sleeping' | 'recovering';
@@ -158,32 +168,58 @@ export const mascotColors: Record<MascotState | 'ghost', MascotColorSet> = {
   ghost: { body: '#CFCCDB', fold: '#A19DB5', highlight: '#E5E3EE', ui: '#BDB8D1' },
 };
 
+/** Font family names registered by `useThumbwellFonts` (Nunito for headings/numbers, Inter for text). */
 export const fonts = {
-  display: {
-    regular: 'Fredoka_400Regular',
-    semibold: 'Fredoka_600SemiBold',
-    bold: 'Fredoka_700Bold',
-  },
+  nunito: { bold: 'Nunito_700Bold', extrabold: 'Nunito_800ExtraBold', black: 'Nunito_900Black' },
+  inter: { regular: 'Inter_400Regular', medium: 'Inter_500Medium', semibold: 'Inter_600SemiBold' },
+  /** @deprecated Old Brainling aliases (Fredoka/Jakarta), now Nunito/Inter. */
+  display: { regular: 'Nunito_700Bold', semibold: 'Nunito_800ExtraBold', bold: 'Nunito_900Black' },
+  /** @deprecated */
   body: {
-    semibold: 'PlusJakartaSans_600SemiBold',
-    bold: 'PlusJakartaSans_700Bold',
-    extrabold: 'PlusJakartaSans_800ExtraBold',
+    semibold: 'Inter_500Medium',
+    bold: 'Inter_600SemiBold',
+    extrabold: 'Nunito_800ExtraBold',
   },
-  mono: 'JetBrainsMono_500Medium',
 } as const;
 
+type TypeStyle = {
+  fontFamily: string;
+  fontSize: number;
+  lineHeight: number;
+  letterSpacing?: number;
+};
+
+/** Figma type scale (Foundations "Type scale"). */
+export const type = {
+  counterXl: { fontFamily: fonts.nunito.black, fontSize: 96, lineHeight: 96, letterSpacing: -2 },
+  counterL: { fontFamily: fonts.nunito.black, fontSize: 64, lineHeight: 64, letterSpacing: -2 },
+  display: { fontFamily: fonts.nunito.black, fontSize: 48, lineHeight: 52, letterSpacing: -1 },
+  h1: { fontFamily: fonts.nunito.extrabold, fontSize: 32, lineHeight: 38, letterSpacing: -1 },
+  h2: { fontFamily: fonts.nunito.extrabold, fontSize: 24, lineHeight: 30 },
+  h3: { fontFamily: fonts.nunito.bold, fontSize: 20, lineHeight: 26 },
+  button: { fontFamily: fonts.nunito.extrabold, fontSize: 17, lineHeight: 20, letterSpacing: 1 },
+  bodyL: { fontFamily: fonts.inter.regular, fontSize: 18, lineHeight: 26 },
+  body: { fontFamily: fonts.inter.regular, fontSize: 16, lineHeight: 24 },
+  label: { fontFamily: fonts.inter.semibold, fontSize: 14, lineHeight: 20 },
+  caption: { fontFamily: fonts.inter.medium, fontSize: 12, lineHeight: 16 },
+  overline: { fontFamily: fonts.inter.semibold, fontSize: 12, lineHeight: 16, letterSpacing: 10 },
+} as const satisfies Record<string, TypeStyle>;
+
+export type TypeVariant = keyof typeof type;
+
+/** @deprecated Old variant names, mapped onto the Thumbwell scale. */
 export const typography = {
-  'display.xl': { fontFamily: fonts.display.bold, fontSize: 64, lineHeight: 83 },
-  'display.lg': { fontFamily: fonts.display.bold, fontSize: 48, lineHeight: 62 },
-  'heading.h1': { fontFamily: fonts.display.semibold, fontSize: 32, lineHeight: 42 },
-  'heading.h2': { fontFamily: fonts.display.semibold, fontSize: 24, lineHeight: 31 },
-  'heading.h3': { fontFamily: fonts.display.semibold, fontSize: 20, lineHeight: 26 },
-  'body.lg': { fontFamily: fonts.body.bold, fontSize: 16, lineHeight: 21 },
-  'body.md': { fontFamily: fonts.body.semibold, fontSize: 15, lineHeight: 20 },
-  'body.sm': { fontFamily: fonts.body.semibold, fontSize: 13, lineHeight: 17 },
-  caption: { fontFamily: fonts.body.bold, fontSize: 12, lineHeight: 16 },
-  mono: { fontFamily: fonts.mono, fontSize: 16, lineHeight: 21 },
-} as const;
+  'display.xl': type.counterL,
+  'display.lg': type.display,
+  'heading.h1': type.h1,
+  'heading.h2': type.h2,
+  'heading.h3': type.h3,
+  'body.lg': { ...type.button, letterSpacing: 0 },
+  'body.md': type.body,
+  'body.sm': type.label,
+  caption: type.caption,
+  mono: type.label,
+} as const satisfies Record<string, TypeStyle>;
 
 export type TypographyVariant = keyof typeof typography;
 
@@ -207,12 +243,38 @@ export const radius = {
   md: 16,
   lg: 20,
   xl: 24,
+  '2xl': 28,
   sheet: 28,
   dialog: 32,
   pill: 999,
 } as const;
 
-/** Chunky offset shadow with no blur (matches the design SVGs). */
+/** Component sizes (Figma "Size tokens"). */
+export const sizes = {
+  buttonHeight: 52,
+  buttonHeightSm: 40,
+  buttonEdge: 4,
+  buttonEdgePressed: 1,
+  buttonPressTravel: 3,
+  touchMin: 48,
+  inputHeight: 56,
+  topBarHeight: 56,
+  tabBarHeight: 72,
+  switchWidth: 52,
+  switchHeight: 32,
+  progressHeight: 12,
+  screenWidth: 360,
+  screenHeight: 800,
+} as const;
+
+/** Floating-surface shadows (Figma "Elevation"). Cards use a 1.5dp border instead. */
+export const elevations = {
+  card: { color: '#2A1C7A', opacity: 0.08, offsetY: 2, radius: 8 },
+  toast: { color: '#2A1C7A', opacity: 0.14, offsetY: 4, radius: 16 },
+  sheet: { color: '#2A1C7A', opacity: 0.2, offsetY: 8, radius: 32 },
+} as const;
+
+/** @deprecated Brainling chunky offset shadow, still used by the old onboarding screens. */
 export const elevation = { offsetY: 3, opacity: 0.7 } as const;
 
 export const motion = {
@@ -226,9 +288,9 @@ export const motion = {
 } as const;
 
 export const layout = {
-  screenWidth: 412,
-  screenHeight: 915,
+  screenWidth: sizes.screenWidth,
+  screenHeight: sizes.screenHeight,
   gutter: 20,
-  tabBarHeight: 84,
-  minTouch: 48,
+  tabBarHeight: sizes.tabBarHeight,
+  minTouch: sizes.touchMin,
 } as const;

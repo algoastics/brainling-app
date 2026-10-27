@@ -1,25 +1,15 @@
-import {
-  Fredoka_400Regular,
-  Fredoka_600SemiBold,
-  Fredoka_700Bold,
-} from '@expo-google-fonts/fredoka';
-import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
-import {
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 
-/** Font files keyed by the family names used in `fonts` / `typography`. */
+/** Font files keyed by the family names used in `fonts` / `type`. Nunito: headings and numbers; Inter: text. */
 export const fontAssets = {
-  Fredoka_400Regular,
-  Fredoka_600SemiBold,
-  Fredoka_700Bold,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-  JetBrainsMono_500Medium,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
 };
 
 /** Returns `[loaded, error]`; the app keeps the splash screen up until fonts settle. */
