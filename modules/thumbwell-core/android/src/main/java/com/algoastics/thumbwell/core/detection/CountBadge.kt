@@ -4,7 +4,9 @@ import android.accessibilityservice.AccessibilityService
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
@@ -12,6 +14,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -39,10 +42,11 @@ import java.util.Random
  * and [release] cancel everything and remove the window; add and remove are idempotent.
  *
  * Two window layouts, switched once per mode (never per frame): awake (pill and Thumb, pill flush
- * with the edge it is snapped to; the Thumb sits in front of the pill's left socket) and resting
- * (the whole node at [BadgeRest.NODE_ALPHA] with the sleeping Thumb on its edge end, half past the screen
- * edge; [BadgeRest.PILL_VISIBLE] false gives the Thumb alone). Nothing animates or has a timer
- * while resting. The window is touchable but never focusable.
+ * with the edge it is snapped to; the Thumb sits in front of the pill's socket on the side that
+ * faces the screen centre) and resting (the whole node at [BadgeRest.NODE_ALPHA] with the sleeping
+ * Thumb centred on that same pill end, only its outer half showing, as in Figma A42;
+ * [BadgeRest.PILL_VISIBLE] false gives the Thumb alone). Nothing animates or has a timer while
+ * resting. The window is touchable but never focusable.
  */
 class CountBadge(
   private val service: AccessibilityService,
@@ -74,6 +78,17 @@ class CountBadge(
   private val animators = ArrayList<Animator>()
   private var bob: ObjectAnimator? = null
   private var dragging = false
+  // Drag and snap (A31). One window update per frame; nothing allocated per touch event or frame.
+  private val choreographer: Choreographer = Choreographer.getInstance()
+  private val coalescer = FrameCoalescer()
+  private val dragFrame = Choreographer.FrameCallback { onDragFrame() }
+  private var snap: ValueAnimator? = null
+  private var capsuleShape: GradientDrawable? = null
+  private val cornersFrom = FloatArray(8)
+  private val cornersTo = FloatArray(8)
+  private val cornersNow = FloatArray(8)
+  private val thumbClip = Rect()
+  private var restThumbDx = 0f
 
   val isShown: Boolean get() = window != null
 
@@ -143,7 +158,13 @@ class CountBadge(
     }
   }
 
-  private val restDue = Runnable { apply(machine.onRestDue()) }
+  private val restDue: Runnable = object : Runnable {
+    override fun run() {
+      // Never rest in the middle of a drag or a snap: look again shortly after. The retry is this
+      // same Runnable, so every removeCallbacks(restDue) also cancels a pending retry.
+      if (dragging || snap != null) handler.postDelayed(this, REST_RETRY_MS) else apply(machine.onRestDue())
+    }
+  }
   private val hideDue = Runnable { apply(machine.onHideDue()) }
 
   private var addedAtMs = 0L
@@ -181,10 +202,10 @@ class CountBadge(
     val capsule = LinearLayout(service).apply {
       orientation = LinearLayout.HORIZONTAL
       gravity = Gravity.CENTER_VERTICAL
-      setPadding(dp(46f), 0, dp(16f), 0)
       elevation = dp(PILL_ELEVATION).toFloat()
       addView(counter, LinearLayout.LayoutParams(-2, -2))
     }
+    applyPillPadding(capsule, position.side)
     val art = ImageView(service).apply {
       setImageResource(R.drawable.ic_thumb_badge_closed)
       scaleType = ImageView.ScaleType.FIT_XY
@@ -253,27 +274,27 @@ class CountBadge(
     odometer = null; params = null
   }
 
-  /** Pill chrome: round with a violet ring while lifted, else the flat side takes the edge radius. */
+  /** Pill padding: the socket for the Thumb is on the screen-centre side (A42 side rule). */
+  private fun applyPillPadding(capsule: View?, side: BadgeSide) {
+    val (l, r) = BadgePlacement.pillPadding(side, PILL_SOCKET, PILL_GAP)
+    capsule?.setPadding(dp(l), 0, dp(r), 0)
+  }
+
+  /**
+   * Pill chrome. Dragging ([lifted]): fully round with a violet ring. Docked ([snapped]): the corners
+   * on the screen-edge side are square (radius 0), the inner ones fully round. The shape is kept in
+   * [capsuleShape] so the snap can animate its per-corner radii.
+   */
   private fun styleCapsule(snapped: Boolean, lifted: Boolean) {
     val capsule = pill ?: return
     val full = dp(PILL_H / 2f).toFloat()
-    val edge = dp(8f).toFloat()
     val shape = GradientDrawable().apply {
       setColor(service.getColor(R.color.thumbwell_badge_bg))
-      if (lifted) {
-        setStroke(dp(2f), service.getColor(R.color.thumbwell_badge_ring))
-        cornerRadius = full
-      } else {
-        setStroke(dp(1f), service.getColor(R.color.thumbwell_badge_border))
-        if (snapped && position.side == BadgeSide.RIGHT) {
-          cornerRadii = floatArrayOf(full, full, edge, edge, edge, edge, full, full)
-        } else if (snapped) {
-          cornerRadii = floatArrayOf(edge, edge, full, full, full, full, edge, edge)
-        } else {
-          cornerRadius = full
-        }
-      }
+      if (lifted) setStroke(dp(2f), service.getColor(R.color.thumbwell_badge_ring))
+      else setStroke(dp(1f), service.getColor(R.color.thumbwell_badge_border))
+      cornerRadii = BadgeCorners.radii(snapped && !lifted, position.side, full, cornersNow)
     }
+    capsuleShape = shape
     capsule.background = shape
   }
 
@@ -286,19 +307,26 @@ class CountBadge(
   private fun pillWidthPx(): Int {
     val counter = odometer ?: return dp(PILL_MIN_W)
     counter.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-    return dp(46f) + counter.measuredWidth + dp(16f)
+    return dp(PILL_SOCKET) + counter.measuredWidth + dp(PILL_GAP)
   }
 
   private data class Geometry(val x: Int, val y: Int, val w: Int, val h: Int, val thumbLeft: Int, val thumbTop: Int, val pillLeft: Int, val pillTop: Int, val pillW: Int)
 
-  private fun awakeGeometry(): Geometry {
+  /**
+   * Window and children for [side]. The pill is flush with the screen edge; the window reaches
+   * [PAD] past it and [INNER_PAD] past the centre-facing end (room for the resting Thumb's outer
+   * half). The window width is the same on both sides.
+   */
+  private fun awakeGeometry(side: BadgeSide = position.side): Geometry {
     val pillW = pillWidthPx()
     val pad = dp(PAD)
-    val w = pad + pillW + pad
+    val (padLeft, padRight) = BadgePlacement.windowPads(side, PAD, INNER_PAD).let { dp(it.first) to dp(it.second) }
+    val w = padLeft + pillW + padRight
     val h = pad + dp(THUMB_H) + pad
     val top = pillTopPx()
-    val x = if (position.side == BadgeSide.RIGHT) screenW() - w + pad else -pad
-    return Geometry(x, top - pad - dp(THUMB_RISE), w, h, pad - dp(5f), pad, pad, pad + dp(THUMB_RISE), pillW)
+    val x = if (side == BadgeSide.RIGHT) screenW() - padLeft - pillW else -padLeft
+    val thumbInPill = BadgePlacement.thumbLeftInPill(side, pillW.toFloat(), dp(THUMB_W).toFloat(), dp(THUMB_NUDGE).toFloat())
+    return Geometry(x, top - pad - dp(THUMB_RISE), w, h, padLeft + thumbInPill.toInt(), pad, padLeft, pad + dp(THUMB_RISE), pillW)
   }
 
   private fun applyGeometry(g: Geometry, commit: Boolean) {
@@ -334,7 +362,7 @@ class CountBadge(
     val g = awakeGeometry()
     return BadgePlacement.restShift(
       position.side, g.pillW.toFloat(), dp(PILL_H).toFloat(), dp(THUMB_W).toFloat(), dp(THUMB_H).toFloat(),
-      (g.thumbLeft - g.pillLeft).toFloat(), dp(THUMB_RISE).toFloat(), dp(46f).toFloat(), dp(16f).toFloat(),
+      (g.thumbLeft - g.pillLeft).toFloat(), dp(THUMB_RISE).toFloat(), dp(PILL_SOCKET).toFloat(), dp(PILL_GAP).toFloat(),
     )
   }
 
@@ -342,16 +370,40 @@ class CountBadge(
   private fun applyRestTransforms() {
     val box = thumbBox ?: return
     val shift = restShift()
+    restThumbDx = shift.thumbDx
     box.translationX = shift.thumbDx; box.translationY = shift.thumbDy
     box.scaleX = REST_SCALE; box.scaleY = REST_SCALE
     odometer?.translationX = shift.countDx
     pill?.translationX = 0f
+    updateThumbClip()
+  }
+
+  /**
+   * The Thumb's inner half is tucked behind the pill at rest (Figma peek frame), but it stays above
+   * the pill in the draw order (a Thumb under the pill disappeared on the device). The same look is
+   * made by clipping the Thumb to its outer half, in step with how far it has slid to rest. Awake
+   * there is no clip. Reuses one Rect, nothing is allocated per frame.
+   */
+  private fun updateThumbClip() {
+    val box = thumbBox ?: return
+    val progress = BadgePlacement.restProgress(box.translationX, restThumbDx)
+    if (progress <= 0f) {
+      box.clipBounds = null
+      return
+    }
+    val w = dp(THUMB_W).toFloat()
+    thumbClip.set(
+      BadgePlacement.thumbClipLeft(position.side, w, progress).toInt(), 0,
+      BadgePlacement.thumbClipRight(position.side, w, progress).toInt(), dp(THUMB_H),
+    )
+    box.clipBounds = thumbClip
   }
 
   private fun layoutAwake(commit: Boolean) {
     restingLayout = false
     pill?.visibility = View.VISIBLE
     styleCapsule(snapped = true, lifted = false)
+    thumbBox?.clipBounds = null
     applyGeometry(awakeGeometry(), commit)
   }
 
@@ -360,12 +412,14 @@ class CountBadge(
   private fun animate(
     target: View, property: android.util.Property<View, Float>, to: Float, ms: Long,
     interpolator: Interpolator, delay: Long = 0L, from: Float? = null, onEnd: (() -> Unit)? = null,
+    onUpdate: (() -> Unit)? = null,
   ): ObjectAnimator {
     val a = if (from != null) ObjectAnimator.ofFloat(target, property, from, to)
     else ObjectAnimator.ofFloat(target, property, to)
     a.duration = ms
     a.startDelay = delay
     a.interpolator = interpolator
+    if (onUpdate != null) a.addUpdateListener { onUpdate() }
     animators.add(a)
     a.addListener(object : AnimatorListenerAdapter() {
       override fun onAnimationEnd(animation: Animator) {
@@ -389,6 +443,13 @@ class CountBadge(
   /** Cancels every animator and every timer. Called before anything is removed or re-laid out. */
   private fun cancelAll(keepHide: Boolean = false) {
     cancelAnimators()
+    choreographer.removeFrameCallback(dragFrame)
+    coalescer.cancel()
+    snap?.let {
+      // A snap cut short by a hide keeps the position the finger chose.
+      it.removeAllListeners(); it.cancel(); snap = null
+      prefs.setBadgePosition(position)
+    }
     handler.removeCallbacksAndMessages(null)
     if (keepHide) handler.postDelayed(hideDue, BadgeTiming.LEAVE_DELAY_MS)
     blinking = false
@@ -413,6 +474,7 @@ class CountBadge(
     val art = thumb ?: return
     val wasResting = restingLayout
     val shift = if (a.fromGone || wasResting) restShift() else null
+    shift?.let { restThumbDx = it.thumbDx }
     val delta = (shift?.thumbDx ?: 0f) to (shift?.thumbDy ?: 0f)
     val countDx = shift?.countDx ?: 0f
     val group = content ?: return
@@ -428,6 +490,7 @@ class CountBadge(
       capsule.scaleX = 1f
       capsule.translationX = 0f
       odometer?.translationX = 0f
+      updateThumbClip()
       box.alpha = 1f
       capsule.alpha = pillStartAlpha
       animate(group, View.ALPHA, 1f, REDUCED_FADE_IN_MS, LinearInterpolator(), from = startAlpha)
@@ -438,9 +501,10 @@ class CountBadge(
     box.translationX = delta.first; box.translationY = delta.second
     box.scaleX = REST_SCALE; box.scaleY = REST_SCALE
     box.rotation = 0f
+    updateThumbClip()
     setEyes(R.drawable.ic_thumb_badge_closed)
     handler.postDelayed(eyeOpen, EYES_OPEN_AT_MS)
-    animate(box, View.TRANSLATION_X, 0f, BadgeTiming.POP_MS, spring)
+    animate(box, View.TRANSLATION_X, 0f, BadgeTiming.POP_MS, spring, onUpdate = ::updateThumbClip)
     animate(box, View.TRANSLATION_Y, 0f, BadgeTiming.POP_MS, spring)
     animate(box, View.SCALE_X, 1f, BadgeTiming.POP_MS, spring)
     animate(box, View.SCALE_Y, 1f, BadgeTiming.POP_MS, spring)
@@ -552,6 +616,7 @@ class CountBadge(
     thumb?.let { it.translationY = 0f; it.rotation = 0f; it.scaleY = 1f }
     val end = { finishSettle() }
     val shift = restShift()
+    restThumbDx = shift.thumbDx
     if (reduced) {
       if (!BadgeRest.PILL_VISIBLE) animate(capsule, View.ALPHA, 0f, BadgeTiming.REDUCED_FADE_MS, LinearInterpolator())
       animate(group, View.ALPHA, REST_ALPHA, BadgeTiming.REDUCED_FADE_MS, LinearInterpolator(), onEnd = end)
@@ -566,7 +631,7 @@ class CountBadge(
     handler.postDelayed({ setEyes(R.drawable.ic_thumb_badge_closed) }, BadgeTiming.BLINK_STEP_MS * 2)
     animate(box, View.SCALE_X, REST_SCALE, BadgeTiming.SETTLE_MS, ease)
     animate(box, View.SCALE_Y, REST_SCALE, BadgeTiming.SETTLE_MS, ease)
-    animate(box, View.TRANSLATION_X, shift.thumbDx, BadgeTiming.SETTLE_MS, ease)
+    animate(box, View.TRANSLATION_X, shift.thumbDx, BadgeTiming.SETTLE_MS, ease, onUpdate = ::updateThumbClip)
     animate(box, View.TRANSLATION_Y, shift.thumbDy, BadgeTiming.SETTLE_MS, ease)
     animate(group, View.ALPHA, REST_ALPHA, BadgeTiming.SETTLE_MS, ease, onEnd = end)
   }
@@ -611,6 +676,8 @@ class CountBadge(
   private var moved = false
 
   private fun onTouch(view: View, event: MotionEvent): Boolean {
+    // A touch during a snap lets it finish at once (jumps to the edge and commits); a drag or tap starts from there.
+    if (event.actionMasked == MotionEvent.ACTION_DOWN) snap?.end()
     val lp = params ?: return false
     when (event.actionMasked) {
       MotionEvent.ACTION_DOWN -> {
@@ -632,7 +699,8 @@ class CountBadge(
           val p = params ?: return true
           p.x = startWinX + dx.toInt()
           p.y = startWinY + dy.toInt()
-          window?.let { w -> w.postOnAnimation { if (w.isAttachedToWindow && dragging) windowManager.updateViewLayout(w, p) } }
+          // Coalesce: many touch events per frame, one window update per frame.
+          if (coalescer.submit(p.x, p.y)) choreographer.postFrameCallback(dragFrame)
         }
         return true
       }
@@ -674,38 +742,114 @@ class CountBadge(
     }
   }
 
+  /** The frame callback of the drag: one `updateViewLayout`, only if the position changed. */
+  private fun onDragFrame() {
+    if (!coalescer.take() || !dragging) return
+    val root = window ?: return
+    val p = params ?: return
+    p.x = coalescer.x
+    p.y = coalescer.y
+    if (root.isAttachedToWindow) {
+      try { windowManager.updateViewLayout(root, p) } catch (e: IllegalArgumentException) {
+        Log.w(TAG, "badge drag failed: ${e.javaClass.simpleName}")
+      }
+    }
+  }
+
+  /**
+   * A31 release: the SAME window slides from the finger to the edge (layout x animated, decelerate,
+   * [BadgeTiming.SNAP_MS]); it is never hidden, removed or re-added, and it never moves inside a
+   * fixed window (the old translation was clipped by the window and looked like hide/reappear). If
+   * the other half of the screen was chosen the Thumb and the count swap ends in the same animation
+   * and the corner radii go from fully round to flat-on-the-edge. The final layout is committed once.
+   */
   private fun endDrag() {
     val root = window ?: return
     val p = params ?: return
     dragging = false
-    val awake = awakeGeometry()
-    val centerX = p.x + awake.pillLeft + awake.pillW / 2f
+    choreographer.removeFrameCallback(dragFrame)
+    coalescer.cancel()
+    val oldSide = position.side
+    val old = awakeGeometry(oldSide)
+    val centerX = p.x + old.pillLeft + old.pillW / 2f
     val side = BadgePlacement.sideFor(centerX, screenW())
-    val targetX = if (side == BadgeSide.RIGHT) screenW() - awake.w + dp(PAD) else -dp(PAD)
     val y = BadgePlacement.clampY(p.y + dp(PAD) + dp(THUMB_RISE), dp(PILL_H), screenH(), dp(KEEP_TOP), dp(KEEP_BOTTOM))
     position = BadgePosition(side, BadgePlacement.pxToDp(y, density))
+    val target = awakeGeometry(side)
+    val flipped = side != oldSide
+    // The window's inner padding differs per side, so after a flip the pill sits at another offset
+    // in the window: start the window shifted back by that much and the pill does not jump.
+    val fromX = if (flipped) p.x + old.pillLeft - target.pillLeft else p.x
+    val fromY = p.y
+    val thumbDx = if (flipped) ((old.thumbLeft - old.pillLeft) - (target.thumbLeft - target.pillLeft)).toFloat() else 0f
+    val oldPad = BadgePlacement.pillPadding(oldSide, PILL_SOCKET, PILL_GAP).first
+    val newPad = BadgePlacement.pillPadding(side, PILL_SOCKET, PILL_GAP).first
+    val countDx = if (flipped) (dp(oldPad) - dp(newPad)).toFloat() else 0f
+
     val commit = {
-      p.x = targetX
-      p.y = y - dp(PAD) - dp(THUMB_RISE)
-      root.translationX = 0f
+      snap = null
+      val g = awakeGeometry()
+      applyPillPadding(pill, position.side)
+      applyGeometry(g, commit = false)
+      thumbBox?.translationX = 0f
+      odometer?.translationX = 0f
       content?.let { it.scaleX = 1f; it.scaleY = 1f }
       styleCapsule(snapped = true, lifted = false)
       pill?.elevation = dp(PILL_ELEVATION).toFloat()
-      if (root.isAttachedToWindow) windowManager.updateViewLayout(root, p)
+      if (root.isAttachedToWindow) {
+        try { windowManager.updateViewLayout(root, p) } catch (e: IllegalArgumentException) {
+          Log.w(TAG, "badge snap failed: ${e.javaClass.simpleName}")
+        }
+      }
       prefs.setBadgePosition(position)
       restartRest()
     }
     if (machine.reducedMotion) {
       commit()
-    } else {
-      content?.let {
-        animate(it, View.SCALE_X, 1f, DRAG_MS, DecelerateInterpolator())
-        animate(it, View.SCALE_Y, 1f, DRAG_MS, DecelerateInterpolator())
+      return
+    }
+
+    // Lay out the NEW inner arrangement once (the pill keeps its width), then slide the Thumb and
+    // the count from where they were while the window glides from the finger to the edge.
+    if (flipped) {
+      applyPillPadding(pill, side)
+      applyGeometry(target, commit = false)
+      thumbBox?.translationX = thumbDx
+      odometer?.translationX = countDx
+    }
+    p.x = fromX
+    p.y = fromY
+    val full = dp(PILL_H / 2f).toFloat()
+    BadgeCorners.radii(false, oldSide, full, cornersFrom)
+    BadgeCorners.radii(true, side, full, cornersTo)
+    styleCapsule(snapped = false, lifted = false) // ring off, all corners still round
+    pill?.elevation = dp(PILL_ELEVATION).toFloat()
+    content?.let {
+      animate(it, View.SCALE_X, 1f, BadgeTiming.SNAP_MS, DecelerateInterpolator())
+      animate(it, View.SCALE_Y, 1f, BadgeTiming.SNAP_MS, DecelerateInterpolator())
+    }
+    snap = ValueAnimator.ofFloat(0f, 1f).apply {
+      duration = BadgeTiming.SNAP_MS
+      interpolator = DecelerateInterpolator(1.8f)
+      addUpdateListener { a ->
+        val t = a.animatedFraction
+        p.x = fromX + ((target.x - fromX) * t).toInt()
+        p.y = fromY + ((target.y - fromY) * t).toInt()
+        if (flipped) {
+          thumbBox?.translationX = thumbDx * (1f - t)
+          odometer?.translationX = countDx * (1f - t)
+        }
+        capsuleShape?.cornerRadii = BadgeCorners.lerp(cornersFrom, cornersTo, t, cornersNow)
+        if (root.isAttachedToWindow) {
+          try { windowManager.updateViewLayout(root, p) } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "badge snap frame failed: ${e.javaClass.simpleName}")
+          }
+        }
       }
-      animate(
-        root, View.TRANSLATION_X, (targetX - p.x).toFloat(), BadgeTiming.SNAP_MS,
-        OvershootInterpolator(0.9f), onEnd = commit,
-      )
+      addListener(object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) { commit() }
+      })
+      start()
     }
   }
 
@@ -717,7 +861,12 @@ class CountBadge(
     const val TAG = "ThumbwellBadge"
     const val STALE_AFTER_MS = 1500L
     const val PAD = 12f
+    const val INNER_PAD = 28f // PAD on the edge side; on the centre side room for the resting Thumb's outer half
     const val PILL_H = 38f
+    const val PILL_SOCKET = 46f
+    const val PILL_GAP = 16f
+    const val THUMB_NUDGE = 5f
+    const val REST_RETRY_MS = 300L
     const val PILL_MIN_W = 80f
     const val THUMB_W = 53.333f
     const val THUMB_H = 60f
