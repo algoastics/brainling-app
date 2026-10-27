@@ -260,6 +260,51 @@ object BadgePlacement {
   fun thumbClipRight(side: BadgeSide, thumbW: Float, progress: Float): Float =
     if (side == BadgeSide.RIGHT) thumbW - thumbW / 2f * progress.coerceIn(0f, 1f) else thumbW
 
+  /** Window and child offsets of the badge, all in px (window position is in screen coordinates). */
+  data class Frame(
+    val x: Int, val y: Int, val w: Int, val h: Int,
+    val thumbLeft: Int, val thumbTop: Int, val pillLeft: Int, val pillTop: Int, val pillW: Int,
+  )
+
+  /** The fixed sizes the frame is built from, in px. */
+  data class FrameDims(
+    val pad: Int, val innerPad: Int, val pillH: Int, val thumbW: Int, val thumbH: Int,
+    val rise: Int, val nudge: Int, val keepTop: Int, val keepBottom: Int,
+  )
+
+  /**
+   * The ONE place the badge window is placed, used for the first show and every later one, from the
+   * same inputs: the side, the requested top of the pill ([requestedTop], from the saved position
+   * or the default), the measured pill width, the screen size and the safe side insets (display
+   * cutout; 0 in portrait). The pill is flush with the screen edge on its [side] (inside the inset),
+   * its width never exceeds the room between the insets, and its top stays between the keep-out
+   * bands, so a first draw with a default position, an odd measure or an inset can never put the
+   * pill past the screen edge. The window width is the same on both sides.
+   */
+  fun frame(
+    side: BadgeSide, requestedTop: Int, pillWidth: Int,
+    screenW: Int, screenH: Int, insetLeft: Int, insetRight: Int, d: FrameDims,
+  ): Frame {
+    val room = (screenW - insetLeft - insetRight).coerceAtLeast(1)
+    val pillW = pillWidth.coerceIn(1, room)
+    val (padLeft, padRight) = windowPads(side, d.pad.toFloat(), d.innerPad.toFloat()).let { it.first.toInt() to it.second.toInt() }
+    val edgeLeft = if (side == BadgeSide.RIGHT) screenW - insetRight - pillW else insetLeft
+    val pillLeftOnScreen = edgeLeft.coerceIn(insetLeft, maxOf(insetLeft, screenW - insetRight - pillW))
+    val top = clampY(requestedTop, d.pillH, screenH, d.keepTop, d.keepBottom)
+    val thumbInPill = thumbLeftInPill(side, pillW.toFloat(), d.thumbW.toFloat(), d.nudge.toFloat())
+    return Frame(
+      x = pillLeftOnScreen - padLeft,
+      y = top - d.pad - d.rise,
+      w = padLeft + pillW + padRight,
+      h = d.pad + d.thumbH + d.pad,
+      thumbLeft = padLeft + thumbInPill.toInt(),
+      thumbTop = d.pad,
+      pillLeft = padLeft,
+      pillTop = d.pad + d.rise,
+      pillW = pillW,
+    )
+  }
+
   fun dpToPx(dp: Float, density: Float): Int = (dp * density + 0.5f).toInt()
   fun pxToDp(px: Int, density: Float): Float = px / density
 }

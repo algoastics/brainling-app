@@ -9,6 +9,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -18,6 +19,7 @@ import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowInsets
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -255,6 +257,7 @@ class CountBadge(
     layoutResting(commit = false)
     try {
       windowManager.addView(root, lp)
+      refitAfterFirstLayout(root)
     } catch (e: WindowManager.BadTokenException) {
       Log.w(TAG, "badge add failed: ${e.javaClass.simpleName}")
       clearViews()
@@ -262,6 +265,30 @@ class CountBadge(
       Log.w(TAG, "badge add failed: ${e.javaClass.simpleName}")
       clearViews()
     }
+  }
+
+  /**
+   * The window is added with a frame computed before any view of it was attached, measured or laid
+   * out, and a geometry update is skipped while the view is not attached yet. So after the FIRST
+   * layout the frame is computed again from the real measure and screen, and the window is moved
+   * only if it differs. This is the first-draw fix: the first show ends in the same bounds as every
+   * later one.
+   */
+  private fun refitAfterFirstLayout(root: View) {
+    root.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+      override fun onLayoutChange(
+        v: View, l: Int, t: Int, r: Int, b: Int, oL: Int, oT: Int, oR: Int, oB: Int,
+      ) {
+        v.removeOnLayoutChangeListener(this)
+        v.post { refitGeometry() }
+      }
+    })
+  }
+
+  private fun refitGeometry() {
+    if (window == null || dragging || snap != null) return
+    val frame = awakeGeometry()
+    if (frame != appliedFrame) applyGeometry(frame, commit = true)
   }
 
   private fun describe() {
@@ -298,39 +325,59 @@ class CountBadge(
     capsule.background = shape
   }
 
-  private fun screenW() = service.resources.displayMetrics.widthPixels
-  private fun screenH() = service.resources.displayMetrics.heightPixels
+  /**
+   * Screen size and safe side insets for placement. The window manager's own metrics are used (API
+   * 30+), not [android.content.res.Resources], which on a service context can lag the display (a
+   * resolution or size change) and put the first draw off the screen edge. Cutout insets keep the
+   * pill out of a side camera hole in landscape; they are 0 in portrait.
+   */
+  private class Screen(val w: Int, val h: Int, val insetLeft: Int, val insetRight: Int)
 
-  private fun pillTopPx(): Int = BadgePlacement.clampY(
-    dp(position.yDp), dp(PILL_H), screenH(), dp(KEEP_TOP), dp(KEEP_BOTTOM))
+  private fun screen(): Screen {
+    if (Build.VERSION.SDK_INT >= 30) {
+      val metrics = windowManager.currentWindowMetrics
+      val cutout = metrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.displayCutout())
+      return Screen(metrics.bounds.width(), metrics.bounds.height(), cutout.left, cutout.right)
+    }
+    val m = service.resources.displayMetrics
+    return Screen(m.widthPixels, m.heightPixels, 0, 0)
+  }
 
-  private fun pillWidthPx(): Int {
+  private fun screenW() = screen().w
+
+  private fun screenH() = screen().h
+
+  private fun dims() = BadgePlacement.FrameDims(
+    pad = dp(PAD), innerPad = dp(INNER_PAD), pillH = dp(PILL_H), thumbW = dp(THUMB_W), thumbH = dp(THUMB_H),
+    rise = dp(THUMB_RISE), nudge = dp(THUMB_NUDGE), keepTop = dp(KEEP_TOP), keepBottom = dp(KEEP_BOTTOM),
+  )
+
+  /** Pill width from an explicit measure of the count (bounded by the screen), never a stale value. */
+  private fun pillWidthPx(limit: Int): Int {
     val counter = odometer ?: return dp(PILL_MIN_W)
-    counter.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+    counter.forceLayout()
+    val spec = View.MeasureSpec.makeMeasureSpec(limit, View.MeasureSpec.AT_MOST)
+    counter.measure(spec, View.MeasureSpec.makeMeasureSpec(dp(PILL_H), View.MeasureSpec.AT_MOST))
     return dp(PILL_SOCKET) + counter.measuredWidth + dp(PILL_GAP)
   }
 
-  private data class Geometry(val x: Int, val y: Int, val w: Int, val h: Int, val thumbLeft: Int, val thumbTop: Int, val pillLeft: Int, val pillTop: Int, val pillW: Int)
+  private var appliedFrame: BadgePlacement.Frame? = null
 
   /**
-   * Window and children for [side]. The pill is flush with the screen edge; the window reaches
-   * [PAD] past it and [INNER_PAD] past the centre-facing end (room for the resting Thumb's outer
-   * half). The window width is the same on both sides.
+   * Window and children for [side], from [BadgePlacement.frame]: the same call for the first show
+   * and every later one. The pill is flush with the screen edge; the window reaches the pad past it
+   * and the inner pad past the centre-facing end (room for the resting Thumb's outer half).
    */
-  private fun awakeGeometry(side: BadgeSide = position.side): Geometry {
-    val pillW = pillWidthPx()
-    val pad = dp(PAD)
-    val (padLeft, padRight) = BadgePlacement.windowPads(side, PAD, INNER_PAD).let { dp(it.first) to dp(it.second) }
-    val w = padLeft + pillW + padRight
-    val h = pad + dp(THUMB_H) + pad
-    val top = pillTopPx()
-    val x = if (side == BadgeSide.RIGHT) screenW() - padLeft - pillW else -padLeft
-    val thumbInPill = BadgePlacement.thumbLeftInPill(side, pillW.toFloat(), dp(THUMB_W).toFloat(), dp(THUMB_NUDGE).toFloat())
-    return Geometry(x, top - pad - dp(THUMB_RISE), w, h, padLeft + thumbInPill.toInt(), pad, padLeft, pad + dp(THUMB_RISE), pillW)
+  private fun awakeGeometry(side: BadgeSide = position.side): BadgePlacement.Frame {
+    val s = screen()
+    return BadgePlacement.frame(
+      side, dp(position.yDp), pillWidthPx(s.w - s.insetLeft - s.insetRight), s.w, s.h, s.insetLeft, s.insetRight, dims(),
+    )
   }
 
-  private fun applyGeometry(g: Geometry, commit: Boolean) {
+  private fun applyGeometry(g: BadgePlacement.Frame, commit: Boolean) {
     val lp = params ?: return
+    appliedFrame = g
     lp.x = g.x; lp.y = g.y; lp.width = g.w; lp.height = g.h
     (thumbBox?.layoutParams as? FrameLayout.LayoutParams)?.let { it.leftMargin = g.thumbLeft; it.topMargin = g.thumbTop }
     (pill?.layoutParams as? FrameLayout.LayoutParams)?.let {
