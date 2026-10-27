@@ -30,9 +30,28 @@ class LockWatchTest {
 
   @Test fun anotherWindowThatStaysHidesTheLockAfterTheDebounce() {
     val f = BadgeForeground()
-    assertEquals(LockWatch.Action.KEEP, step(f, "com.sec.android.app.launcher", 1_000))
-    assertEquals(LockWatch.Action.KEEP, step(f, "com.sec.android.app.launcher", 1_250))
-    assertEquals(LockWatch.Action.HIDE, step(f, "com.sec.android.app.launcher", 1_400))
+    assertEquals(LockWatch.Action.KEEP, step(f, "com.some.popup", 1_000))
+    assertEquals(LockWatch.Action.KEEP, step(f, "com.some.popup", 1_250))
+    assertEquals(LockWatch.Action.HIDE, step(f, "com.some.popup", 1_400))
+  }
+
+  @Test fun homeOrRecentsHidesTheLockAtOnceAndForgetsTheSurface() {
+    assertEquals(LockWatch.Action.LEAVE_HIDE, step(BadgeForeground(), "com.sec.android.app.launcher", 0))
+    assertEquals(
+      LockWatch.Action.LEAVE_HIDE,
+      LockWatch.decide(
+        true,
+        BadgeForeground().check("com.android.systemui", ig, 0, className = "com.android.systemui.recents.RecentsActivity"),
+      ),
+    )
+    assertEquals(
+      LockWatch.Action.LEAVE_HIDE,
+      LockWatch.decide(true, BadgeForeground().check("x.home", ig, 0, homePackages = setOf("x.home"))),
+    )
+  }
+
+  @Test fun theTrackedAppKeepsTheLock() {
+    assertEquals(LockWatch.Action.KEEP, step(BadgeForeground(), ig, 0))
   }
 
   @Test fun aLockThatIsNoLongerActiveHidesAtOnce() {

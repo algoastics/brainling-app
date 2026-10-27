@@ -1,2 +1,10 @@
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Lets the service resolve the launcher (home) apps, to hide the badge and lock at once on Home
+       and Recents. A package-visibility query only, not a permission. -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.HOME" />
+    </intent>
+  </queries>
 </manifest>

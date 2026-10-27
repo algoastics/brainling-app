@@ -84,17 +84,18 @@ object ReducedMotion {
 }
 
 /**
- * Decides, from each foreground-package sample, whether the badge hides. One sample of another
- * package (a system window, the app's own popup, a null root while the screen redraws) must not
- * hide it: that is what made the badge vanish and come back while scrolling. Rules:
- * - a safety package ([OverlaySafetyPackages]) hides at once;
+ * Decides, from each foreground sample, whether the badge (and the lock) hides. One sample of
+ * another package (a system window, the app's own popup, a null root while the screen redraws)
+ * must not hide it: that is what made the badge vanish and come back while scrolling. Rules:
+ * - an immediate leave hides at once, [Verdict.HIDE_NOW] for a safety package ([OverlaySafetyPackages])
+ *   and [Verdict.LEAVE_NOW] for Home, a launcher or a Recents window ([ForegroundWindows]);
  * - the tracked app in front keeps it;
- * - anything else hides only after staying in front for [debounceMs];
- * - one hide per show: [Verdict.HIDE] / [Verdict.HIDE_NOW] come once, then [Verdict.ALREADY_HIDDEN]
- *   until [reset] (called when the badge is shown again).
+ * - anything else (an unknown or transient window) hides only after staying in front for [debounceMs];
+ * - one hide per show: [Verdict.HIDE] / [Verdict.HIDE_NOW] / [Verdict.LEAVE_NOW] come once, then
+ *   [Verdict.ALREADY_HIDDEN] until [reset] (called when the badge is shown again).
  */
 class BadgeForeground(private val debounceMs: Long = BadgeTiming.LEAVE_FOREGROUND_DEBOUNCE_MS) {
-  enum class Verdict { KEEP, HIDE_NOW, HIDE, ALREADY_HIDDEN }
+  enum class Verdict { KEEP, HIDE_NOW, LEAVE_NOW, HIDE, ALREADY_HIDDEN }
 
   private var awaySince: Long? = null
   private var hidden = false
@@ -104,22 +105,34 @@ class BadgeForeground(private val debounceMs: Long = BadgeTiming.LEAVE_FOREGROUN
     hidden = false
   }
 
-  fun check(activePackage: String?, trackedPackage: String, nowMs: Long): Verdict {
+  fun check(
+    activePackage: String?,
+    trackedPackage: String,
+    nowMs: Long,
+    className: String? = null,
+    homePackages: Set<String> = emptySet(),
+  ): Verdict {
     if (hidden) return Verdict.ALREADY_HIDDEN
-    if (OverlaySafetyPackages.matches(activePackage)) {
-      hidden = true
-      awaySince = null
-      return Verdict.HIDE_NOW
-    }
-    if (activePackage == trackedPackage) {
-      awaySince = null
-      return Verdict.KEEP
+    when (ForegroundWindows.classify(activePackage, className, trackedPackage, homePackages)) {
+      ForegroundWindows.Kind.SAFETY -> return leaveNow(Verdict.HIDE_NOW)
+      ForegroundWindows.Kind.HOME, ForegroundWindows.Kind.RECENTS -> return leaveNow(Verdict.LEAVE_NOW)
+      ForegroundWindows.Kind.TRACKED -> {
+        awaySince = null
+        return Verdict.KEEP
+      }
+      ForegroundWindows.Kind.OTHER -> Unit
     }
     val since = awaySince ?: nowMs.also { awaySince = it }
     if (nowMs - since < debounceMs) return Verdict.KEEP
     hidden = true
     awaySince = null
     return Verdict.HIDE
+  }
+
+  private fun leaveNow(verdict: Verdict): Verdict {
+    hidden = true
+    awaySince = null
+    return verdict
   }
 }
 

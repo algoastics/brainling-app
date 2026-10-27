@@ -364,16 +364,45 @@ class BadgeLogicTest {
 
   @Test fun aRealLeaveHidesAfterTheDebounceExactlyOnce() {
     val f = BadgeForeground()
-    assertEquals(BadgeForeground.Verdict.KEEP, f.check("com.sec.android.app.launcher", ig, 1_000))
-    assertEquals(BadgeForeground.Verdict.KEEP, f.check("com.sec.android.app.launcher", ig, 1_399))
-    assertEquals(BadgeForeground.Verdict.HIDE, f.check("com.sec.android.app.launcher", ig, 1_400))
-    val hides = (1..5).map { f.check("com.sec.android.app.launcher", ig, 1_400L + it * 500) }
+    val other = "com.some.popup" // unknown window: debounced
+    assertEquals(BadgeForeground.Verdict.KEEP, f.check(other, ig, 1_000))
+    assertEquals(BadgeForeground.Verdict.KEEP, f.check(other, ig, 1_399))
+    assertEquals(BadgeForeground.Verdict.HIDE, f.check(other, ig, 1_400))
+    val hides = (1..5).map { f.check(other, ig, 1_400L + it * 500) }
     assertTrue(hides.all { it == BadgeForeground.Verdict.ALREADY_HIDDEN })
     // shown again (reset): the next leave works again
     f.reset()
     assertEquals(BadgeForeground.Verdict.KEEP, f.check(ig, ig, 9_000))
     assertEquals(BadgeForeground.Verdict.KEEP, f.check("x", ig, 9_100))
     assertEquals(BadgeForeground.Verdict.HIDE, f.check("x", ig, 9_500))
+  }
+
+  @Test fun homeAndRecentsLeaveAtOnceWithoutTheDebounce() {
+    // a launcher package (Home, and Recents on Pixel / Samsung / Xiaomi / ColorOS) at the first sample
+    for (launcher in listOf("com.sec.android.app.launcher", "com.google.android.apps.nexuslauncher", "com.miui.home")) {
+      assertEquals(BadgeForeground.Verdict.LEAVE_NOW, BadgeForeground().check(launcher, ig, 0))
+    }
+    // the device's own home app, resolved at run time
+    assertEquals(
+      BadgeForeground.Verdict.LEAVE_NOW,
+      BadgeForeground().check("com.custom.home", ig, 0, homePackages = setOf("com.custom.home")),
+    )
+    // a Recents window by class name, even in com.android.systemui
+    assertEquals(
+      BadgeForeground.Verdict.LEAVE_NOW,
+      BadgeForeground().check("com.android.systemui", ig, 0, className = "com.android.systemui.recents.RecentsActivity"),
+    )
+    // one hide per show
+    val f = BadgeForeground()
+    assertEquals(BadgeForeground.Verdict.LEAVE_NOW, f.check("com.miui.home", ig, 0))
+    assertEquals(BadgeForeground.Verdict.ALREADY_HIDDEN, f.check("com.miui.home", ig, 150))
+  }
+
+  @Test fun systemUiAlonePassingInFrontIsStillDebounced() {
+    val f = BadgeForeground()
+    assertEquals(BadgeForeground.Verdict.KEEP, f.check("com.android.systemui", ig, 0))
+    assertEquals(BadgeForeground.Verdict.KEEP, f.check("com.android.systemui", ig, 399))
+    assertEquals(BadgeForeground.Verdict.HIDE, f.check("com.android.systemui", ig, 400))
   }
 
   @Test fun hidingIsOneActionForThePillAndTheThumb() {
