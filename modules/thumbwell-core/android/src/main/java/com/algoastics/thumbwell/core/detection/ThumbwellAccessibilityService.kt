@@ -182,8 +182,23 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       handler.post {
         PENDING_STATES.putAll(states)
         seenLoaded = true
+        // Events that arrived while the state was loading were dropped: evaluate those apps now,
+        // so a fresh open right after a process start shows the badge without waiting for a scroll.
+        waitingForLoad.toList().forEach(::resumeAfterLoad)
+        waitingForLoad.clear()
       }
     }, "thumbwell-seen-load").start()
+  }
+
+  /** Tracked apps whose events came in before the seen state finished loading (main thread). */
+  private val waitingForLoad = mutableSetOf<String>()
+
+  private fun resumeAfterLoad(packageName: String) {
+    val active = rules ?: return
+    val rule = active.ruleFor(packageName) ?: return
+    if (!countingAllowed()) return
+    noteEntry(packageName, rule, session(packageName, active))
+    schedule(packageName, 0L)
   }
 
   /** Counting runs only with consent logged for the current disclosure and the seen state loaded. */
@@ -246,7 +261,12 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     val packageName = event.packageName?.toString() ?: return
     val rule = active.ruleFor(packageName) ?: return
     health.heartbeat()
-    if (!countingAllowed()) return
+    if (!countingAllowed()) {
+      // Right after a process start the seen state is still loading (a few ms): remember the app and
+      // evaluate it the moment the load ends, instead of dropping the open and waiting for a scroll.
+      if (!seenLoaded) waitingForLoad.add(packageName)
+      return
+    }
     checkDayRollover()
     val session = session(packageName, active)
     noteEntry(packageName, rule, session)
@@ -286,6 +306,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     val activeRoot = rootInActiveWindow
     if (!appEntry.onEvent(packageName, activeRoot?.packageName?.toString() == packageName)) return
     entryForeground.reset()
+    // A fresh open starts from a clean badge: nothing from the previous visit (a fade that never
+    // finished, a hidden latch) may keep it away. The surface check below shows it again.
+    hideBadge()
     handler.removeCallbacks(foregroundWatch)
     handler.postDelayed(foregroundWatch, FOREGROUND_WATCH_MS)
     session.retryStep = 0

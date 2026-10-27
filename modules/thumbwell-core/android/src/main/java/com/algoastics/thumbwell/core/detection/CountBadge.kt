@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -68,7 +69,6 @@ class CountBadge(
   private var odometer: OdometerView? = null
   private var params: WindowManager.LayoutParams? = null
   private var restingLayout = true
-  private var gate = false
   private var count = 0
   private var position = prefs.badgePosition()
   private val animators = ArrayList<Animator>()
@@ -85,13 +85,8 @@ class CountBadge(
   fun show(count: Int) {
     machine.reducedMotion = reduced()
     this.count = count
-    val out = ArrayList<BadgeAction>()
-    if (!gate || machine.leaving) {
-      gate = true
-      out.addAll(machine.setVisible(true, count))
-    }
-    out.addAll(machine.onCount(count))
-    apply(out)
+    dropStaleWindow()
+    apply(machine.onSurface(count))
   }
 
   /** The reels surface is gone: fade out after 600 ms unless it comes back. */
@@ -99,7 +94,6 @@ class CountBadge(
 
   /** Remove at once (keyboard, lock, switch off, paused, service off). Idempotent. */
   fun hideNow() {
-    gate = false
     apply(machine.setVisible(false, count))
     removeNow()
   }
@@ -152,6 +146,21 @@ class CountBadge(
   private val restDue = Runnable { apply(machine.onRestDue()) }
   private val hideDue = Runnable { apply(machine.onHideDue()) }
 
+  private var addedAtMs = 0L
+
+  /**
+   * The system can remove our window (service rebind, display change) without telling the view
+   * code. A window that is still not attached long after it was added is dropped, and the machine
+   * reset, so the next show adds a fresh one instead of trusting a dead reference.
+   */
+  private fun dropStaleWindow() {
+    val w = window ?: return
+    if (w.isAttachedToWindow || SystemClock.elapsedRealtime() - addedAtMs < STALE_AFTER_MS) return
+    Log.w(TAG, "badge window was detached: resetting")
+    apply(machine.setVisible(false, count))
+    removeNow()
+  }
+
   private fun reduced(): Boolean {
     val resolver = service.contentResolver
     val animator = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
@@ -162,7 +171,9 @@ class CountBadge(
   // ---- window and views ----
 
   private fun addWindow(initial: Int) {
-    if (window != null) return
+    // A window still fading out (leave) must not block the new one: remove it now.
+    if (window != null) removeNow()
+    addedAtMs = SystemClock.elapsedRealtime()
     count = initial
     position = prefs.badgePosition()
     val face = service.getColor(R.color.thumbwell_badge_text)
@@ -704,6 +715,7 @@ class CountBadge(
 
   private companion object {
     const val TAG = "ThumbwellBadge"
+    const val STALE_AFTER_MS = 1500L
     const val PAD = 12f
     const val PILL_H = 38f
     const val PILL_MIN_W = 80f

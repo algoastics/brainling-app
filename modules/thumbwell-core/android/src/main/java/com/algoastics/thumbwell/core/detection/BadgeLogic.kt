@@ -271,6 +271,20 @@ class BadgeMachine(settings: BadgeSettings = BadgeSettings()) {
   /** True while the fade-out after leaving the surface is pending. */
   val leaving: Boolean get() = hidePending
 
+  /**
+   * The gate ([BadgeGate]) is open on a reels surface: show the badge with [count], the count of
+   * the foreground app. Called on every evaluation. The "was it already shown" memory lives HERE
+   * ([visible]), cleared by [setVisible] false and by [onHideDue], so the view layer cannot keep a
+   * stale copy: after a fade-out (surface left, 600 ms) or a hide, the next call shows it again,
+   * with no counted reel needed. Pure and tested ([BadgeMachineTest] regression sequences).
+   */
+  fun onSurface(count: Int): List<BadgeAction> {
+    val out = ArrayList<BadgeAction>()
+    if (!visible || hidePending) out.addAll(setVisible(true, count))
+    out.addAll(onCount(count))
+    return out
+  }
+
   /** The gate ([BadgeGate]) changed. [count] is today's count for the foreground app. */
   fun setVisible(now: Boolean, count: Int): List<BadgeAction> {
     val out = ArrayList<BadgeAction>()
