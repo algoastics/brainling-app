@@ -5,7 +5,7 @@ Native, inside the accessibility service process. Code:
 
 | File | Role |
 |---|---|
-| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, resting x), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
+| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restLayout` for pill + half-off-edge Thumb), `BadgeRest` (resting look constants), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
 | `CountBadge.kt` | One `TYPE_ACCESSIBILITY_OVERLAY` window. Turns `BadgeAction`s into framework animators and timers on one main `Handler`. Drag, snap, tap. |
 | `OdometerView.kt` | The count: one clipped slot per character, rolling digits. |
 | `ThumbwellAccessibilityService.kt` | Decides the gate (`updateBadge`), feeds the count, hides on lock / input / surface gone. |
@@ -23,11 +23,17 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
 - A counted reel: pop-out (200 ms) and flick (140 + 160 ms) from rest; when already awake only the
   changed digits roll (150 ms each, 30 ms stagger, ones first). Bob 1.6 s, plus or minus 2 dp, stops
   after 10 s in "Always". Blink about 120 ms every 3 to 5 s while awake.
-- After the display time (1 s, 2 s default, 3 s, Always) the Thumb settles (240 ms) to a half
-  off-edge sleeping Thumb at 40% opacity in a 48 dp wide window. Each counted reel restarts the timer.
-  "Hide completely when resting" fades it out instead.
+- After the display time (1 s, 2 s default, 3 s, Always) the Thumb settles (240 ms): it sleeps (eyes
+  closed, 0.93 scale, 40% opacity) tucked half past the screen edge, and **the count pill stays on
+  screen at 70% opacity** right beside it (PM decision, option B; the original spec hid the pill).
+  Pill and sleeping Thumb touch and never overlap; the pill slides inward to make room. Each counted
+  reel restarts the timer. "Hide completely when resting" hides the whole badge (Thumb and count)
+  instead. "Always" never rests. Flip `BadgeRest.PILL_VISIBLE` to false for the Thumb alone.
+- Layering: the Thumb is drawn in front of the pill (elevation 6 dp vs the pill's 2 dp, 3 dp when
+  dragged). Android orders views by elevation before child order; with the pill higher the Thumb used
+  to be hidden behind it (device bug).
 - Drag: lifts (scale 1.2, violet ring), release snaps to the nearer edge (220 ms) and the position is
-  saved natively. Vertical keep-outs: 96 dp top, 120 dp bottom. A tap on a resting Thumb wakes it;
+  saved natively. Vertical keep-outs: 96 dp top, 120 dp bottom. A tap or drag on the resting badge wakes it (A40 with the current count, no roll);
   a tap on an awake badge opens Thumbwell.
 - Reduced motion (animator or transition scale 0): fades and instant swaps, no spring, bob, blink or roll.
 - Nothing runs while resting or hidden. No haptics, no sound, no analytics event.
