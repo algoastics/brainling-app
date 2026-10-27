@@ -1,6 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+
+import { haptics, pressTo, useReducedMotion } from '@/motion';
 import { radius, sizes, space, useTheme, type ColorTokens } from '@/theme';
 
 import { Text } from './Text';
@@ -55,7 +58,9 @@ function kindStyle(kind: ButtonKind, c: ColorTokens, inactive: boolean): KindSty
 
 /**
  * Button (Figma "Button": lg 52 / sm 40, radius 16). Solid kinds sit on a 4dp "edge" in a darker
- * tone; on press the face travels down 3dp and the edge shrinks to 1dp (push-down).
+ * tone; on press (A50) only the face travels down 3dp so the lip shrinks to 1dp. The haptic fires
+ * on press-in (Medium for the primary CTA, Light otherwise). Reduced motion: no travel, the face
+ * swaps to the edge colour while pressed.
  */
 export function Button({
   label,
@@ -75,6 +80,12 @@ export function Button({
   const k = kindStyle(kind, colors, disabled);
   const height = size === 'lg' ? sizes.buttonHeight : sizes.buttonHeightSm;
   const hasEdge = k.edge !== undefined;
+  const reduced = useReducedMotion();
+  const press = useSharedValue(0);
+  const faceMotion = useAnimatedStyle(() => ({
+    transform: [{ translateY: press.value * sizes.buttonPressTravel }],
+  }));
+  const heavy = kind === 'primary' || kind === 'pro';
 
   return (
     <Pressable
@@ -84,6 +95,12 @@ export function Button({
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
       onPress={onPress}
+      onPressIn={() => {
+        if (heavy) haptics.medium();
+        else haptics.light();
+        pressTo(press, true, reduced);
+      }}
+      onPressOut={() => pressTo(press, false, reduced)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       hitSlop={size === 'sm' ? 4 : 0}
@@ -95,28 +112,29 @@ export function Button({
     >
       {({ pressed }) => {
         const down = pressed && !inactive;
-        const edge = hasEdge ? (down ? sizes.buttonEdgePressed : sizes.buttonEdge) : 0;
+        const face = reduced && down ? (k.edge ?? k.face) : k.face;
         return (
           <View
             style={[
               styles.edge,
               {
                 backgroundColor: k.edge ?? 'transparent',
-                paddingTop: hasEdge && down ? sizes.buttonPressTravel : 0,
-                paddingBottom: edge,
+                height: height + (hasEdge ? sizes.buttonEdge : 0),
               },
             ]}
           >
-            <View
+            <Animated.View
               style={[
                 styles.face,
                 {
                   height,
-                  backgroundColor: k.face,
+                  backgroundColor: face,
                   borderColor: k.border ?? 'transparent',
                   borderWidth: k.border ? 1.5 : 0,
                   paddingHorizontal: size === 'lg' ? space[24] : space[16],
+                  opacity: !hasEdge && down ? 0.7 : 1,
                 },
+                hasEdge && !reduced ? faceMotion : null,
               ]}
             >
               {loading ? (
@@ -130,7 +148,7 @@ export function Button({
                   {iconRight}
                 </>
               )}
-            </View>
+            </Animated.View>
           </View>
         );
       }}

@@ -1,4 +1,7 @@
 import { Pressable, StyleSheet } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+
+import { haptics, pressTo, useReducedMotion } from '@/motion';
 
 import { layout, radius, space, useTheme } from '@/theme';
 
@@ -12,9 +15,15 @@ export type ChipProps = {
   testID?: string;
 };
 
-/** Preset chip (Figma S04: selected = soft violet fill with a brand border). One of a radio group. */
+/**
+ * Preset chip (Figma S04: selected = soft violet fill with a brand border), one of a radio group.
+ * A50: scale 1 to 0.96 on press and a Light haptic on press-in; reduced motion keeps no scale.
+ */
 export function Chip({ label, selected, onPress, disabled = false, testID }: ChipProps) {
   const { colors } = useTheme();
+  const reduced = useReducedMotion();
+  const press = useSharedValue(0);
+  const scale = useAnimatedStyle(() => ({ transform: [{ scale: 1 - 0.04 * press.value }] }));
   return (
     <Pressable
       testID={testID}
@@ -23,18 +32,27 @@ export function Chip({ label, selected, onPress, disabled = false, testID }: Chi
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: selected ? colors.bgPrimarySoft : colors.bgSurface,
-          borderColor: selected ? colors.brandPrimary : colors.borderControl,
-          opacity: disabled ? 0.45 : 1,
-        },
-      ]}
+      onPressIn={() => {
+        haptics.light();
+        pressTo(press, true, reduced);
+      }}
+      onPressOut={() => pressTo(press, false, reduced)}
     >
-      <Text variant="label" color={selected ? 'brandAccentText' : 'textSecondary'}>
-        {label}
-      </Text>
+      <Animated.View
+        style={[
+          styles.chip,
+          {
+            backgroundColor: selected ? colors.bgPrimarySoft : colors.bgSurface,
+            borderColor: selected ? colors.brandPrimary : colors.borderControl,
+            opacity: disabled ? 0.45 : 1,
+          },
+          reduced ? null : scale,
+        ]}
+      >
+        <Text variant="label" color={selected ? 'brandAccentText' : 'textSecondary'}>
+          {label}
+        </Text>
+      </Animated.View>
     </Pressable>
   );
 }
