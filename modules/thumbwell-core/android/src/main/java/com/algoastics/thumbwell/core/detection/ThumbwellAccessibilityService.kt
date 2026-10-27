@@ -197,7 +197,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     val active = rules ?: return
     val rule = active.ruleFor(packageName) ?: return
     if (!countingAllowed()) return
-    noteEntry(packageName, rule, session(packageName, active))
+    noteEntry(packageName, rule, session(packageName, active), windowStateEvent = true)
     schedule(packageName, 0L)
   }
 
@@ -269,7 +269,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     }
     checkDayRollover()
     val session = session(packageName, active)
-    noteEntry(packageName, rule, session)
+    noteEntry(packageName, rule, session, event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
         val verdict = if (session.onSurface) onScrolled(session, rule, event) else "off-surface"
@@ -301,10 +301,11 @@ class ThumbwellAccessibilityService : AccessibilityService() {
    * limit-reel rule (cover the NEXT item after the first swipe) does not apply: this is not the
    * live limit reel.
    */
-  private fun noteEntry(packageName: String, rule: AppRule, session: Session) {
+  private fun noteEntry(packageName: String, rule: AppRule, session: Session, windowStateEvent: Boolean = false) {
     if (appEntry.current == packageName) return
     val activeRoot = rootInActiveWindow
-    if (!appEntry.onEvent(packageName, activeRoot?.packageName?.toString() == packageName)) return
+    val up = AppEntry.windowIsUp(activeRoot?.packageName?.toString(), packageName, windowStateEvent)
+    if (!appEntry.onEvent(packageName, up)) return
     entryForeground.reset()
     // A fresh open starts from a clean badge: nothing from the previous visit (a fade that never
     // finished, a hidden latch) may keep it away. The surface check below shows it again.
