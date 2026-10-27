@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { layout, radius, space, useTheme } from '@/theme';
+import { radius, sizes, space, useTheme } from '@/theme';
 
 import { Text } from './Text';
 
@@ -18,7 +18,10 @@ export type TabBarProps = {
   bottomInset?: number;
 };
 
-/** C09 — bottom TabBar. */
+/**
+ * Tab bar (Figma "Tab bar": 72 high, surface, 1dp top border; the active tab gets a 56x32 soft
+ * violet pill behind its icon and an accent label). Figma lists Home, Limits, Settings.
+ */
 export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarProps) {
   const { colors } = useTheme();
   return (
@@ -26,12 +29,17 @@ export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarPr
       accessibilityRole="tablist"
       style={[
         styles.bar,
-        { backgroundColor: colors.nav, borderTopColor: colors.line, paddingBottom: bottomInset },
+        {
+          backgroundColor: colors.bgSurface,
+          borderTopColor: colors.borderDefault,
+          height: sizes.tabBarHeight + bottomInset,
+          paddingBottom: bottomInset,
+        },
       ]}
     >
       {items.map((item) => {
         const focused = item.key === activeKey;
-        const color = focused ? colors.primary : colors.muted;
+        const color = focused ? colors.brandAccentText : colors.textMuted;
         return (
           <Pressable
             key={item.key}
@@ -41,7 +49,7 @@ export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarPr
             onPress={() => onSelect(item.key)}
             style={styles.tab}
           >
-            <View style={[styles.pill, focused && { backgroundColor: colors.primarySoft }]}>
+            <View style={[styles.pill, focused && { backgroundColor: colors.bgPrimarySoft }]}>
               {item.icon?.({ focused, color })}
             </View>
             <Text variant="caption" style={{ color }}>
@@ -55,17 +63,17 @@ export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarPr
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: 1, paddingTop: space[8] },
+  bar: { flexDirection: 'row', borderTopWidth: 1 },
   tab: {
     flex: 1,
-    minHeight: layout.minTouch + 8,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: space[4],
+    paddingVertical: space[8],
   },
   pill: {
-    minWidth: 56,
-    minHeight: 28,
+    width: 56,
+    height: 32,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',

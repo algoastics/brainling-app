@@ -1,14 +1,26 @@
 import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 
-import { typography, useTheme, type ColorTokens, type TypographyVariant } from '@/theme';
+import {
+  type,
+  typography,
+  useTheme,
+  type ColorTokens,
+  type TypeVariant,
+  type TypographyVariant,
+} from '@/theme';
 
 export type TextProps = RNTextProps & {
-  variant?: TypographyVariant;
+  /** A Thumbwell type-scale name (`h2`, `body`, `label` ...) or an old dotted variant. */
+  variant?: TypeVariant | TypographyVariant;
   color?: keyof ColorTokens;
 };
 
-/** Themed text using the design-kit type scale. Scales with the system font size. */
-export function Text({ variant = 'body.md', color = 'ink', style, ...rest }: TextProps) {
+function styleFor(variant: TypeVariant | TypographyVariant) {
+  return variant in type ? type[variant as TypeVariant] : typography[variant as TypographyVariant];
+}
+
+/** Themed text using the Thumbwell type scale. Scales with the system font size. */
+export function Text({ variant = 'body', color = 'textPrimary', style, ...rest }: TextProps) {
   const { colors } = useTheme();
-  return <RNText {...rest} style={[typography[variant], { color: colors[color] }, style]} />;
+  return <RNText {...rest} style={[styleFor(variant), { color: colors[color] }, style]} />;
 }

@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { layout, radius, space, useTheme } from '@/theme';
 
+import { Icon } from './Icon';
+
 import { Text } from './Text';
 
 export type CheckboxProps = {
@@ -27,14 +29,16 @@ export function Checkbox({ value, onChange, label, disabled = false }: CheckboxP
         style={[
           styles.box,
           {
-            backgroundColor: value ? colors.primary : colors.surface,
-            borderColor: value ? colors.primary : colors.ink2,
+            backgroundColor: value ? colors.brandPrimary : colors.bgSurface,
+            borderColor: value ? colors.brandPrimary : colors.borderControl,
           },
         ]}
       >
-        {value ? <View style={[styles.tick, { borderColor: colors.onPrimary }]} /> : null}
+        {value ? <Icon name="check" size={16} color="brandOnPrimary" strokeWidth={3} /> : null}
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <Text variant="body" style={styles.label}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -48,13 +52,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tick: {
-    width: 12,
-    height: 7,
-    borderLeftWidth: 2.5,
-    borderBottomWidth: 2.5,
-    transform: [{ translateY: -2 }, { rotate: '-45deg' }],
   },
   label: { flex: 1 },
 });

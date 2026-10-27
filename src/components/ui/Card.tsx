@@ -1,58 +1,57 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { elevation, radius, space, useTheme, type ColorTokens } from '@/theme';
+import { radius, space, useTheme, type ColorTokens } from '@/theme';
 
-export type CardTone = 'default' | 'primary' | 'accent' | 'good' | 'warn' | 'bad' | 'info';
+export type CardTone =
+  'default' | 'tint' | 'notice' | 'primary' | 'accent' | 'good' | 'warn' | 'bad' | 'info';
 
 export type CardProps = {
   children: ReactNode;
+  /** @deprecated Cards prefer a border over a shadow; kept for old screens, ignored. */
   elevated?: boolean;
   tone?: CardTone;
   style?: ViewStyle;
 };
 
 const toneBg: Record<CardTone, keyof ColorTokens> = {
-  default: 'surface',
-  primary: 'primarySoft',
-  accent: 'accentSoft',
+  default: 'bgSurface',
+  tint: 'bgPrimarySoft',
+  notice: 'bgSurface',
+  primary: 'bgPrimarySoft',
+  accent: 'bgPrimarySoft',
   good: 'goodSoft',
   warn: 'warnSoft',
   bad: 'badSoft',
   info: 'infoSoft',
 };
 
-/** C03 — Card. Radius 20; `elevated` adds the 3dp offset shadow with no blur. */
-export function Card({ children, elevated = false, tone = 'default', style }: CardProps) {
+/** Card (Figma "Card": radius 20, 1.5dp border not shadow, padding 20; tint and notice kinds). */
+export function Card({ children, tone = 'default', style }: CardProps) {
   const { colors } = useTheme();
+  const border =
+    tone === 'default'
+      ? colors.borderDefault
+      : tone === 'notice'
+        ? colors.statusWarn
+        : 'transparent';
   return (
-    <View style={elevated ? { paddingBottom: elevation.offsetY } : undefined}>
-      {elevated ? (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.shade,
-            { backgroundColor: colors.shadow, top: elevation.offsetY },
-          ]}
-        />
-      ) : null}
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors[toneBg[tone]],
-            borderColor: tone === 'default' ? colors.line : 'transparent',
-          },
-          style,
-        ]}
-      >
-        {children}
-      </View>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors[toneBg[tone]],
+          borderColor: border,
+          borderWidth: tone === 'notice' ? 2 : 1.5,
+        },
+        style,
+      ]}
+    >
+      {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  shade: { borderRadius: radius.lg, opacity: elevation.opacity },
-  card: { borderRadius: radius.lg, borderWidth: 1.5, padding: space[16] },
+  card: { borderRadius: radius.lg, padding: space[20] },
 });

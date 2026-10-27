@@ -1,13 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
 
-import { elevation, palette, radius, space, typography, useTheme, type ColorTokens } from '@/theme';
+import { radius, sizes, space, useTheme, type ColorTokens } from '@/theme';
 
 import { Text } from './Text';
-import { usePressScale } from './usePressScale';
 
-export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'text' | 'good' | 'danger' | 'pro';
+export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'text' | 'good' | 'pro';
 export type ButtonSize = 'lg' | 'sm';
 
 export type ButtonProps = {
@@ -23,30 +21,42 @@ export type ButtonProps = {
   style?: ViewStyle;
 };
 
-type KindStyle = { bg: string; fg: string; shade?: string; border?: string };
+type KindStyle = { face: string; fg: string; edge?: string; border?: string };
 
-function kindStyle(kind: ButtonKind, c: ColorTokens): KindStyle {
+function kindStyle(kind: ButtonKind, c: ColorTokens, inactive: boolean): KindStyle {
+  if (inactive && kind !== 'ghost' && kind !== 'text') {
+    return { face: c.bgSurface2, fg: c.textMuted, edge: c.borderDefault };
+  }
   switch (kind) {
     case 'primary':
-      return { bg: c.primary, fg: c.onPrimary, shade: c.primary2 };
-    case 'secondary':
-      return { bg: c.surface, fg: c.primary, shade: c.shadow, border: c.line };
-    case 'ghost':
-      return { bg: 'transparent', fg: c.primary, border: c.primary };
-    case 'text':
-      return { bg: 'transparent', fg: c.primary };
-    case 'good':
-      return { bg: c.good, fg: palette.ink900, shade: palette.mint700 };
-    case 'danger':
-      return { bg: c.bad, fg: palette.ink900, shade: palette.ember700 };
     case 'pro':
-      return { bg: c.coin, fg: palette.ink900, shade: c.coinInk };
+      return { face: c.brandPrimary, fg: c.brandOnPrimary, edge: c.brandPrimaryEdge };
+    case 'secondary':
+      return {
+        face: c.bgSurface,
+        fg: c.brandAccentText,
+        edge: c.borderStrong,
+        border: c.borderStrong,
+      };
+    case 'danger':
+      return { face: c.statusDangerStrong, fg: c.statusOnDanger, edge: c.statusDangerEdge };
+    case 'good':
+      return { face: c.statusGood, fg: c.statusOnDanger, edge: c.statusGoodText };
+    case 'ghost':
+      return {
+        face: 'transparent',
+        fg: inactive ? c.textMuted : c.brandAccentText,
+        border: c.borderStrong,
+      };
+    case 'text':
+      return { face: 'transparent', fg: inactive ? c.textMuted : c.brandAccentText };
   }
 }
 
-const HEIGHT: Record<ButtonSize, number> = { lg: 54, sm: 40 };
-
-/** C01 — Button. Pressed: shifts down 2dp, loses its offset shadow and scales to 0.97. */
+/**
+ * Button (Figma "Button": lg 52 / sm 40, radius 16). Solid kinds sit on a 4dp "edge" in a darker
+ * tone; on press the face travels down 3dp and the edge shrinks to 1dp (push-down).
+ */
 export function Button({
   label,
   onPress,
@@ -60,88 +70,79 @@ export function Button({
   style,
 }: ButtonProps) {
   const { colors } = useTheme();
-  const k = kindStyle(kind, colors);
   const [focused, setFocused] = useState(false);
-  const press = usePressScale();
   const inactive = disabled || loading;
-  const height = HEIGHT[size];
+  const k = kindStyle(kind, colors, disabled);
+  const height = size === 'lg' ? sizes.buttonHeight : sizes.buttonHeightSm;
+  const hasEdge = k.edge !== undefined;
 
   return (
-    <Animated.View style={[press.animatedStyle, style]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityHint={accessibilityHint}
-        accessibilityState={{ disabled: inactive, busy: loading }}
-        disabled={inactive}
-        onPress={onPress}
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        hitSlop={size === 'sm' ? 4 : 0}
-      >
-        {({ pressed }) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: inactive, busy: loading }}
+      disabled={inactive}
+      onPress={onPress}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      hitSlop={size === 'sm' ? 4 : 0}
+      style={[
+        styles.root,
+        focused && { borderColor: colors.brandPrimary, borderWidth: 2, margin: -2 },
+        style,
+      ]}
+    >
+      {({ pressed }) => {
+        const down = pressed && !inactive;
+        const edge = hasEdge ? (down ? sizes.buttonEdgePressed : sizes.buttonEdge) : 0;
+        return (
           <View
             style={[
-              styles.ring,
-              { borderRadius: radius.pill, borderColor: focused ? colors.primary : 'transparent' },
+              styles.edge,
+              {
+                backgroundColor: k.edge ?? 'transparent',
+                paddingTop: hasEdge && down ? sizes.buttonPressTravel : 0,
+                paddingBottom: edge,
+              },
             ]}
           >
-            <View style={{ paddingBottom: k.shade ? elevation.offsetY : 0 }}>
-              {k.shade && !pressed && !inactive ? (
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    styles.shade,
-                    { backgroundColor: k.shade, top: elevation.offsetY, borderRadius: radius.pill },
-                  ]}
-                />
-              ) : null}
-              <View
-                style={[
-                  styles.face,
-                  {
-                    minHeight: height,
-                    backgroundColor: k.bg,
-                    borderColor: k.border ?? 'transparent',
-                    paddingHorizontal: size === 'lg' ? space[24] : space[16],
-                    transform: [{ translateY: pressed && k.shade ? 2 : 0 }],
-                    opacity: disabled ? 0.45 : 1,
-                  },
-                ]}
-              >
-                {loading ? (
-                  <ActivityIndicator color={k.fg} />
-                ) : (
-                  <>
-                    {icon}
-                    <Text
-                      style={[
-                        size === 'lg' ? typography['body.lg'] : typography['body.sm'],
-                        { color: k.fg },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                    {iconRight}
-                  </>
-                )}
-              </View>
+            <View
+              style={[
+                styles.face,
+                {
+                  height,
+                  backgroundColor: k.face,
+                  borderColor: k.border ?? 'transparent',
+                  borderWidth: k.border ? 1.5 : 0,
+                  paddingHorizontal: size === 'lg' ? space[24] : space[16],
+                },
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color={k.fg} />
+              ) : (
+                <>
+                  {icon}
+                  <Text variant="button" style={{ color: k.fg }}>
+                    {label}
+                  </Text>
+                  {iconRight}
+                </>
+              )}
             </View>
           </View>
-        )}
-      </Pressable>
-    </Animated.View>
+        );
+      }}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  ring: { borderWidth: 2, padding: 3, margin: -5 },
-  shade: { bottom: 0 },
+  root: { borderRadius: radius.md },
+  edge: { borderRadius: radius.md, overflow: 'hidden' },
   face: {
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
+    borderRadius: radius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { space, useTheme } from '@/theme';
 
 import { Text } from './Text';
+import { Icon } from './Icon';
 import { Toggle } from './Toggle';
 
 export type ListRowToggle = { value: boolean; onChange: (value: boolean) => void };
@@ -52,12 +53,7 @@ export function ListRow({
       {toggle ? (
         <Toggle value={toggle.value} onChange={toggle.onChange} accessibilityLabel={title} />
       ) : null}
-      {chevron ? (
-        <View
-          importantForAccessibility="no"
-          style={[styles.chevron, { borderColor: colors.muted }]}
-        />
-      ) : null}
+      {chevron ? <Icon name="chevron" color="textMuted" /> : null}
     </>
   );
 
