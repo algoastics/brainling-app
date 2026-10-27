@@ -143,14 +143,41 @@ const withoutForegroundService = (config) =>
     return cfg;
   });
 
+/** Supported apps (keep in sync with AppIcons.ALLOWED): visible to getAppIcon on Android 11+. */
+const QUERY_PACKAGES = [
+  'com.instagram.android',
+  'com.google.android.youtube',
+  'com.zhiliaoapp.musically',
+  'com.ss.android.ugc.trill',
+];
+
+/** Adds `<queries>` so the app can load the supported apps' own launcher icons at runtime. */
+const withAppQueries = (config) =>
+  withAndroidManifest(config, (cfg) => {
+    const manifest = cfg.modResults.manifest;
+    const queries = manifest.queries ?? [{}];
+    const first = queries[0] ?? {};
+    const have = new Set((first.package ?? []).map((p) => p.$['android:name']));
+    first.package = [
+      ...(first.package ?? []),
+      ...QUERY_PACKAGES.filter((name) => !have.has(name)).map((name) => ({
+        $: { 'android:name': name },
+      })),
+    ];
+    queries[0] = first;
+    manifest.queries = queries;
+    return cfg;
+  });
+
 /** Declares the reel-counting AccessibilityService and its configuration. */
 module.exports = function withThumbwellCore(config, props = {}) {
   const description =
     props.serviceDescription ??
-    'Thumbwell counts the short videos you watch in Instagram, YouTube, TikTok, Facebook and Snapchat. It reads only which screen is open, never what is on it, and nothing leaves your phone.';
+    'Thumbwell counts the short videos you watch in Instagram, YouTube and TikTok. It reads only which screen is open, never what is on it, and nothing leaves your phone.';
   config = withServiceXml(config);
   config = withDescription(config, description);
   config = withServiceDeclaration(config);
   config = withRulesUrl(config, rulesUrl(props));
+  config = withAppQueries(config);
   return withoutForegroundService(config);
 };

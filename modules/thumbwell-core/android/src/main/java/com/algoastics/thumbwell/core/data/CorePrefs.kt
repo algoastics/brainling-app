@@ -66,6 +66,41 @@ class CorePrefs private constructor(context: Context) {
     return computed
   }
 
+  /** The daily limit with its pending raise; a pending limit is promoted once its day starts. */
+  @Synchronized
+  fun dailyLimit(todayKey: String): LimitState {
+    val stored = LimitState(
+      effective = prefs.getInt(KEY_LIMIT, DailyLimit.DEFAULT),
+      pending = if (prefs.contains(KEY_LIMIT_PENDING)) prefs.getInt(KEY_LIMIT_PENDING, 0) else null,
+      pendingFromDay = prefs.getString(KEY_LIMIT_FROM, null),
+    )
+    val resolved = DailyLimit.resolve(stored, todayKey)
+    if (resolved != stored) writeLimit(resolved)
+    return resolved
+  }
+
+  /** Lowering applies now; raising applies from [nextDayKey]. Returns the new state. */
+  @Synchronized
+  fun setDailyLimit(value: Int, todayKey: String, nextDayKey: String): LimitState {
+    val next = DailyLimit.set(dailyLimit(todayKey), value, todayKey, nextDayKey)
+    writeLimit(next)
+    return next
+  }
+
+  private fun writeLimit(state: LimitState) {
+    val edit = prefs.edit().putInt(KEY_LIMIT, state.effective)
+    if (state.pending != null) edit.putInt(KEY_LIMIT_PENDING, state.pending) else edit.remove(KEY_LIMIT_PENDING)
+    if (state.pendingFromDay != null) edit.putString(KEY_LIMIT_FROM, state.pendingFromDay) else edit.remove(KEY_LIMIT_FROM)
+    edit.commit()
+  }
+
+  /** Deletes every setting this store keeps (consent, limit, day start, day mark, salt). */
+  @Synchronized
+  fun clearAll() {
+    prefs.edit().clear().commit()
+    consentCache = null
+  }
+
   /** Random per-install salt for fingerprint hashes; never leaves the device. */
   @Synchronized
   fun fingerprintSalt(): ByteArray {
@@ -81,6 +116,9 @@ class CorePrefs private constructor(context: Context) {
     private const val KEY_CONSENT_AT = "consent_at_ms"
     private const val KEY_DAY_START = "day_start_minutes"
     private const val KEY_LAST_DAY = "last_day_key"
+    private const val KEY_LIMIT = "daily_limit"
+    private const val KEY_LIMIT_PENDING = "daily_limit_pending"
+    private const val KEY_LIMIT_FROM = "daily_limit_pending_from"
     private const val KEY_SALT = "fingerprint_salt"
     const val MINUTES_PER_DAY = 24 * 60
 

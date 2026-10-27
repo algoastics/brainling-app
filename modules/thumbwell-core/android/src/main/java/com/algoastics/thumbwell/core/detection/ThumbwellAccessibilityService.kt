@@ -170,6 +170,11 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent) {
+    if (clearRequested) {
+      clearRequested = false
+      sessions.clear()
+      PENDING_STATES.clear()
+    }
     val active = rules ?: return
     val packageName = event.packageName?.toString() ?: return
     val rule = active.ruleFor(packageName) ?: return
@@ -458,6 +463,13 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     private const val TAG = "ThumbwellDetect"
     private const val THROTTLE_MS = 250L
     private const val BADGE_WATCH_MS = 1_000L
+
+    /** Set by "delete my data": the service drops its in-memory players on the next event. */
+    @Volatile private var clearRequested = false
+
+    fun requestClear() {
+      clearRequested = true
+    }
 
     /** True while the service is bound in this process (read by the watchdog and debug tools). */
     @Volatile var connected = false

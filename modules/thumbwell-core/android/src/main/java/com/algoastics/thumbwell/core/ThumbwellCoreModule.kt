@@ -3,10 +3,13 @@ package com.algoastics.thumbwell.core
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import com.algoastics.thumbwell.core.data.AppIcons
 import com.algoastics.thumbwell.core.data.CorePrefs
 import com.algoastics.thumbwell.core.data.CountRepository
 import com.algoastics.thumbwell.core.data.DayCounts
+import com.algoastics.thumbwell.core.data.ThumbwellDay
 import com.algoastics.thumbwell.core.detection.DetectionDebug
+import com.algoastics.thumbwell.core.detection.ThumbwellAccessibilityService
 import com.algoastics.thumbwell.core.health.HealthMonitor
 import com.algoastics.thumbwell.core.health.HealthStatus
 import com.algoastics.thumbwell.core.rules.RulesManager
@@ -84,6 +87,40 @@ class ThumbwellCoreModule : Module() {
       CountRepository.get(context).today().toMap()
     }
 
+    /**
+     * The installed app's own launcher icon as a base64 PNG (`sizePx` default 96), or null when it
+     * is not installed. Only the supported packages can be asked for.
+     */
+    AsyncFunction("getAppIcon") { packageName: String, sizePx: Int? ->
+      AppIcons.pngBase64(context.packageManager, packageName, sizePx ?: DEFAULT_ICON_PX)
+    }
+
+    /**
+     * The daily limit: `{effective, pending, pendingFromDay}`. Lowering applies at once; raising
+     * applies from the next logical day (shown as `pending`).
+     */
+    AsyncFunction("getDailyLimit") {
+      val prefs = CorePrefs.get(context)
+      prefs.dailyLimit(prefs.currentDayKey(System.currentTimeMillis())).toMap()
+    }
+
+    AsyncFunction("setDailyLimit") { value: Int ->
+      val prefs = CorePrefs.get(context)
+      val now = System.currentTimeMillis()
+      val zone = java.util.TimeZone.getDefault()
+      val start = prefs.dayStartMinutes()
+      val today = prefs.currentDayKey(now, zone)
+      val next = ThumbwellDay.key(ThumbwellDay.nextCloseMs(now, zone, start), zone, start)
+      prefs.setDailyLimit(value, today, next).toMap()
+    }
+
+    /** Deletes all counts, events, ad tallies, seen state, consent, limit and day start. */
+    AsyncFunction("clearAllData") {
+      ThumbwellAccessibilityService.requestClear()
+      CountRepository.get(context).clearAll()
+      CorePrefs.get(context).clearAll()
+    }
+
     AsyncFunction("getHealth") {
       HealthMonitor.get(context).check(HealthMonitor.REASON_QUERY).toMap()
     }
@@ -125,5 +162,6 @@ class ThumbwellCoreModule : Module() {
     private const val COUNT_EVENT = "onCountChange"
     private const val HEALTH_EVENT = "onHealthChange"
     private const val DEFAULT_HISTORY_DAYS = 30
+    private const val DEFAULT_ICON_PX = 96
   }
 }

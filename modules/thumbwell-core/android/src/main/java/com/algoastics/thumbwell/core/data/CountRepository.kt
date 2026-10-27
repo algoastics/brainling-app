@@ -130,6 +130,15 @@ class CountRepository private constructor(context: Context) {
     executor.execute { dao.clearSeenStates() }
   }
 
+  /** Deletes every count, event, ad tally, seen state and health event, then notifies listeners. */
+  fun clearAll() {
+    executor.submit {
+      ThumbwellDatabase.get(appContext).clearAllTables()
+      val counts = read(System.currentTimeMillis())
+      listeners.forEach { it(counts) }
+    }.get()
+  }
+
   fun addListener(listener: (DayCounts) -> Unit) {
     listeners.add(listener)
   }
