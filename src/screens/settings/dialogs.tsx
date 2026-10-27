@@ -161,6 +161,9 @@ export function BadgeTimeDialog({ value, onSave, onClose }: BadgeTimeDialogProps
           />
         ))}
       </View>
+      <Text variant="caption" color="textSecondary" style={styles.note}>
+        {t('settings.badgeDialog.default')}
+      </Text>
       {failed ? (
         <Text variant="caption" color="statusDangerStrong" accessibilityLiveRegion="polite">
           {t('settings.badgeDialog.error')}

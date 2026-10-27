@@ -238,7 +238,7 @@ describe('settings (S43-P0)', () => {
     expect(screen.getByTestId('row-badge-hide-switch').props.disabled).toBe(true);
     expect(
       screen.getByText(
-        'Only applies when the display time is 1, 2 or 3 s. Hides the whole badge, Thumb and count, between counts instead of leaving your count on screen.',
+        'Only with 1–3 s: hides the Thumb and the count between reels instead of resting',
       ),
     ).toBeTruthy();
   });
@@ -275,9 +275,10 @@ describe('settings (S43-P0)', () => {
     await fireEvent.press(await screen.findByTestId('row-badge-time'));
     expect(
       screen.getByText(
-        'Always keeps the Thumb awake and your count visible while you are in a reels app. 1, 2 or 3 s lets the Thumb go to sleep after each reel; your count stays on screen.',
+        'How long the Thumb stays awake after a counted reel. Always keeps it awake while you watch reels.',
       ),
     ).toBeTruthy();
+    expect(screen.getByText('Default: Always')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('badge-time-3s'));
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ displayTime: '3s' }));

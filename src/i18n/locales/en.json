@@ -140,7 +140,7 @@
       "timeValue_3s": "3 s",
       "timeValue_always": "Always",
       "hide": "Hide completely when resting",
-      "hideHelp": "Only applies when the display time is 1, 2 or 3 s. Hides the whole badge, Thumb and count, between counts instead of leaving your count on screen."
+      "hideHelp": "Only with 1–3 s: hides the Thumb and the count between reels instead of resting"
     },
     "privacy": "Privacy policy",
     "feedback": "Send feedback",
@@ -158,7 +158,8 @@
     },
     "badgeDialog": {
       "title": "Badge display time",
-      "body": "Always keeps the Thumb awake and your count visible while you are in a reels app. 1, 2 or 3 s lets the Thumb go to sleep after each reel; your count stays on screen.",
+      "body": "How long the Thumb stays awake after a counted reel. Always keeps it awake while you watch reels.",
+      "default": "Default: Always",
       "done": "Done",
       "error": "Could not save the time. Try again."
     },
