@@ -5,7 +5,7 @@ Native, inside the accessibility service process. Code:
 
 | File | Role |
 |---|---|
-| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restLayout` for pill + half-off-edge Thumb), `BadgeRest` (resting look constants), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
+| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restShift`: Figma A42 rest offsets), `BadgeRest` (resting look constants), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
 | `CountBadge.kt` | One `TYPE_ACCESSIBILITY_OVERLAY` window. Turns `BadgeAction`s into framework animators and timers on one main `Handler`. Drag, snap, tap. |
 | `OdometerView.kt` | The count: one clipped slot per character, rolling digits. |
 | `ThumbwellAccessibilityService.kt` | Decides the gate (`updateBadge`), feeds the count, hides on lock / input / surface gone. |
