@@ -261,7 +261,7 @@ object NodeInspector {
    * builds (e.g. ReVanced) can keep the original package's resources, so every package of the
    * app family is tried, the observed package first.
    */
-  private fun qualifiedIds(id: String, rule: AppRule, packageName: String): List<String> =
+  internal fun qualifiedIds(id: String, rule: AppRule, packageName: String): List<String> =
     (listOf(packageName) + rule.packageNames).distinct().map { "$it:id/$id" }
 
   /**

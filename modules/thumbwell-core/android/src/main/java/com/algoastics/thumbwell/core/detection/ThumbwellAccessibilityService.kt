@@ -314,7 +314,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     handler.postDelayed(foregroundWatch, FOREGROUND_WATCH_MS)
     session.retryStep = 0
     debugLog("entered $packageName")
-    if (EarlyCover.coversOnEntry(rule.key)) lock.onEntry(packageName, activeRoot)
+    if (EarlyCover.coversOnEntry(rule.key)) lock.onEntry(packageName, activeRoot, rule)
     schedule(packageName, 0L)
   }
 
@@ -496,7 +496,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     session.onSurface = true
     // The limit lock covers the surface: reels seen under it are not counted (Room is untouched).
     // The lock has priority over the badge, so the badge is decided after the lock.
-    val locked = lock.onSurface(packageName, surface.bounds, root)
+    val locked = lock.onSurface(packageName, surface.bounds, root, rule)
     updateBadge(packageName, rule.key, root, locked)
     if (locked) return
     // Re-selected on every evaluation; a stale or invisible node is never kept.

@@ -158,36 +158,49 @@ class LockLogicTest {
   }
 
   @Test fun topBandIsStatusBarPlusTheHeadsUpAreaWithAFallback() {
-    // 3x density, 24 dp status bar = 72 px: 72 + 120 dp (360 px).
-    assertEquals(432, OverlayGuard.topBandPx(72, 3f))
+    // 3x density, 24 dp status bar = 72 px: 72 + 96 dp (288 px).
+    assertEquals(360, OverlayGuard.topBandPx(72, 3f))
     // Unknown status bar height falls back to 24 dp.
-    assertEquals(432, OverlayGuard.topBandPx(0, 3f))
-    assertEquals(144, OverlayGuard.topBandPx(0, 1f))
+    assertEquals(360, OverlayGuard.topBandPx(0, 3f))
+    assertEquals(120, OverlayGuard.topBandPx(0, 1f))
   }
 
   @Test fun theLockLeavesTheTopBandFreeButNeverBelowTheBand() {
     val surface = Box(0, 0, 1080, 2400)
-    assertEquals(Box(0, 432, 1080, 2400), OverlayGuard.leaveTopBand(surface, 432))
+    assertEquals(Box(0, 360, 1080, 2400), OverlayGuard.leaveTopBand(surface, 360))
     // A surface that already starts below the band is untouched.
-    assertEquals(Box(0, 500, 1080, 2400), OverlayGuard.leaveTopBand(Box(0, 500, 1080, 2400), 432))
+    assertEquals(Box(0, 500, 1080, 2400), OverlayGuard.leaveTopBand(Box(0, 500, 1080, 2400), 360))
     // Split screen or landscape: cutting would leave under half, so the box stays as it is.
     val small = Box(0, 0, 1080, 700)
-    assertEquals(small, OverlayGuard.leaveTopBand(small, 432))
+    assertEquals(small, OverlayGuard.leaveTopBand(small, 360))
     assertEquals(surface, OverlayGuard.leaveTopBand(surface, 0))
   }
 
-  @Test fun coverBoxPrefersTheSurfaceThenTheAppWindow() {
-    val screen = Box(0, 0, 1080, 2400)
-    val feed = Box(0, 120, 1080, 2200)
-    assertEquals(feed, OverlayGuard.coverBox(feed, screen, 1080, 2400))
-    // A small surface (a player inside a page) falls back to the app window.
-    assertEquals(screen, OverlayGuard.coverBox(Box(100, 300, 500, 600), screen, 1080, 2400))
-    assertEquals(screen, OverlayGuard.coverBox(Box(100, 300, 500, 600), null, 1080, 2400))
-    // Out-of-screen bounds are clamped.
-    assertEquals(Box(0, 0, 1080, 2400), OverlayGuard.coverBox(Box(-10, -10, 1200, 2500), null, 1080, 2400))
+  // --- Leave reels: Home tab, then BACK, loop cooldown, HOME ---
+
+  @Test fun homeTabThatWorksEndsTheFlowWithoutBackOrHome() {
+    val f = LeaveFlow()
+    assertEquals(LeaveFlow.Action.TAB, f.press(tabAvailable = true))
+    assertTrue(f.busy)
+    assertNull(f.press(tabAvailable = true)) // a second tap during the check is ignored
+    assertNull(f.tabChecked(stillOnReels = false))
+    assertFalse(f.busy)
   }
 
-  // --- Leave reels: BACK, loop cooldown, HOME ---
+  @Test fun homeTabThatDoesNotWorkFallsBackToBackThenHome() {
+    val f = LeaveFlow()
+    assertEquals(LeaveFlow.Action.TAB, f.press(tabAvailable = true))
+    assertEquals(LeaveFlow.Action.BACK, f.tabChecked(stillOnReels = true))
+    val end = f.backChecked(2_000, stillOnReels = true)!!
+    assertEquals(LeaveFlow.Action.HOME, f.cooldownElapsed(end, stillOnReels = true))
+  }
+
+  @Test fun noTabMeansBackAndNeverHomeAtOnce() {
+    val f = LeaveFlow()
+    assertEquals(LeaveFlow.Action.BACK, f.press(tabAvailable = false))
+    assertNull(f.tabChecked(stillOnReels = true)) // not in the tab phase
+  }
+
 
   @Test fun backThatWorksEndsTheFlow() {
     val f = LeaveFlow()

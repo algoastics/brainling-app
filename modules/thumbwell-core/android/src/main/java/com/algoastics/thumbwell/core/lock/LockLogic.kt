@@ -126,23 +126,12 @@ object OverlayGuard {
   }
 
   /**
-   * The area to cover: the reels surface when it is most of the screen, else the app window, else
-   * the whole screen. The tab bar below a feed stays outside, so the user can always tap away.
+   * ONE constant for the free strip above the lock: the heads-up notification area under the
+   * status bar. A TYPE_ACCESSIBILITY_OVERLAY window is drawn above heads-up banners (layer 31
+   * against 15 and 17 in AOSP), so banners can only show above the lock if the lock starts below
+   * them. The strip is full width and the lock has rounded top corners, so it reads as an edge.
    */
-  fun coverBox(surface: Box, app: Box?, screenW: Int, screenH: Int): Box {
-    val s = surface.clampTo(screenW, screenH)
-    if (s.width >= screenW * 8 / 10 && s.height >= screenH * 4 / 10) return s
-    val a = app?.clampTo(screenW, screenH)
-    if (a != null && a.width > 0 && a.height > 0) return a
-    return Box(0, 0, screenW, screenH)
-  }
-
-  /**
-   * ONE constant for the free band above the lock: the heads-up notification area under the status
-   * bar. A TYPE_ACCESSIBILITY_OVERLAY window is drawn above heads-up banners (WhatsApp, Instagram
-   * DMs), so the lock starts below this band and banners stay readable and tappable.
-   */
-  const val HEADS_UP_BAND_DP = 120
+  const val HEADS_UP_BAND_DP = 96
   const val STATUS_BAR_FALLBACK_DP = 24
 
   /** Height in px of the band the lock leaves free: status bar plus the heads-up area. */
@@ -163,22 +152,42 @@ object OverlayGuard {
 }
 
 /**
- * The "Leave reels" button as a small state machine. First press: BACK. If after
- * [BACK_CHECK_MS] the user is still on a reels surface (BACK loops), wait [COOLDOWN_MS], then HOME
- * (the service shows a toast). Presses during the check and the cooldown are ignored.
+ * The "Leave reels" button as a small state machine (LOCK-B). First press: tap the app's Home tab
+ * when it has one ([Action.TAB]), else BACK. If after [TAB_CHECK_MS] the user is still on a reels
+ * surface (tab not found or not clickable), BACK is tried. If after [BACK_CHECK_MS] the user is
+ * still on reels (BACK loops), wait [COOLDOWN_MS], then HOME (the service shows a toast). Presses
+ * during a check or the cooldown are ignored. BACK and HOME are the last resort, never the default
+ * for an app with a Home tab.
  */
 class LeaveFlow {
-  enum class Action { BACK, HOME }
+  enum class Action { TAB, BACK, HOME }
 
-  private enum class Phase { IDLE, BACK_SENT, COOLDOWN }
+  private enum class Phase { IDLE, TAB_SENT, BACK_SENT, COOLDOWN }
 
   private var phase = Phase.IDLE
   private var cooldownEndMs = 0L
 
   val busy: Boolean get() = phase != Phase.IDLE
 
-  fun press(): Action? {
+  /** [tabAvailable]: the app has a Home tab node that can be tapped right now. */
+  fun press(tabAvailable: Boolean = false): Action? {
     if (phase != Phase.IDLE) return null
+    return if (tabAvailable) {
+      phase = Phase.TAB_SENT
+      Action.TAB
+    } else {
+      phase = Phase.BACK_SENT
+      Action.BACK
+    }
+  }
+
+  /** After [TAB_CHECK_MS]: null when the tab worked, else BACK (the next step). */
+  fun tabChecked(stillOnReels: Boolean): Action? {
+    if (phase != Phase.TAB_SENT) return null
+    if (!stillOnReels) {
+      phase = Phase.IDLE
+      return null
+    }
     phase = Phase.BACK_SENT
     return Action.BACK
   }
@@ -207,6 +216,7 @@ class LeaveFlow {
   }
 
   companion object {
+    const val TAB_CHECK_MS = 700L
     const val BACK_CHECK_MS = 700L
     const val COOLDOWN_MS = 1_500L
   }

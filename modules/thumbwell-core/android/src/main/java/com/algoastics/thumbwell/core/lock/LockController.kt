@@ -12,10 +12,12 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
+import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import com.algoastics.thumbwell.core.R
 import com.algoastics.thumbwell.core.data.CorePrefs
 import com.algoastics.thumbwell.core.detection.BadgeForeground
+import com.algoastics.thumbwell.core.rules.AppRule
 import java.util.TimeZone
 
 /**
@@ -47,12 +49,15 @@ class LockController(
   private var overlayPackage: String? = null
   private var started = false
   private val foreground = BadgeForeground()
-  private val audio = LockAudio(SystemAudioPort(service))
+  private val audioPort = SystemAudioPort(service)
+  private val audio = LockAudio(audioPort, MuteGuard(audioPort, SystemMuteStore(service)))
+  private var surfaceRule: AppRule? = null
+  /** Bounds of the in-app pause or mute control the lock clicked; only that one is ever clicked back. */
+  private var pausedControl: Box? = null
   private var provisional = false
   private var provisionalSince = 0L
   private val pauseAgain = Runnable { audio.pauseAgain() }
-  private val homeFallback = HomeFallback()
-  private var coverShownAt = 0L
+  private val verifyAudio = Runnable { audio.verify() }
 
   private val stateListener: (LockState) -> Unit = { state -> handler.post { onState(state) } }
 
@@ -78,7 +83,6 @@ class LockController(
           // A cover shown on entry, before any reels surface, is removed when none ever appears.
           if (provisional && EarlyCover.expired(provisionalSince, now)) hide()
           else {
-            if (homeFallback.due(coverShownAt, now, flow.busy)) goHome(now)
             handler.postDelayed(this, WATCH_MS)
           }
         }
@@ -92,6 +96,7 @@ class LockController(
   fun start() {
     if (started) return
     started = true
+    audio.recover() // a mute left behind by a crash or a kill is undone first
     engine.addListener(stateListener)
     val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
     if (Build.VERSION.SDK_INT >= 33) {
@@ -113,8 +118,7 @@ class LockController(
     }
     handler.removeCallbacksAndMessages(null)
     flow.reset()
-    homeFallback.reset()
-    hide()
+    hide() // also gives the music volume back
     surfacePackage = null
     surfaceBounds = null
   }
@@ -123,22 +127,12 @@ class LockController(
   fun hide() {
     handler.removeCallbacks(watch)
     handler.removeCallbacks(pauseAgain)
+    handler.removeCallbacks(verifyAudio)
     overlay.hide()
     overlayPackage = null
     provisional = false
-    coverShownAt = 0L
+    pausedControl = null
     audio.release()
-  }
-
-  /**
-   * The sound still plays under the cover (focus and PAUSE key do not reach every reels app): HOME
-   * sends the app to the background, which stops it for certain. The watch then sees the launcher
-   * and hides the cover; the lock comes back on the next fresh reels entry while still locked.
-   */
-  private fun goHome(now: Long) {
-    homeFallback.record(now)
-    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
-    Log.i(TAG, "lock: home fallback (sound stops with the app)")
   }
 
   /**
@@ -154,7 +148,8 @@ class LockController(
    * the normal path. The cover is provisional: the reels surface, when found, confirms it and sets
    * its bounds ([maybeShow]); with none after [EarlyCover.GRACE_MS] it is removed.
    */
-  fun onEntry(packageName: String, root: AccessibilityNodeInfo?) {
+  fun onEntry(packageName: String, root: AccessibilityNodeInfo?, rule: AppRule? = null) {
+    if (rule != null) surfaceRule = rule
     trigger.onSurfaceEntered() // an entry, not the live limit reel: nothing waits for a swipe
     if (overlay.isShown) return
     val state = engine.state
@@ -169,25 +164,35 @@ class LockController(
     )
     if (verdict != OverlayGuard.Verdict.SHOW) return
     overlayPackage = packageName
-    val box = coverBox(app ?: Box(0, 0, metrics.widthPixels, metrics.heightPixels), app, metrics.widthPixels, metrics.heightPixels)
+    val box = coverBox(null, app, root, packageName)
     overlay.show(box, content(state))
     if (!overlay.isShown) return
     provisional = true
     provisionalSince = SystemClock.elapsedRealtime()
-    onCoverShown()
+    onCoverShown(root, box)
     Log.i(TAG, "lock shown on entry app=$packageName")
   }
 
-  /** The cover is up: restart the foreground watch, stop the sound. */
-  private fun onCoverShown() {
-    if (coverShownAt == 0L) coverShownAt = SystemClock.elapsedRealtime()
+  /**
+   * The cover is up: restart the foreground watch and stop the sound in place, never by leaving the
+   * app. Layers: tap the in-app pause or mute control when it reads as playing, then audio focus
+   * and a media PAUSE key, then (if sound is still heard) mute the music stream until the lock hides.
+   */
+  private fun onCoverShown(root: AccessibilityNodeInfo?, area: Box) {
     overlay.setBusy(flow.busy)
     foreground.reset()
     handler.removeCallbacks(watch)
     handler.postDelayed(watch, WATCH_MS)
+    if (root != null && pausedControl == null) {
+      pausedControl = LockTree.pausePlaying(root, area)
+      if (pausedControl != null) Log.i(TAG, "lock: in-app pause control clicked")
+    }
     audio.engage()
     handler.removeCallbacks(pauseAgain)
     handler.postDelayed(pauseAgain, PAUSE_AGAIN_MS)
+    handler.removeCallbacks(verifyAudio)
+    handler.postDelayed(verifyAudio, VERIFY_AUDIO_MS)
+    handler.postDelayed(verifyAudio, VERIFY_AUDIO_MS * 3)
   }
 
   /**
@@ -205,7 +210,8 @@ class LockController(
    * A reels surface is on screen in [packageName]. Returns true when the overlay covers it, so the
    * caller skips counting. Called from every evaluation, so it must stay cheap.
    */
-  fun onSurface(packageName: String, bounds: Rect, root: AccessibilityNodeInfo): Boolean {
+  fun onSurface(packageName: String, bounds: Rect, root: AccessibilityNodeInfo, rule: AppRule? = null): Boolean {
+    if (rule != null) surfaceRule = rule
     if (surfacePackage != packageName) {
       if (overlayPackage != null && overlayPackage != packageName) hide()
       surfacePackage = packageName
@@ -236,6 +242,7 @@ class LockController(
     val active = LockRules.activeAt(state, System.currentTimeMillis())
     trigger.onState(active, surfacePackage != null)
     if (!active) {
+      resumeInApp()
       hide()
       return
     }
@@ -266,26 +273,54 @@ class LockController(
       OverlayGuard.Verdict.SHOW -> {
         val wasProvisional = provisional
         overlayPackage = pkg
-        overlay.show(coverBox(surface, app, screenW, screenH), content(state))
+        val box = coverBox(surface, app, root, pkg)
+        overlay.show(box, content(state))
         provisional = false
         if (overlay.isShown) {
-          onCoverShown()
+          onCoverShown(root, box)
           Log.i(TAG, if (wasProvisional) "lock confirmed app=$pkg" else "lock shown app=$pkg")
         }
       }
-      OverlayGuard.Verdict.BACK_FALLBACK -> leave()
+      OverlayGuard.Verdict.BACK_FALLBACK -> leave() // split screen: no overlay can be shown
       OverlayGuard.Verdict.WAIT_TEXT_INPUT -> if (provisional) hide()
       OverlayGuard.Verdict.NOT_ACTIVE -> Unit
     }
   }
 
-  /** The cover box, with the status bar and heads-up band left free so notification banners show. */
-  private fun coverBox(surface: Box, app: Box?, screenW: Int, screenH: Int): Box {
+  /**
+   * The unlock came while the user is still on the reel: the control we paused is tapped back, and
+   * only when it still reads as paused. Nothing we did not change is ever toggled.
+   */
+  private fun resumeInApp() {
+    val was = pausedControl ?: return
+    pausedControl = null
+    val pkg = overlayPackage ?: return
+    val root = service.rootInActiveWindow?.takeIf { it.packageName?.toString() == pkg } ?: return
+    if (LockTree.resume(root, was)) Log.i(TAG, "lock: in-app control resumed")
+  }
+
+  /**
+   * The cover box (LOCK-A): the reels container from the tree, minus the bottom tab bar and the
+   * navigation bar ([LockBounds]), then minus the free top strip for heads-up banners
+   * ([OverlayGuard.leaveTopBand]).
+   */
+  private fun coverBox(surface: Box?, app: Box?, root: AccessibilityNodeInfo?, pkg: String): Box {
     val resources = service.resources
-    val id = resources.getIdentifier("status_bar_height", "dimen", "android")
-    val statusBar = if (id > 0) resources.getDimensionPixelSize(id) else 0
-    val band = OverlayGuard.topBandPx(statusBar, resources.displayMetrics.density)
-    return OverlayGuard.leaveTopBand(OverlayGuard.coverBox(surface, app, screenW, screenH), band)
+    val metrics = resources.displayMetrics
+    val rule = surfaceRule
+    val tabBar = if (root != null && rule != null) {
+      LockTree.tabBar(root, rule, pkg, metrics.widthPixels, metrics.heightPixels, metrics.density)
+    } else {
+      null
+    }
+    val navId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+    val navBar = if (navId > 0) resources.getDimensionPixelSize(navId) else 0
+    val picked = LockBounds.select(surface, tabBar, app, metrics.widthPixels, metrics.heightPixels, navBar, metrics.density)
+    val statusId = resources.getIdentifier("status_bar_height", "dimen", "android")
+    val statusBar = if (statusId > 0) resources.getDimensionPixelSize(statusId) else 0
+    val band = OverlayGuard.topBandPx(statusBar, metrics.density)
+    Log.i(TAG, "lock bounds source=${picked.source} tabBar=${tabBar != null}")
+    return OverlayGuard.leaveTopBand(picked.box, band)
   }
 
   /** Focus and flags only; the text of a field is never read. */
@@ -302,15 +337,39 @@ class LockController(
     return LockContent(state.limit, state.total, until)
   }
 
-  /** "Leave reels": BACK; when BACK loops, a cooldown, then HOME with a toast. */
+  /**
+   * "Leave reels" (LOCK-B): taps the app's Home tab (Instagram, YouTube), staying inside the app.
+   * An app with no such tab (TikTok), or a tab that is not found or does not respond, falls back to
+   * BACK, and when BACK loops to HOME with a toast: the last resort, never the default.
+   */
   private fun leave() {
     val pkg = surfacePackage ?: overlayPackage
-    val action = flow.press() ?: return
+    val rule = surfaceRule
+    val root = pkg?.let { p -> service.rootInActiveWindow?.takeIf { it.packageName?.toString() == p } }
+    val rtl = service.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+    val tab = if (root != null && rule != null && pkg != null) LockTree.findHomeTab(root, rule, pkg, rtl) else null
+    val action = flow.press(tabAvailable = tab != null) ?: return
     overlay.setBusy(true)
+    if (action == LeaveFlow.Action.TAB) {
+      if (tab != null) LockTree.click(tab)
+      handler.postDelayed({ afterTab(pkg) }, LeaveFlow.TAB_CHECK_MS)
+      return
+    }
     perform(action)
     if (action == LeaveFlow.Action.BACK) {
       handler.postDelayed({ afterBack(pkg) }, LeaveFlow.BACK_CHECK_MS)
     }
+  }
+
+  private fun afterTab(pkg: String?) {
+    val next = flow.tabChecked(pkg != null && isOnReels(pkg))
+    if (next == null) {
+      overlay.setBusy(false)
+      return
+    }
+    Log.i(TAG, "lock exit: home tab did not work, trying back")
+    perform(next)
+    handler.postDelayed({ afterBack(pkg) }, LeaveFlow.BACK_CHECK_MS)
   }
 
   private fun afterBack(pkg: String?) {
@@ -331,6 +390,7 @@ class LockController(
 
   private fun perform(action: LeaveFlow.Action) {
     when (action) {
+      LeaveFlow.Action.TAB -> Unit // the tab is tapped in leave(), not by a global action
       LeaveFlow.Action.BACK -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
       LeaveFlow.Action.HOME -> {
         service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
@@ -344,5 +404,6 @@ class LockController(
     const val TAG = "ThumbwellLock"
     const val WATCH_MS = 150L
     const val PAUSE_AGAIN_MS = 400L
+    const val VERIFY_AUDIO_MS = 600L
   }
 }

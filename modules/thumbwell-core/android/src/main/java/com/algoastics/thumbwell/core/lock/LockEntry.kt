@@ -37,40 +37,6 @@ class AppEntry {
   }
 }
 
-/**
- * Policy for the HOME fallback: audio focus and the media key do not stop a reels app on every phone
- * (see [LockAudio]), so after the lock has been up [DELAY_MS] the service sends HOME, which stops
- * the sound for certain. Guards so the user is never trapped: not while "Leave reels" is running,
- * at least [COOLDOWN_MS] between two, and at most [MAX_COUNT] per [WINDOW_MS]; past that the lock
- * simply stays up (the sound is then best effort). Pure.
- */
-class HomeFallback {
-  private val sent = ArrayList<Long>()
-
-  /** True when HOME should be sent now. [shownAtMs] is when the cover appeared (0 = not shown). */
-  fun due(shownAtMs: Long, nowMs: Long, leaving: Boolean): Boolean {
-    if (shownAtMs <= 0L || leaving || nowMs - shownAtMs < DELAY_MS) return false
-    sent.removeAll { nowMs - it >= WINDOW_MS }
-    if (sent.size >= MAX_COUNT) return false
-    return sent.isEmpty() || nowMs - sent.last() >= COOLDOWN_MS
-  }
-
-  fun record(nowMs: Long) {
-    sent.add(nowMs)
-  }
-
-  fun reset() {
-    sent.clear()
-  }
-
-  companion object {
-    const val DELAY_MS = 700L
-    const val COOLDOWN_MS = 3_000L
-    const val MAX_COUNT = 3
-    const val WINDOW_MS = 60_000L
-  }
-}
-
 /** When a lock covers an app before its reels surface is seen, and for how long it may wait. */
 object EarlyCover {
   /**

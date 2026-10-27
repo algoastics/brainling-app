@@ -51,6 +51,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       if (box != shownBox) {
         try {
           windowManager.updateViewLayout(existing, params(box))
+          shape(existing, box)
           shownBox = box
         } catch (e: Exception) {
           Log.w(TAG, "overlay relayout failed: ${e.javaClass.simpleName}")
@@ -112,7 +113,9 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       box.height,
       WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
       // No FLAG_LAYOUT_NO_LIMITS: the window never extends past the screen or up into the free top
-      // band (OverlayGuard.topBandPx), where heads-up notification banners show.
+      // strip (OverlayGuard.topBandPx), where heads-up notification banners show. A window of
+      // this type is drawn ABOVE the status bar and heads-up banners (layer 31 against 15 and 17),
+      // so the strip is the only way to keep a banner visible.
       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
       PixelFormat.TRANSLUCENT,
@@ -121,7 +124,21 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       x = box.left
       y = box.top
       title = "Thumbwell lock"
+      // The box is in screen coordinates already; no system bar inset may move or shrink it.
+      if (Build.VERSION.SDK_INT >= 30) setFitInsetsTypes(0)
     }
+
+  /**
+   * Square when the lock fills the reels edge to edge. When a free strip is left above it (for
+   * banners) the top corners are rounded, so the strip reads as a deliberate edge, not a gap.
+   */
+  private fun shape(view: View, box: Box) {
+    val radius = if (box.top > 0) dp(TOP_RADIUS_DP).toFloat() else 0f
+    view.background = GradientDrawable().apply {
+      setColor(color(R.color.thumbwell_lock_bg))
+      cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+    }
+  }
 
   private fun dp(value: Int): Int = (value * density + 0.5f).toInt()
 
@@ -129,7 +146,6 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
 
   private fun build(box: Box): View {
     val frame = FrameLayout(service).apply {
-      setBackgroundColor(color(R.color.thumbwell_lock_bg))
       clipChildren = false
       clipToPadding = false
       importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -202,6 +218,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     body = bodyView
     today = todayView
     leave = button
+    shape(frame, box)
     return frame
   }
 
@@ -235,5 +252,6 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
 
   private companion object {
     const val TAG = "ThumbwellLock"
+    const val TOP_RADIUS_DP = 20
   }
 }
