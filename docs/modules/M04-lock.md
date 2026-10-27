@@ -105,11 +105,18 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
   banners (AOSP window layers: accessibility overlay 31, status bar 15, notification shade 17), so a
   banner can only show if the lock does not cover its area: layering "under" banners is not possible
   with this window type, and `TYPE_APPLICATION_OVERLAY` (which would be below) needs
-  `SYSTEM_ALERT_WINDOW`, excluded by design. So the lock starts below a free strip: status bar height
-  plus 96 dp (`OverlayGuard.HEADS_UP_BAND_DP`, one constant, the only place to change it). The strip is full width, the lock's top corners are rounded (20 dp), and no
-  window inset moves it (`setFitInsetsTypes(0)`), so it reads as the lock's top edge, not a gap. The
-  reel plays (muted or paused) in the strip; a swipe that starts there reaches the app and nothing is
-  counted while the lock is up. Edge to edge at the top was rejected because it would hide every banner.
+  `SYSTEM_ALERT_WINDOW`, excluded by design. So the opaque lock starts below a see-through strip: status bar
+  height plus 96 dp (`OverlayGuard.HEADS_UP_BAND_DP`, one constant, the only place to change it). The
+  strip is full width, the lock's top corners are rounded (20 dp), and no
+  window inset moves it (`setFitInsetsTypes(0)`), so it reads as the lock's top edge, not a gap.
+  **The strip is see-through but absorbs every touch** (`LockFrame`): the lock is ONE window that
+  runs from the bottom of the status bar to the cover's bottom, with a transparent touch-consuming
+  area on top and the cover below it. Reels cannot be scrolled or tapped through it, and there is no
+  second window to add, remove or leak. The status bar area is left out on purpose: SystemUI's own
+  window gets the touches there (nothing reaches the reel) and the notification shade pull-down keeps
+  working. Banner trade-off: the lock window is above banners, so a banner is VISIBLE through the
+  strip, but a touch on it lands on the lock, so it cannot be tapped or swiped away while the lock is
+  up (it times out by itself). An opaque edge-to-edge top was rejected because it would hide every banner.
   Split screen and landscape keep the full cover when cutting would leave under half.
 - **TikTok cover on entry.** An event of a window-state change with no active window known yet (cold
   start splash, return from Recents) now counts as the entry (`AppEntry.windowIsUp`), and events
