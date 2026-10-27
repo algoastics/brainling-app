@@ -37,6 +37,8 @@ export const core = {
   setConsent: jest.fn<(v: string) => Promise<{ atMs: number; version: string }>>(),
   getAppIcon: jest.fn<(pkg: string) => Promise<string | null>>(),
   openAccessibilitySettings: jest.fn<() => Promise<void>>(),
+  canDrawOverlays: jest.fn<() => Promise<boolean>>(),
+  openOverlaySettings: jest.fn<() => Promise<void>>(),
   clearAllData: jest.fn<() => Promise<void>>(),
   isServiceEnabled: jest.fn<() => Promise<boolean>>(),
   addListener: jest.fn(() => ({ remove: jest.fn() })),
@@ -65,6 +67,8 @@ export function resetCore() {
   core.setConsent.mockImplementation(async (version) => ({ atMs: 1, version }));
   core.getAppIcon.mockResolvedValue('AAAA');
   core.openAccessibilitySettings.mockResolvedValue(undefined);
+  core.canDrawOverlays.mockResolvedValue(true);
+  core.openOverlaySettings.mockResolvedValue(undefined);
   core.clearAllData.mockResolvedValue(undefined);
   core.isServiceEnabled.mockResolvedValue(true);
   core.addListener.mockImplementation(() => ({ remove: jest.fn() }));

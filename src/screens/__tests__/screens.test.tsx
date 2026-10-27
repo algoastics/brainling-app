@@ -94,13 +94,68 @@ describe('guide (S07)', () => {
     expect(await screen.findByText('Still off, try again')).toBeTruthy();
   });
 
-  it('shows success once the service is on and goes Home', async () => {
+  it('shows success once the service is on and goes Home when the overlay permission is already granted', async () => {
     await render(<GuideScreen />);
     expect(await screen.findByText('Thumbwell is on')).toBeTruthy();
     useAppStore.setState({ onboardingCompleted: false });
-    await fireEvent.press(screen.getByRole('button', { name: 'Go to Home' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/(tabs)'));
     expect(useAppStore.getState().onboardingCompleted).toBe(true);
+    expect(screen.queryByTestId('overlay-permission')).toBeNull();
+  });
+});
+
+describe('display over other apps step', () => {
+  const toStep = async () => {
+    core.canDrawOverlays.mockResolvedValue(false);
+    await render(<GuideScreen />);
+    useAppStore.setState({ onboardingCompleted: false });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Continue' }));
+    return screen.findByTestId('overlay-permission');
+  };
+
+  it('follows Accessibility when the permission is missing, and onboarding is already done', async () => {
+    await toStep();
+    expect(useAppStore.getState().onboardingCompleted).toBe(true);
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(screen.getByText('Show the lock under your notifications')).toBeTruthy();
+    expect(screen.getByText(/Settings → Apps → Special access/)).toBeTruthy();
+  });
+
+  it('opens the system page from the button', async () => {
+    await toStep();
+    await fireEvent.press(screen.getByRole('button', { name: 'Open settings' }));
+    expect(core.openOverlaySettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('can be skipped and lands on Home', async () => {
+    await toStep();
+    await fireEvent.press(screen.getByRole('button', { name: 'Skip for now' }));
     expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+    expect(core.openOverlaySettings).not.toHaveBeenCalled();
+  });
+
+  it('re-checks on return: still off says so, then granted shows the success state', async () => {
+    await toStep();
+    await fireEvent.press(screen.getByRole('button', { name: 'Open settings' }));
+    await act(async () => {
+      appStateHandlers.forEach((h) => h('active'));
+    });
+    expect(await screen.findByTestId('overlay-still-off')).toBeTruthy();
+    core.canDrawOverlays.mockResolvedValue(true);
+    await act(async () => {
+      appStateHandlers.forEach((h) => h('active'));
+    });
+    expect(await screen.findByTestId('overlay-granted')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+  });
+
+  it('still offers the step when the permission read fails', async () => {
+    core.canDrawOverlays.mockRejectedValue(new Error('no'));
+    await render(<GuideScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Continue' }));
+    expect(await screen.findByTestId('overlay-permission')).toBeTruthy();
   });
 });
 
@@ -175,6 +230,21 @@ describe('home (S14)', () => {
     expect(core.openAccessibilitySettings).not.toHaveBeenCalled();
   });
 
+  it('has no overlay note while the permission is granted', async () => {
+    await render(<HomeScreen />);
+    await waitFor(() => expect(core.canDrawOverlays).toHaveBeenCalled());
+    expect(screen.queryByTestId('overlay-notice')).toBeNull();
+  });
+
+  it('explains the fallback and offers the permission when it is not granted', async () => {
+    core.canDrawOverlays.mockResolvedValue(false);
+    await render(<HomeScreen />);
+    expect(await screen.findByTestId('overlay-notice')).toBeTruthy();
+    expect(screen.getByText('Notifications may be hidden while locked')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Allow' }));
+    expect(core.openOverlaySettings).toHaveBeenCalledTimes(1);
+  });
+
   it('says how far over the limit you are', async () => {
     core.getTodayCounts.mockResolvedValue(dayCounts(65, { instagram: 65 }));
     await render(<HomeScreen />);
@@ -220,10 +290,28 @@ describe('settings (S43-P0)', () => {
     expect(await screen.findByText('100 reels from tomorrow')).toBeTruthy();
   });
 
+  it('shows "Display over other apps" as allowed and opens the system page to turn it off', async () => {
+    await render(<SettingsScreen />);
+    const row = await screen.findByTestId('row-overlay');
+    await waitFor(() => expect(screen.getByText('Allowed')).toBeTruthy());
+    expect(screen.getByText('Display over other apps')).toBeTruthy();
+    expect(screen.getByText(/turn it on or off in Android settings/)).toBeTruthy();
+    await fireEvent.press(row);
+    expect(core.openOverlaySettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows "Not allowed" when the permission is missing and the same row opens the page', async () => {
+    core.canDrawOverlays.mockResolvedValue(false);
+    await render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText('Not allowed')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('row-overlay'));
+    expect(core.openOverlaySettings).toHaveBeenCalledTimes(1);
+  });
+
   it('groups the rows under the Figma section headers', async () => {
     await render(<SettingsScreen />);
     await screen.findByTestId('row-limit');
-    for (const header of ['COUNTING', 'FLOATING BADGE', 'APPEARANCE', 'ABOUT', 'DATA']) {
+    for (const header of ['COUNTING', 'LOCK', 'FLOATING BADGE', 'APPEARANCE', 'ABOUT', 'DATA']) {
       expect(screen.getByText(header)).toBeTruthy();
     }
     expect(screen.getByTestId('row-delete')).toBeTruthy();

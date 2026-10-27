@@ -5,9 +5,12 @@ import { AppState, Platform, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
 import { useCountingStatus, useInterval } from '@/detection';
+import { afterAccessibility } from '@/lock/overlayPermission';
 import { useT } from '@/i18n';
 import { useAppStore } from '@/state/appStore';
 import { openAppInfo } from '@/system/settings';
+
+import { OverlayPermissionStep } from './OverlayPermissionStep';
 import { radius, space, useTheme } from '@/theme';
 
 /** Android 13 (API 33) and newer block Accessibility for apps installed outside the store. */
@@ -65,7 +68,8 @@ function PanelIllustration() {
 /**
  * S07 Accessibility guide. Only reachable after consent: without a logged consent it hands back to
  * S06. Opens the system settings, re-checks when the app returns, and shows success or
- * "Still off, try again" (plus the Android 13 "Allow restricted settings" help).
+ * "Still off, try again" (plus the Android 13 "Allow restricted settings" help). After success the
+ * "Display over other apps" step follows (skippable), then Home.
  */
 export function GuideScreen() {
   const t = useT();
@@ -74,6 +78,7 @@ export function GuideScreen() {
   const [opened, setOpened] = useState(false);
   const [returned, setReturned] = useState(false);
   const [help, setHelp] = useState(false);
+  const [overlayStep, setOverlayStep] = useState(false);
   const openedRef = useRef(false);
 
   useEffect(() => {
@@ -100,10 +105,22 @@ export function GuideScreen() {
     setReturned(false);
     void ThumbwellCore.openAccessibilitySettings();
   };
-  const goHome = () => {
+  const toHome = () => router.replace('/(tabs)');
+  // Onboarding is done once Accessibility is on. The overlay permission step follows unless it is
+  // already granted; skipping it is fine (the lock uses a fallback window).
+  const next = async () => {
     completeOnboarding();
-    router.replace('/(tabs)');
+    let granted = false;
+    try {
+      granted = await ThumbwellCore.canDrawOverlays();
+    } catch {
+      granted = false;
+    }
+    if (afterAccessibility(granted) === 'home') toHome();
+    else setOverlayStep(true);
   };
+
+  if (overlayStep) return <OverlayPermissionStep onDone={toHome} />;
 
   if (on) {
     return (
@@ -117,7 +134,7 @@ export function GuideScreen() {
           </Text>
         </ScreenGroup>
         <ScreenGroup>
-          <Button label={t('guide.home')} onPress={goHome} />
+          <Button label={t('guide.next')} onPress={() => void next()} />
         </ScreenGroup>
       </Screen>
     );

@@ -1,3 +1,4 @@
+import ThumbwellCore from 'thumbwell-core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,10 +12,12 @@ import {
   useCountingStatus,
   useDailyLimit,
   useInterval,
+  useOverlayPermission,
   useTodayCounts,
 } from '@/detection';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT } from '@/limit/limitRule';
+import { overlayNoticeVisible } from '@/lock/overlayPermission';
 import { space, useTheme } from '@/theme';
 
 /** How often Home re-reads the native counter, status and limit while it is on screen. */
@@ -47,11 +50,15 @@ export function HomeScreen() {
   const { counts, refresh: refreshCounts } = useTodayCounts();
   const { status, refresh: refreshStatus } = useCountingStatus();
   const { limit, refresh: refreshLimit } = useDailyLimit();
+  const { granted: overlayGranted, refresh: refreshOverlay } = useOverlayPermission();
   const [refreshing, setRefreshing] = useState(false);
 
   const refreshAll = useCallback(
-    () => Promise.all([refreshCounts(), refreshStatus(), refreshLimit()]).then(() => undefined),
-    [refreshCounts, refreshStatus, refreshLimit],
+    () =>
+      Promise.all([refreshCounts(), refreshStatus(), refreshLimit(), refreshOverlay()]).then(
+        () => undefined,
+      ),
+    [refreshCounts, refreshStatus, refreshLimit, refreshOverlay],
   );
   useFocusEffect(
     useCallback(() => {
@@ -100,6 +107,21 @@ export function HomeScreen() {
               label: t('home.turnOn'),
               kind: 'primary',
               onPress: () => router.push({ pathname: '/disclosure', params: { from: 'home' } }),
+            },
+          ]}
+        />
+      ) : null}
+      {overlayNoticeVisible(overlayGranted) ? (
+        <Banner
+          testID="overlay-notice"
+          tone="info"
+          title={t('home.overlayNoticeTitle')}
+          body={t('home.overlayNotice')}
+          actions={[
+            {
+              label: t('home.overlayNoticeAction'),
+              kind: 'secondary',
+              onPress: () => void ThumbwellCore.openOverlaySettings(),
             },
           ]}
         />

@@ -91,6 +91,25 @@ export function useServiceStatus(): { enabled: boolean | null; refresh: () => Pr
 }
 
 /**
+ * Whether "Display over other apps" is granted (the lock is drawn below notifications with it).
+ * Re-read on mount and when the app returns to the foreground, e.g. from the system page.
+ * `null` until the first read; a failed read counts as not granted.
+ */
+export function useOverlayPermission(): {
+  granted: boolean | null;
+  refresh: () => Promise<void>;
+} {
+  const [granted, setGranted] = useState<boolean | null>(null);
+  const { read } = useLatest(setGranted);
+  const refresh = useCallback(
+    () => read(() => ThumbwellCore.canDrawOverlays().catch(() => false)),
+    [read],
+  );
+  useOnMountAndForeground(refresh);
+  return { granted, refresh };
+}
+
+/**
  * Counting status for the "counting paused" state: service on, consent logged for the current
  * disclosure version, per-app enabled. Re-read on mount and when the app returns to the foreground.
  * `null` until the first read.

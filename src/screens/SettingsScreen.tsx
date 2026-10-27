@@ -13,10 +13,12 @@ import {
   useCountingStatus,
   useDailyLimit,
   useDayStart,
+  useOverlayPermission,
 } from '@/detection';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT } from '@/limit/limitRule';
 import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
+import { overlayValueKey } from '@/lock/overlayPermission';
 import { useAppStore } from '@/state/appStore';
 import { getStorage } from '@/storage';
 import { buildFeedbackMailto } from '@/support/feedback';
@@ -33,6 +35,7 @@ export function SettingsScreen() {
   const { limit, refresh: refreshLimit } = useDailyLimit();
   const { minutes, refresh: refreshDayStart } = useDayStart();
   const { settings: badge, refresh: refreshBadge, update: updateBadge } = useBadgeSettings();
+  const { granted: overlayGranted, refresh: refreshOverlay } = useOverlayPermission();
   const resetApp = useAppStore((s) => s.resetApp);
   const [editing, setEditing] = useState<Editing>(null);
   const [sheetKey, setSheetKey] = useState(0);
@@ -44,7 +47,8 @@ export function SettingsScreen() {
       void refreshLimit();
       void refreshDayStart();
       void refreshBadge();
-    }, [refreshStatus, refreshLimit, refreshDayStart, refreshBadge]),
+      void refreshOverlay();
+    }, [refreshStatus, refreshLimit, refreshDayStart, refreshBadge, refreshOverlay]),
   );
 
   const dayStart = minutes ?? DEFAULT_DAY_START_MINUTES;
@@ -134,6 +138,21 @@ export function SettingsScreen() {
           title={t('settings.disclosure')}
           trailing="chevron"
           onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
+        />
+      </ListSection>
+      <ListSection title={t('settings.sections.lock')} footer={t('settings.footers.lock')}>
+        <ListRow
+          testID="row-overlay"
+          icon="bell"
+          title={t('settings.overlay.title')}
+          subtitle={t('settings.overlay.help')}
+          value={
+            overlayValueKey(overlayGranted) === null
+              ? undefined
+              : t(`settings.overlay.${overlayValueKey(overlayGranted) ?? 'off'}`)
+          }
+          trailing="external"
+          onPress={() => void ThumbwellCore.openOverlaySettings()}
         />
       </ListSection>
       {badge ? (
