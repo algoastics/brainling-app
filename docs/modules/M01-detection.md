@@ -111,6 +111,33 @@ descriptions only when they look like component labels such as `…Spec_…`; ne
 capture** sends the file via expo-sharing. The code lives in `src/debug` and is not compiled into
 release.
 
+## Phase 0 counting (F01, F02, F06, D13, D35, D36)
+
+- **Watch threshold** is 1,000 ms (`ReelSession.SETTLE_MS`, rules `dwellMs`; a test pins them equal).
+- **Apps on in Phase 0** (rules v5): Instagram, YouTube (`com.google.android.youtube` only) and
+  TikTok (`musically`, `trill`). Facebook, Facebook Lite, Snapchat and TikTok Lite are
+  `enabled: false` in the signed rules, and `FeatureFlags.facebookEnabled/snapchatEnabled` (both
+  false) also filter them in `RuleSet.byPackage`. Phase 1 flips the flag and the rules entry. The
+  accessibility XML lists only enabled apps (`app.plugin.js`) and no longer sets
+  `isAccessibilityTool`.
+- **Ads**: sponsored reels are never counted; they are stored per app per day in `ad_daily`.
+- **Events**: each counted reel is a `reel_event` row (counted_at_ms, package, surface, dwell_ms,
+  salted fingerprint hash, day key, time zone). `dwell_ms` is monotonic and is filled when the reel
+  ends. `daily_aggregates` holds the per-app daily count. No screen text is stored or logged.
+  Raw events are pruned after 30 days. There are no hourly aggregates.
+- **Day** starts at 04:00 local by default (`CorePrefs.dayStartMinutes`, user-changeable). Counts
+  and the seen state are keyed by that logical day; the day key never moves backwards, so a day is
+  not closed twice. The seen state (`seen_state` table) survives process death and is cleared at
+  day start.
+- **Consent gate**: nothing counts until `setConsent(version)` has logged a timestamp for
+  `Disclosure.CURRENT_VERSION` (mirror: `DISCLOSURE_VERSION` in `src/onboarding/disclosure.ts`).
+- **Count badge** (and the old mascot PNGs) are behind `FeatureFlags.countBadgeEnabled`, default off.
+
+JS API (`thumbwell-core`): `getTodayCounts()` (total, `apps`, `ads`), `getDailyCounts(limit?)`,
+`getCountingStatus()` (paused, pausedReason, service, consent, per-app enabled, dayStartMinutes,
+flags), `setConsent(version)`, `getConsent()`, `get/setDayStartMinutes(minutes)`; hook
+`useCountingStatus()`. Sentry is off: the `@sentry/react-native` plugin is out of `app.json`.
+
 ## Room schema
 
 `ksp { arg("room.schemaLocation", "$projectDir/schemas") }` exports to
