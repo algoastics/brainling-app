@@ -105,4 +105,32 @@ class LockBoundsTest {
     assertNull(HomeTab.chooseByIndex(emptyList(), 0, rtl = false))
     assertNull(HomeTab.chooseByIndex(items(0, 300, 600), 5, rtl = false))
   }
+
+  // --- the whole cover box: bounds, then the free top strip ---
+
+  private val band = OverlayGuard.topBandPx(72, d)
+
+  @Test fun theCoverStartsExactlyAtTheStripAndStopsAboveTheTabBar() {
+    // Instagram: pager from the top of the screen, tab bar over its bottom.
+    val picked = select(surface = Box(0, 0, w, 2205), tabBar = Box(0, 2052, w, 2205)).box
+    val cover = OverlayGuard.leaveTopBand(picked, band)
+    assertEquals(Box(0, band, w, 2052), cover)
+    assertEquals(w, cover.width) // full width, no side gap
+  }
+
+  @Test fun aContainerThatAlreadyStartsBelowTheStripIsNotMovedDown() {
+    // YouTube: the container starts at 80 px, inside the strip: it is cut to the strip, not lower.
+    val ytTop = OverlayGuard.leaveTopBand(select(surface = Box(0, 80, w, 2000)).box, band)
+    assertEquals(band, ytTop.top)
+    val low = OverlayGuard.leaveTopBand(select(surface = Box(0, 500, w, 2000)).box, band)
+    assertEquals(500, low.top)
+  }
+
+  @Test fun theCoverIsNeverTallerThanTheContainerOrCoversTheTabBar() {
+    val surface = Box(0, 0, w, 2205)
+    val bar = Box(0, 2052, w, 2205)
+    val cover = OverlayGuard.leaveTopBand(select(surface = surface, tabBar = bar).box, band)
+    assertTrue(cover.bottom <= bar.top)
+    assertTrue(cover.top >= surface.top && cover.bottom <= surface.bottom)
+  }
 }

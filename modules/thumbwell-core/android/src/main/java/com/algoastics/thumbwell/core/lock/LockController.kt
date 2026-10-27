@@ -52,6 +52,8 @@ class LockController(
   private val audioPort = SystemAudioPort(service)
   private val audio = LockAudio(audioPort, MuteGuard(audioPort, SystemMuteStore(service)))
   private var surfaceRule: AppRule? = null
+  /** The container bounds the shown cover was last fitted to; a different value triggers a re-fit. */
+  private var fittedSurface: Box? = null
   /** Bounds of the in-app pause or mute control the lock clicked; only that one is ever clicked back. */
   private var pausedControl: Box? = null
   private var provisional = false
@@ -132,6 +134,7 @@ class LockController(
     overlayPackage = null
     provisional = false
     pausedControl = null
+    fittedSurface = null
     audio.release()
   }
 
@@ -255,7 +258,10 @@ class LockController(
     val pkg = surfacePackage ?: return
     val surface = surfaceBounds ?: return
     // A provisional cover (shown on entry) is confirmed and re-fitted to the surface below.
-    if (overlay.isShown && !provisional) return
+    if (overlay.isShown && !provisional) {
+      refit(root)
+      return
+    }
     val state = engine.state
     val active = LockRules.activeAt(state, System.currentTimeMillis())
     if (!trigger.mayShow(active, true)) return
@@ -285,6 +291,19 @@ class LockController(
       OverlayGuard.Verdict.WAIT_TEXT_INPUT -> if (provisional) hide()
       OverlayGuard.Verdict.NOT_ACTIVE -> Unit
     }
+  }
+
+  /**
+   * A shown cover follows its reels container: when the container's bounds change (rotation, the
+   * tab bar appearing or going, a layout change) the box is computed again and the window moved. The
+   * tree is walked only on a change, never on every evaluation.
+   */
+  private fun refit(root: AccessibilityNodeInfo?) {
+    val pkg = overlayPackage ?: return
+    val surface = surfaceBounds ?: return
+    if (surface == fittedSurface) return
+    val app = root?.let { n -> Rect().also(n::getBoundsInScreen) }?.let { Box(it.left, it.top, it.right, it.bottom) }
+    overlay.show(coverBox(surface, app, root, pkg), content(engine.state))
   }
 
   /**
@@ -319,6 +338,7 @@ class LockController(
     val statusId = resources.getIdentifier("status_bar_height", "dimen", "android")
     val statusBar = if (statusId > 0) resources.getDimensionPixelSize(statusId) else 0
     val band = OverlayGuard.topBandPx(statusBar, metrics.density)
+    fittedSurface = surface
     Log.i(TAG, "lock bounds source=${picked.source} tabBar=${tabBar != null}")
     return OverlayGuard.leaveTopBand(picked.box, band)
   }
