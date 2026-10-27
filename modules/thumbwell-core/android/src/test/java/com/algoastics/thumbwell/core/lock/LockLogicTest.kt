@@ -157,6 +157,25 @@ class LockLogicTest {
     assertFalse(OverlayGuard.isMultiWindow(null, 1080, 2400))
   }
 
+  @Test fun topBandIsStatusBarPlusTheHeadsUpAreaWithAFallback() {
+    // 3x density, 24 dp status bar = 72 px: 72 + 120 dp (360 px).
+    assertEquals(432, OverlayGuard.topBandPx(72, 3f))
+    // Unknown status bar height falls back to 24 dp.
+    assertEquals(432, OverlayGuard.topBandPx(0, 3f))
+    assertEquals(144, OverlayGuard.topBandPx(0, 1f))
+  }
+
+  @Test fun theLockLeavesTheTopBandFreeButNeverBelowTheBand() {
+    val surface = Box(0, 0, 1080, 2400)
+    assertEquals(Box(0, 432, 1080, 2400), OverlayGuard.leaveTopBand(surface, 432))
+    // A surface that already starts below the band is untouched.
+    assertEquals(Box(0, 500, 1080, 2400), OverlayGuard.leaveTopBand(Box(0, 500, 1080, 2400), 432))
+    // Split screen or landscape: cutting would leave under half, so the box stays as it is.
+    val small = Box(0, 0, 1080, 700)
+    assertEquals(small, OverlayGuard.leaveTopBand(small, 432))
+    assertEquals(surface, OverlayGuard.leaveTopBand(surface, 0))
+  }
+
   @Test fun coverBoxPrefersTheSurfaceThenTheAppWindow() {
     val screen = Box(0, 0, 1080, 2400)
     val feed = Box(0, 120, 1080, 2200)

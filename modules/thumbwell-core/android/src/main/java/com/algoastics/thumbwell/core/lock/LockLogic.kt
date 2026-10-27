@@ -136,6 +136,30 @@ object OverlayGuard {
     if (a != null && a.width > 0 && a.height > 0) return a
     return Box(0, 0, screenW, screenH)
   }
+
+  /**
+   * ONE constant for the free band above the lock: the heads-up notification area under the status
+   * bar. A TYPE_ACCESSIBILITY_OVERLAY window is drawn above heads-up banners (WhatsApp, Instagram
+   * DMs), so the lock starts below this band and banners stay readable and tappable.
+   */
+  const val HEADS_UP_BAND_DP = 120
+  const val STATUS_BAR_FALLBACK_DP = 24
+
+  /** Height in px of the band the lock leaves free: status bar plus the heads-up area. */
+  fun topBandPx(statusBarPx: Int, density: Float): Int {
+    val bar = if (statusBarPx > 0) statusBarPx else (STATUS_BAR_FALLBACK_DP * density + 0.5f).toInt()
+    return bar + (HEADS_UP_BAND_DP * density + 0.5f).toInt()
+  }
+
+  /**
+   * [box] without its top [bandPx]. Left as it is when it already starts below the band, or when
+   * cutting would leave less than half of it (split screen, landscape: covering matters more).
+   */
+  fun leaveTopBand(box: Box, bandPx: Int): Box {
+    if (bandPx <= 0 || box.top >= bandPx) return box
+    val cut = Box(box.left, bandPx, box.right, box.bottom)
+    return if (cut.height < box.height / 2) box else cut
+  }
 }
 
 /**

@@ -111,9 +111,10 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       box.width,
       box.height,
       WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+      // No FLAG_LAYOUT_NO_LIMITS: the window never extends past the screen or up into the free top
+      // band (OverlayGuard.topBandPx), where heads-up notification banners show.
       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
       PixelFormat.TRANSLUCENT,
     ).apply {
       gravity = Gravity.TOP or Gravity.START
