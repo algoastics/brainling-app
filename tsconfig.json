@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["./src/*"],
-      "brainling-core": ["./modules/brainling-core/src"]
+      "thumbwell-core": ["./modules/thumbwell-core/src"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

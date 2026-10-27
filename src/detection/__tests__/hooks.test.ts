@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, renderHook } from '@testing-library/react-native';
-import type { DayCounts } from 'brainling-core';
+import type { DayCounts } from 'thumbwell-core';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { useServiceStatus, useTodayCounts } from '../hooks';
@@ -18,7 +18,7 @@ const mockCore = {
 };
 
 // Getter: the factory runs when the hoisted import loads, before `mockCore` is initialised.
-jest.mock('brainling-core', () => ({
+jest.mock('thumbwell-core', () => ({
   __esModule: true,
   get default() {
     return mockCore;

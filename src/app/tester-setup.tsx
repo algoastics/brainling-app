@@ -1,4 +1,4 @@
-import BrainlingCore from 'brainling-core';
+import ThumbwellCore from 'thumbwell-core';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -24,7 +24,7 @@ export default function TesterSetupScreen() {
   const t = useT();
   const { enabled } = useServiceStatus();
   const complete = useAppStore((s) => s.completeTesterSetup);
-  const openSettings = useCallback(() => void BrainlingCore.openAccessibilitySettings(), []);
+  const openSettings = useCallback(() => void ThumbwellCore.openAccessibilitySettings(), []);
   const finish = useCallback(() => {
     complete();
     router.replace('/');

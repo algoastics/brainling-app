@@ -1,4 +1,4 @@
-# Brainling — Module-by-Module Development Plan (v1, 21 Oct 2026)
+# Thumbwell — Module-by-Module Development Plan (v1, 21 Oct 2026)
 
 Inputs: `build-plan.md`, `feasibility-research.md`, `brainling-design/docs/handoff.md`, scope doc FINAL v1.0.
 Locked decisions: Android-first, Expo SDK 58 / RN 0.88 (already scaffolded); squads (S37–S38, A22, N09, M14) and Chrome reels (S47) out of MVP; launch apps = **Instagram Reels + YouTube Shorts** (TikTok, FB/FB Lite, Snapchat, IG Lite behind remote flags in the signed ruleset); lock = native `TYPE_ACCESSIBILITY_OVERLAY` (no `SYSTEM_ALERT_WINDOW` in the normal path, **no foreground service**); all counting + locking in Kotlin; personal Play account → closed test with ≥12 testers × 14 continuous days.
@@ -53,7 +53,7 @@ Days = dev-days for one dev. A = Android/Kotlin dev, B = RN dev.
 
 ### M0 — Foundation (5 d, MVP)
 - **Purpose:** working app shell everyone builds on.
-- **Scope:** ESLint/Prettier/TS strict, Jest + RNTL, EAS Build profiles (dev/preview/prod), dev-client, `expo-router` file routes (`(onboarding)`, `(tabs)`: Home/Stats/Me, modal stack), `theme.ts` + `tokens.json` from design kit (light/dark, contrast fixes: darken `muted`, ink-on-primary <16dp lint rule), fonts, MMKV, Zustand store, i18n scaffold (EN only), design-system components C01–C10 (Button with A01 press scale 0.97, Card, Ring/Counter, Chip, Sheet, Toast, ListRow, Stepper, ProTag, EmptyState), `<Mascot>` interface with static SVG fallback (Rive swap later), app icons via `PackageManager.getApplicationIcon` (no trademark logos). Empty `modules/brainling-core` Expo Module + config plugin (A, 1 d).
+- **Scope:** ESLint/Prettier/TS strict, Jest + RNTL, EAS Build profiles (dev/preview/prod), dev-client, `expo-router` file routes (`(onboarding)`, `(tabs)`: Home/Stats/Me, modal stack), `theme.ts` + `tokens.json` from design kit (light/dark, contrast fixes: darken `muted`, ink-on-primary <16dp lint rule), fonts, MMKV, Zustand store, i18n scaffold (EN only), design-system components C01–C10 (Button with A01 press scale 0.97, Card, Ring/Counter, Chip, Sheet, Toast, ListRow, Stepper, ProTag, EmptyState), `<Mascot>` interface with static SVG fallback (Rive swap later), app icons via `PackageManager.getApplicationIcon` (no trademark logos). Empty `modules/thumbwell-core` Expo Module + config plugin (A, 1 d).
 - **IDs:** A01, S01 + S01-error.
 - **Native vs JS:** JS; config plugin + module skeleton native.
 - **Deps:** none.
@@ -62,7 +62,7 @@ Days = dev-days for one dev. A = Android/Kotlin dev, B = RN dev.
 
 ### M1 — Native detection engine (10 d, MVP, critical path)
 - **Purpose:** count reels in IG Reels + YT Shorts with the RN app dead.
-- **Scope (Kotlin):** `BrainlingAccessibilityService`; `RuleEngine` (signed JSON, Ed25519, bundled default; surface detection + new-item detection, 800 ms dwell, 20-fingerprint salted de-dupe, YT autoplay counts, DM reels excluded); per-app **remote flags** in ruleset (`ig`,`yt` on; `tiktok`,`fb`,`fb_lite`,`ig_lite`,`snap` off); `RulesManager` (WorkManager 6 h + on open, keep last good); Room DB (events, daily aggregates, budget, settings mirror); `HealthMonitor` (WorkManager 15 min heartbeat → state for M01/M23/N04); miss detector → M17; Expo Module bridge (`getToday()`, `subscribe(countEvents)`, `setBudget()`, `getHealth()`, `openA11ySettings()`, self-test hook); debug overlay/node dumper (debug builds only).
+- **Scope (Kotlin):** `ThumbwellAccessibilityService`; `RuleEngine` (signed JSON, Ed25519, bundled default; surface detection + new-item detection, 800 ms dwell, 20-fingerprint salted de-dupe, YT autoplay counts, DM reels excluded); per-app **remote flags** in ruleset (`ig`,`yt` on; `tiktok`,`fb`,`fb_lite`,`ig_lite`,`snap` off); `RulesManager` (WorkManager 6 h + on open, keep last good); Room DB (events, daily aggregates, budget, settings mirror); `HealthMonitor` (WorkManager 15 min heartbeat → state for M01/M23/N04); miss detector → M17; Expo Module bridge (`getToday()`, `subscribe(countEvents)`, `setBudget()`, `getHealth()`, `openA11ySettings()`, self-test hook); debug overlay/node dumper (debug builds only).
 - **IDs:** feeds S13, S14, M01, M17, M23, N04, N12.
 - **Native vs JS:** 100% native; JS only consumes events.
 - **Deps:** M0 module skeleton. Day 1–3 = spike/go-no-go on 6 phones (Pixel, Samsung A + S, Xiaomi, Oppo/Realme, OnePlus).
@@ -171,7 +171,7 @@ Days = dev-days for one dev. A = Android/Kotlin dev, B = RN dev.
 ## 3. Order, critical path and 2-dev parallel plan
 
 **Critical path:** M0 skeleton (1 d) → **M1 detection (10 d)** → **M4 lock native (6 d)** → M12 closed-test build → **14-day closed test** → production questionnaire → review.
-Everything RN-side runs in parallel off the bridge contract (mock `brainling-core` in JS from day 2).
+Everything RN-side runs in parallel off the bridge contract (mock `thumbwell-core` in JS from day 2).
 
 | Week | Dev A (Android/Kotlin) | Dev B (React Native) |
 |---|---|---|

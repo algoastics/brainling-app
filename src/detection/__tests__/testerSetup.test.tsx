@@ -10,7 +10,7 @@ const mockCore = {
   openAccessibilitySettings: jest.fn<() => Promise<void>>(),
 };
 
-jest.mock('brainling-core', () => ({
+jest.mock('thumbwell-core', () => ({
   __esModule: true,
   get default() {
     return mockCore;

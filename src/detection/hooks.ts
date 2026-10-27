@@ -1,4 +1,4 @@
-import BrainlingCore, { type DayCounts } from 'brainling-core';
+import ThumbwellCore, { type DayCounts } from 'thumbwell-core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
@@ -52,10 +52,10 @@ function useLatest<T>(set: (value: T) => void) {
 export function useTodayCounts(): { counts: DayCounts | null; refresh: () => Promise<void> } {
   const [counts, setCounts] = useState<DayCounts | null>(null);
   const { read, push } = useLatest(setCounts);
-  const refresh = useCallback(() => read(() => BrainlingCore.getTodayCounts()), [read]);
+  const refresh = useCallback(() => read(() => ThumbwellCore.getTodayCounts()), [read]);
 
   useEffect(() => {
-    const sub = BrainlingCore.addListener('onCountChange', push);
+    const sub = ThumbwellCore.addListener('onCountChange', push);
     return () => sub.remove();
   }, [push]);
   useOnMountAndForeground(refresh);
@@ -64,14 +64,14 @@ export function useTodayCounts(): { counts: DayCounts | null; refresh: () => Pro
 }
 
 /**
- * Whether the Brainling accessibility service is enabled in system settings. Re-read when
+ * Whether the Thumbwell accessibility service is enabled in system settings. Re-read when
  * the app returns to the foreground (e.g. back from the accessibility settings screen).
  * `null` until the first read.
  */
 export function useServiceStatus(): { enabled: boolean | null; refresh: () => Promise<void> } {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const { read } = useLatest(setEnabled);
-  const refresh = useCallback(() => read(() => BrainlingCore.isServiceEnabled()), [read]);
+  const refresh = useCallback(() => read(() => ThumbwellCore.isServiceEnabled()), [read]);
   useOnMountAndForeground(refresh);
   return { enabled, refresh };
 }

@@ -1,4 +1,4 @@
-import BrainlingCore from 'brainling-core';
+import ThumbwellCore from 'thumbwell-core';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -18,14 +18,14 @@ function leave() {
 }
 
 /**
- * Target of the watchdog's "service turned off" notification (`brainling://reenable`). Explains
+ * Target of the watchdog's "service turned off" notification (`thumbwell://reenable`). Explains
  * why the AccessibilityService is needed before offering the settings link, so no system
  * settings deep-link happens without the disclosure. Re-checks the service on foreground.
  */
 export default function ReenableScreen() {
   const t = useT();
   const { enabled } = useServiceStatus();
-  const openSettings = useCallback(() => void BrainlingCore.openAccessibilitySettings(), []);
+  const openSettings = useCallback(() => void ThumbwellCore.openAccessibilitySettings(), []);
 
   return (
     <Screen>

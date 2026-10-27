@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Brainling detection e2e on an emulator: drives IG/FB with adb and asserts BrainlingDetect logs.
+"""Thumbwell detection e2e on an emulator: drives IG/FB with adb and asserts ThumbwellDetect logs.
 
   python3 scripts/e2e/run.py [ig|fb|yt|tt|all]     (E2E_SERIAL defaults to emulator-5554)
 """
@@ -16,7 +16,7 @@ class Case:
         self.skipped = set()
 
     def log(self):
-        return [l for l in ui.adb("logcat", "-d", "-s", "BrainlingDetect").splitlines() if f"app={self.app}" in l]
+        return [l for l in ui.adb("logcat", "-d", "-s", "ThumbwellDetect").splitlines() if f"app={self.app}" in l]
 
     def step(self, name, expected, action, allow_ads=True, needs=None):
         if needs and needs in self.skipped:  # its setup never happened: not a detection result
@@ -43,7 +43,7 @@ class Case:
         print(("PASS " if ok else "FAIL ") + name + " " + detail)
         if not ok:
             for l in lines:
-                print("   ", l.split("BrainlingDetect: ")[-1])
+                print("   ", l.split("ThumbwellDetect: ")[-1])
 
 
 def need(pred, what, tries=2, fallback=None):

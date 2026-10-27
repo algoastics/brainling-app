@@ -1,7 +1,7 @@
 # M01 — Detection: status
 
 Branch: `module/01-detection-native` (from `module/01-detection`). Native code lives in
-`modules/brainling-core/android`; JS consumes it through `brainling-core` and `src/detection/`.
+`modules/thumbwell-core/android`; JS consumes it through `thumbwell-core` and `src/detection/`.
 
 > **Build status:** none of the Kotlin in this branch has been compiled or unit-tested yet (no JDK
 > or Android SDK on the authoring Mac). The first Gradle build and `testDebugUnitTest` run are
@@ -11,23 +11,23 @@ Branch: `module/01-detection-native` (from `module/01-detection`). Native code l
 
 | Piece | File(s) | Notes |
 |---|---|---|
-| AccessibilityService | `detection/BrainlingAccessibilityService.kt` | Events → 250 ms throttle → evaluate on the main thread. Narrows `packageNames` at runtime to the active ruleset. |
+| AccessibilityService | `detection/ThumbwellAccessibilityService.kt` | Events → 250 ms throttle → evaluate on the main thread. Narrows `packageNames` at runtime to the active ruleset. |
 | Node matching | `detection/NodeInspector.kt` | View ids → exact content-description constants → structural fallback. Never reads text. |
 | Counting | `detection/ReelCounter.kt` | 800 ms dwell, 20-key salted de-dupe ring. |
 | Session + de-dupe persistence | `detection/DetectionState.kt` | Per-package snapshot (session id, page index, last seen, de-dupe keys) and the item-key salt in app-private prefs. A return within `sessionGapMs` continues the session; a feed restarted from the top starts a new one. |
 | Ruleset | `rules/RuleSet.kt`, `rules/RulesVerifier.kt`, `rules/RulesManager.kt`, `rules/TrustedRuleKeys.kt` | Ed25519 (BouncyCastle) verify **before** parse; bundled default + remote copy, keep last good, rollback/expiry rejected. |
-| Storage | `data/*` | Room `brainling.db`: `count_events`, `daily_aggregates`, `health_events`. |
-| Day close | `data/BrainlingDay.kt` | Day runs 04:00 → 04:00 local; each count stores the day key computed in its own time zone. |
-| Watchdog | `health/HealthMonitor.kt`, `health/HealthWorker.kt`, `health/ReenableNotifier.kt`, `BrainlingWork.kt` | 15 min WorkManager check + on app open + on service connect/unbind. |
-| Ruleset refresh | `rules/RulesRefreshWorker.kt`, `BrainlingWork.kt` | Every 6 h (network) and once on app open. |
-| Bridge | `BrainlingCoreModule.kt`, `modules/brainling-core/src/index.ts` | All `AsyncFunction`; `openAccessibilitySettings` runs on the main queue. Events `onCountChange`, `onHealthChange`. |
+| Storage | `data/*` | Room `thumbwell.db`: `count_events`, `daily_aggregates`, `health_events`. |
+| Day close | `data/ThumbwellDay.kt` | Day runs 04:00 → 04:00 local; each count stores the day key computed in its own time zone. |
+| Watchdog | `health/HealthMonitor.kt`, `health/HealthWorker.kt`, `health/ReenableNotifier.kt`, `ThumbwellWork.kt` | 15 min WorkManager check + on app open + on service connect/unbind. |
+| Ruleset refresh | `rules/RulesRefreshWorker.kt`, `ThumbwellWork.kt` | Every 6 h (network) and once on app open. |
+| Bridge | `ThumbwellCoreModule.kt`, `modules/thumbwell-core/src/index.ts` | All `AsyncFunction`; `openAccessibilitySettings` runs on the main queue. Events `onCountChange`, `onHealthChange`. |
 | Hooks | `src/detection/hooks.ts` | `useTodayCounts`, `useServiceStatus`: read on mount + foreground, event pushes in between, stale async reads dropped. |
 | Debug tools | `src/debug/.../DetectionDebug.kt`, `src/app/detection-debug.tsx` | Last detection + capture-layout (see below). Release twin in `src/release` is a no-op. |
-| Config plugin | `modules/brainling-core/app.plugin.js` | Service declaration + XML, `BRAINLING_RULES_URL` meta-data, strips foreground service. |
+| Config plugin | `modules/thumbwell-core/app.plugin.js` | Service declaration + XML, `THUMBWELL_RULES_URL` meta-data, strips foreground service. |
 
 ## Ruleset format (schema 3)
 
-Source: `modules/brainling-core/rules/rules.json`. Shipped: `android/src/main/assets/brainling/rules.signed.json`
+Source: `modules/thumbwell-core/rules/rules.json`. Shipped: `android/src/main/assets/thumbwell/rules.signed.json`
 (`{"alg":"Ed25519","keyId","payload":<base64 JSON>,"signature"}`). Top level: `schema`, `version`,
 `issuedAt`, `expiresAt` (UTC), `dwellMs`, `dedupeSize`, `sessionGapMs`, `surfaceRetryDelaysMs`,
 `apps[]`. Per app: `key`, `packageNames[]`, `enabled`, and at least one signal when enabled:
@@ -66,7 +66,7 @@ View ids are tried qualified with the observed package first, then every package
 
 All are enabled in ruleset v4. The service XML `packageNames` is generated from the enabled apps of
 the **signed** bundled payload at prebuild, so the service only ever receives events from these
-packages. `isAccessibilityTool` is always `false` (Brainling is not an accessibility tool under
+packages. `isAccessibilityTool` is always `false` (Thumbwell is not an accessibility tool under
 Play policy); never change it.
 
 ### Signing and rotation
@@ -75,8 +75,8 @@ Play policy); never change it.
 # from a worktree, point at the key in the main checkout (never copy .secrets/ around)
 BRAINLING_RULES_KEY_DIR=<main checkout>/.secrets/rules-signing \
   node scripts/rules/sign-rules.mjs sign brainling-dev-2026-10 \
-  modules/brainling-core/rules/rules.json \
-  modules/brainling-core/android/src/main/assets/brainling/rules.signed.json
+  modules/thumbwell-core/rules/rules.json \
+  modules/thumbwell-core/android/src/main/assets/thumbwell/rules.signed.json
 node scripts/rules/sign-rules.mjs verify <publicKeyB64> brainling-dev-2026-10 <file>
 ```
 
@@ -86,14 +86,14 @@ node scripts/rules/sign-rules.mjs verify <publicKeyB64> brainling-dev-2026-10 <f
 - Rotation: `keygen <newKeyId>`, add the public key to `TrustedRuleKeys.kt`, ship an app update,
   then sign with the new key. The dev key `brainling-dev-2026-10` must be replaced by an offline
   production key before release.
-- Remote rules: host the signed envelope at `BRAINLING_RULES_URL` (https only, see `docs/EAS.md`).
+- Remote rules: host the signed envelope at `THUMBWELL_RULES_URL` (https only, see `docs/EAS.md`).
 
 ## Watchdog and re-enable reminder
 
 `HealthMonitor` derives `ok` / `disabled` / `not_running` and records each change in
 `health_events` (30-day retention). When the state goes from `ok` or `not_running` to `disabled`
 (typically a banking app asked the user to turn accessibility off) it posts a local notification
-on channel `brainling-service-health`. One tap opens Brainling itself on `brainling://reenable`
+on channel `thumbwell-service-health`. One tap opens Thumbwell itself on `thumbwell://reenable`
 (an explicit `ACTION_VIEW` intent to our own package), never system settings directly: the
 `src/app/reenable.tsx` route explains why the AccessibilityService is needed (Play
 prominent-disclosure rule) and only its button calls `openAccessibilitySettings()`. The route
@@ -106,7 +106,7 @@ without the runtime grant on Android 13+ it is skipped. No new dependency was ad
 
 Detection debug screen → **Capture next window**, then open the target app on the screen to study.
 The service writes the node tree of the next window it evaluates to
-`<cache>/brainling-layouts/<package>-<time>.txt` (class, view id, bounds, flags; content
+`<cache>/thumbwell-layouts/<package>-<time>.txt` (class, view id, bounds, flags; content
 descriptions only when they look like component labels such as `…Spec_…`; never text). **Share
 capture** sends the file via expo-sharing. The code lives in `src/debug` and is not compiled into
 release.
@@ -114,7 +114,7 @@ release.
 ## Room schema
 
 `ksp { arg("room.schemaLocation", "$projectDir/schemas") }` exports to
-`modules/brainling-core/android/schemas/com.algoastics.brainling.core.data.BrainlingDatabase/1.json`.
+`modules/thumbwell-core/android/schemas/com.algoastics.thumbwell.core.data.ThumbwellDatabase/1.json`.
 Every schema bump: raise `version`, add `Migration(n, n + 1)` to `Migrations.ALL`, commit the new
 schema JSON, add a migration test. There is no destructive fallback.
 
@@ -128,10 +128,10 @@ schema JSON, add a migration test. There is no destructive fallback.
 
 ## Tests
 
-JVM unit tests in `modules/brainling-core/android/src/test`: ruleset parsing/validation, signature
+JVM unit tests in `modules/thumbwell-core/android/src/test`: ruleset parsing/validation, signature
 verify (bundled asset, tampering, unknown key, malformed, rollback/expiry policy), dwell and
 de-dupe (`ReelCounter`, restored keys), session persistence and policy, structural matching, day
-close (incl. DST), reminder trigger. Run with `./gradlew :brainling-core:testDebugUnitTest` after
+close (incl. DST), reminder trigger. Run with `./gradlew :thumbwell-core:testDebugUnitTest` after
 `npx expo prebuild -p android`. Jest covers the hooks and the re-enable route (`src/detection/__tests__`).
 
 ## Open
@@ -143,5 +143,5 @@ close (incl. DST), reminder trigger. Run with `./gradlew :brainling-core:testDeb
 | Device accuracy (DoD ≥95 % on 6 phones) | No device testing done for any of the five apps. View ids for TikTok, Facebook, Snapchat come from the spec, not from captures. |
 | Page index for apps without scroll indices | Item identity relies on scroll events (`fromIndex`/`scrollY`); apps that emit neither will count at most one item per surface session. Verify with capture-layout + logcat. |
 | YouTube autoplay advance | Not handled separately; depends on scroll events being emitted. |
-| Re-enable route vs M2 disclosure | The reminder now opens `brainling://reenable` (minimal disclosure + settings button, M1 i18n/UI). M2's full disclosure screen is not on this branch; when M2 merges, have the route reuse M2's disclosure component and copy so there is one disclosure text. |
+| Re-enable route vs M2 disclosure | The reminder now opens `thumbwell://reenable` (minimal disclosure + settings button, M1 i18n/UI). M2's full disclosure screen is not on this branch; when M2 merges, have the route reuse M2's disclosure component and copy so there is one disclosure text. |
 | Production signing key | Replace the dev key in `TrustedRuleKeys.kt`. |

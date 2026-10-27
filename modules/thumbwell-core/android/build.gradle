@@ -1,0 +1,54 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:${rootProject["kspVersion"]}"
+  }
+}
+
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+apply plugin: 'com.google.devtools.ksp'
+
+group = 'com.algoastics.thumbwell.core'
+version = '0.1.0'
+
+android {
+  namespace "com.algoastics.thumbwell.core"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+    consumerProguardFiles 'consumer-rules.pro'
+    // Tester builds show a live count badge over reels. On unless THUMBWELL_TESTER_MODE=0.
+    def testerMode = (System.getenv('THUMBWELL_TESTER_MODE') ?: System.getenv('BRAINLING_TESTER_MODE') ?: '1') != '0'
+    buildConfigField 'boolean', 'TESTER_MODE', testerMode.toString()
+  }
+  buildFeatures {
+    buildConfig true
+  }
+}
+
+ksp {
+  arg("room.generateKotlin", "true")
+  arg("room.schemaLocation", "$projectDir/schemas".toString())
+}
+
+def roomVersion = "2.6.1"
+def workVersion = "2.10.0"
+
+dependencies {
+  implementation "androidx.room:room-runtime:$roomVersion"
+  ksp "androidx.room:room-compiler:$roomVersion"
+  implementation "androidx.work:work-runtime:$workVersion"
+  // Ed25519 signature verification for detection rulesets (minSdk 24 has no platform Ed25519).
+  // Same artifact/version the RN networking stack pulls in transitively (bcutil-jdk15to18),
+  // so the app does not end up with duplicate org.bouncycastle classes.
+  implementation 'org.bouncycastle:bcprov-jdk15to18:1.81'
+
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.json:json:20240303'
+}

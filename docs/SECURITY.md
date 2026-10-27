@@ -1,4 +1,4 @@
-# Brainling — Security Baseline (docs/SECURITY.md)
+# Thumbwell — Security Baseline (docs/SECURITY.md)
 
 Target baseline: **OWASP MASVS v2 Level 1 (MASVS-L1)** for every release. MVP is local-only/anonymous; Supabase sections apply from v1.1 (auth/social) but are listed now so the schema is born secure.
 

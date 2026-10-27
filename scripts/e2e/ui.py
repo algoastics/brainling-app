@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tiny adb/uiautomator helpers for the Brainling e2e harness (emulator only)."""
+"""Tiny adb/uiautomator helpers for the Thumbwell e2e harness (emulator only)."""
 import os, re, subprocess, sys, time
 
 SERIAL = os.environ.get("E2E_SERIAL", "emulator-5554")
@@ -21,7 +21,7 @@ def nodes(pkg=None):
     """Visible views of the top activity from `dumpsys activity top`.
 
     Not uiautomator: a UiAutomation connection suppresses and then rebinds every accessibility
-    service, which restarts Brainling's service (empty state) on each dump.
+    service, which restarts Thumbwell's service (empty state) on each dump.
     """
     out, stack, section = [], [], False
     # Dump only the resumed activity: `dumpsys activity top` dumps every task's top activity and
@@ -59,7 +59,7 @@ def find(pred, ns=None):
     return None
 
 
-# A uiautomator dump rebinds every accessibility service; input sent before Brainling's service
+# A uiautomator dump rebinds every accessibility service; input sent before Thumbwell's service
 # is back is lost to it (a harness artifact, not a detection result). Inputs wait it out.
 REBIND_S = 4.0
 _last_dump = 0.0

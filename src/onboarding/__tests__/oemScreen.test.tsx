@@ -23,7 +23,7 @@ jest.mock('expo-intent-launcher', () => ({
   ActivityAction: { APPLICATION_DETAILS_SETTINGS: 'android.settings.APPLICATION_DETAILS_SETTINGS' },
   startActivityAsync: jest.fn(() => Promise.resolve({ resultCode: 0 })),
 }));
-jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.brainling' }));
+jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.thumbwell' }));
 jest.mock('@/storage', () => jest.requireActual('../../../test/memoryStorage'));
 
 beforeEach(() => {
@@ -58,7 +58,7 @@ describe('S10 phone-maker guides', () => {
       packageName: 'com.miui.securitycenter',
       className: 'com.miui.permcenter.autostart.AutoStartManagementActivity',
     });
-    expect(await screen.findByText('Couldn’t open it. Settings → Apps → Brainling')).toBeTruthy();
+    expect(await screen.findByText('Couldn’t open it. Settings → Apps → Thumbwell')).toBeTruthy();
   });
 
   it('records the step and continues to the setup check', async () => {

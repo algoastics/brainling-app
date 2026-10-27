@@ -10,7 +10,7 @@ import RestrictedScreen from '@/app/(onboarding)/restricted';
 import { initialOnboarding, useOnboardingStore } from '@/onboarding/store';
 
 const mockCore = { isServiceEnabled: jest.fn(() => false), openAccessibilitySettings: jest.fn() };
-jest.mock('brainling-core', () => ({
+jest.mock('thumbwell-core', () => ({
   __esModule: true,
   get default() {
     return mockCore;
@@ -27,7 +27,7 @@ jest.mock('expo-intent-launcher', () => ({
   ActivityAction: { APPLICATION_DETAILS_SETTINGS: 'android.settings.APPLICATION_DETAILS_SETTINGS' },
   startActivityAsync: jest.fn(() => Promise.resolve({ resultCode: 0 })),
 }));
-jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.brainling' }));
+jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.thumbwell' }));
 jest.mock('@/storage', () => jest.requireActual('../../../test/memoryStorage'));
 
 let foreground: ((s: AppStateStatus) => void) | undefined;
@@ -61,7 +61,7 @@ describe('S07-restricted', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Open App info' }));
     expect(startActivityAsync).toHaveBeenCalledWith(
       'android.settings.APPLICATION_DETAILS_SETTINGS',
-      { data: 'package:com.algoastics.brainling' },
+      { data: 'package:com.algoastics.thumbwell' },
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Done — turn on Accessibility' }));
     expect(router.push).toHaveBeenCalledWith('/accessibility');

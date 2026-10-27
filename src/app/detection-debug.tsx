@@ -1,4 +1,4 @@
-import BrainlingCore, { type DebugState } from 'brainling-core';
+import ThumbwellCore, { type DebugState } from 'thumbwell-core';
 import { Redirect, router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ function DetectionDebugScreen() {
   const [debug, setDebug] = useState<DebugState | null>(null);
 
   const refreshDebug = useCallback(async () => {
-    const state = await BrainlingCore.getDebugState();
+    const state = await ThumbwellCore.getDebugState();
     setDebug(state);
   }, []);
   const refresh = useCallback(async () => {
@@ -26,12 +26,12 @@ function DetectionDebugScreen() {
   }, [refreshStatus, refreshCounts, refreshDebug]);
 
   const armCapture = useCallback(async () => {
-    await BrainlingCore.captureLayout();
+    await ThumbwellCore.captureLayout();
     await refreshDebug();
   }, [refreshDebug]);
 
   const stopCapture = useCallback(async () => {
-    await BrainlingCore.stopCapture();
+    await ThumbwellCore.stopCapture();
     await refreshDebug();
   }, [refreshDebug]);
 
@@ -46,7 +46,7 @@ function DetectionDebugScreen() {
 
   // Debug state isn't pushed by native: re-read it on each count change and on foreground.
   useEffect(() => {
-    const countSub = BrainlingCore.addListener('onCountChange', () => void refreshDebug());
+    const countSub = ThumbwellCore.addListener('onCountChange', () => void refreshDebug());
     const appStateSub = AppState.addEventListener('change', (s) => {
       if (s === 'active') void refreshDebug();
     });
@@ -72,7 +72,7 @@ function DetectionDebugScreen() {
         <Button
           kind="secondary"
           label="Open accessibility settings"
-          onPress={() => void BrainlingCore.openAccessibilitySettings()}
+          onPress={() => void ThumbwellCore.openAccessibilitySettings()}
         />
         <Button kind="ghost" label="Refresh" onPress={() => void refresh()} />
       </Card>

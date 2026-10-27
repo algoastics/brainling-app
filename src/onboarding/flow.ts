@@ -61,7 +61,7 @@ export function guessMascotState(guess: number): MascotState {
   return stateForHealth(health(guess, 400));
 }
 
-/** S04 face preview: a smaller budget means a happier Brainling. */
+/** S04 face preview: a smaller budget means a happier Thumbwell. */
 export function budgetMascotState(budget: number): MascotState {
   if (budget <= 30) return 'glowing';
   if (budget <= 90) return 'happy';

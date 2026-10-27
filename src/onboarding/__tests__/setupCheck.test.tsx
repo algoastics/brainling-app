@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import type { DayCounts } from 'brainling-core';
+import type { DayCounts } from 'thumbwell-core';
 import { router } from 'expo-router';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -20,7 +20,7 @@ const mockCore = {
     return { remove: () => mockCore.listeners.delete(fn) };
   }),
 };
-jest.mock('brainling-core', () => ({
+jest.mock('thumbwell-core', () => ({
   __esModule: true,
   get default() {
     return mockCore;

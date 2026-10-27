@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Brainling",
+    "name": "Thumbwell",
     "tagline": "Count less. Live more."
   },
   "splash": {
@@ -9,7 +9,7 @@
   },
   "platforms": {
     "title": "Today's reels",
-    "subtitle": "Brainling's mood follows how many reels you watch on each app.",
+    "subtitle": "Thumbwell's mood follows how many reels you watch on each app.",
     "count": "{{count}} reels",
     "name": {
       "instagram": "Instagram",
@@ -43,7 +43,7 @@
     "streakFrozen_other": "{{count}} day streak, frozen"
   },
   "mascot": {
-    "label": "Brainling is {{state}}: {{line}}",
+    "label": "Thumbwell is {{state}}: {{line}}",
     "state": {
       "glowing": "glowing",
       "happy": "happy",
@@ -66,14 +66,14 @@
     }
   },
   "reenable": {
-    "title": "Brainling stopped counting",
-    "body": "Brainling's accessibility service was turned off, so reels aren't being counted. This sometimes happens when a banking or payment app asks you to turn accessibility off.",
-    "steps": "Tap the button, find Brainling under Installed apps, and turn it on.",
+    "title": "Thumbwell stopped counting",
+    "body": "Thumbwell's accessibility service was turned off, so reels aren't being counted. This sometimes happens when a banking or payment app asks you to turn accessibility off.",
+    "steps": "Tap the button, find Thumbwell under Installed apps, and turn it on.",
     "cta": "Open accessibility settings",
     "ctaHint": "Opens Android accessibility settings",
     "later": "Not now",
-    "done": "You're all set — Brainling is counting again.",
-    "home": "Back to Brainling"
+    "done": "You're all set — Thumbwell is counting again.",
+    "home": "Back to Thumbwell"
   },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
@@ -87,18 +87,18 @@
       "reelsToday": "reels today",
       "card1": {
         "title": "You scrolled 300 reels today. Did you notice?",
-        "body": "Brainling counts every reel and short — Instagram, YouTube, TikTok, Facebook and Snapchat.",
+        "body": "Thumbwell counts every reel and short — Instagram, YouTube, TikTok, Facebook and Snapchat.",
         "art": "300 reels today, counted across your apps"
       },
       "card2": {
-        "title": "Meet your Brainling. It feels every reel.",
+        "title": "Meet your Thumbwell. It feels every reel.",
         "body": "Stay under your budget and it glows. Doomscroll and it gets… crispy.",
-        "art": "A happy Brainling turning into a fried one"
+        "art": "A happy Thumbwell turning into a fried one"
       },
       "card3": {
         "title": "Win the day. Keep your streak.",
         "body": "Stay under your budget and your streak grows a little every day you scroll less.",
-        "art": "A glowing Brainling with a streak flame and a trophy"
+        "art": "A glowing Thumbwell with a streak flame and a trophy"
       }
     },
     "quiz": {
@@ -124,7 +124,7 @@
     },
     "budget": {
       "title": "Set your daily reel budget",
-      "subtitle": "This number decides your Brainling’s health and streak.",
+      "subtitle": "This number decides your Thumbwell’s health and streak.",
       "perDay": "reels a day",
       "value_one": "{{count}} reel a day",
       "value_other": "{{count}} reels a day",
@@ -146,7 +146,7 @@
       "subtitle_other": "Tap the brain-pod {{count}} times.",
       "eggLabel": "Brain-pod",
       "tapCount": "Tap {{step}} of {{total}}",
-      "namedTitle": "Say hi to your Brainling!",
+      "namedTitle": "Say hi to your Thumbwell!",
       "nameLabel": "Name (2–14 characters, emoji OK)",
       "nameError": "Name needs 2–14 characters.",
       "colour": "Colour",
@@ -159,19 +159,19 @@
       "save": "Save name"
     },
     "disclosure": {
-      "title": "Brainling needs Accessibility to count your reels",
+      "title": "Thumbwell needs Accessibility to count your reels",
       "points": {
         "counts": "Counts reels on your phone",
         "lock": "Shows the lock screen when you hit your limit",
         "never": "Never reads your messages, never sends screen content anywhere"
       },
       "body": {
-        "what": "To count Reels, Shorts, TikToks and Spotlight videos, Brainling uses Android’s AccessibilityService API. While you use Instagram, Instagram Lite, YouTube, TikTok, Facebook, Facebook Lite or Snapchat, it reads screen layout information (which screen is open, the names of on-screen elements, and scroll events).",
+        "what": "To count Reels, Shorts, TikToks and Spotlight videos, Thumbwell uses Android’s AccessibilityService API. While you use Instagram, Instagram Lite, YouTube, TikTok, Facebook, Facebook Lite or Snapchat, it reads screen layout information (which screen is open, the names of on-screen elements, and scroll events).",
         "use": "We use this only to: count how many short videos you watch, show your count and mascot, and — if you set a limit — cover the reels screen or go back when you reach it.",
         "never": "What we never do: we do not read or store your messages, comments, video titles or what is in the videos. We do not record your screen. Everything is processed on your phone and is not sent to us or anyone else.",
         "off": "You can turn this off any time in Android Settings → Accessibility."
       },
-      "consent": "I understand and agree that Brainling uses the Accessibility service as described above.",
+      "consent": "I understand and agree that Thumbwell uses the Accessibility service as described above.",
       "agree": "Agree & continue",
       "agreeHint": "Tick the box above first",
       "notNow": "Not now"
@@ -180,37 +180,37 @@
       "title": "Allow restricted settings first",
       "subtitle": "Android 13+ blocks Accessibility for apps installed outside Google Play. Do this once:",
       "steps": {
-        "appInfo": "Open App info for Brainling",
+        "appInfo": "Open App info for Thumbwell",
         "menu": "Tap ⋮ (top right)",
         "allow": "Tap “Allow restricted settings”",
         "back": "Come back and turn on Accessibility"
       },
       "open": "Open App info",
-      "openHint": "Opens Brainling's App info in Android settings",
+      "openHint": "Opens Thumbwell's App info in Android settings",
       "done": "Done — turn on Accessibility"
     },
     "accessibility": {
-      "title": "Turn on Brainling in Accessibility",
-      "path": "Settings → Accessibility → Installed apps → Brainling → ON",
+      "title": "Turn on Thumbwell in Accessibility",
+      "path": "Settings → Accessibility → Installed apps → Thumbwell → ON",
       "open": "Open Accessibility settings",
       "openHint": "Opens Android accessibility settings",
       "help": "Need help?",
       "stillOff": "Still off — try again",
       "warning": "Android will show a scary warning. That’s normal for all Accessibility apps. We only do what’s listed on the previous screen.",
-      "banking": "Some banking or payment apps ask you to pause Accessibility apps while you use them. If one asks, pause Brainling — we’ll remind you to turn it back on.",
+      "banking": "Some banking or payment apps ask you to pause Accessibility apps while you use them. If one asks, pause Thumbwell — we’ll remind you to turn it back on.",
       "successTitle": "Counting is ON",
-      "successBody": "Your Brainling can feel reels now."
+      "successBody": "Your Thumbwell can feel reels now."
     },
     "notifications": {
-      "title": "Let Brainling tap you on the shoulder",
+      "title": "Let Thumbwell tap you on the shoulder",
       "subtitle": "Limit warnings, streak reminders and a heads-up if counting stops. Max 4 a day.",
       "allow": "Allow notifications",
-      "defaultName": "Your Brainling",
+      "defaultName": "Your Thumbwell",
       "examplesLabel": "Example notifications: 12 reels left today, your streak is safe, counting stopped",
       "when": {
-        "now": "Brainling · now",
-        "twoMin": "Brainling · 2m",
-        "oneHour": "Brainling · 1h"
+        "now": "Thumbwell · now",
+        "twoMin": "Thumbwell · 2m",
+        "oneHour": "Thumbwell · 1h"
       },
       "examples": {
         "limit": {
@@ -223,7 +223,7 @@
         },
         "stopped": {
           "title": "Counting stopped",
-          "body": "Tap to turn Brainling back on."
+          "body": "Tap to turn Thumbwell back on."
         }
       }
     },
@@ -232,7 +232,7 @@
       "body": "Some phones stop apps to save battery. Then your count stops too.",
       "usage": "We use under ~1–2% battery a day (target)",
       "allow": "Allow",
-      "allowHint": "Opens Android battery optimisation settings. Choose Brainling, then Don't optimise."
+      "allowHint": "Opens Android battery optimisation settings. Choose Thumbwell, then Don't optimise."
     },
     "oem": {
       "title": "One more step for your phone",
@@ -242,7 +242,7 @@
       "vary": "Steps vary by OS version · help page has screenshots",
       "open": "Open the setting",
       "didIt": "I did it",
-      "failed": "Couldn’t open it. Settings → Apps → Brainling",
+      "failed": "Couldn’t open it. Settings → Apps → Thumbwell",
       "previous": "Previous phone maker",
       "next": "Next phone maker",
       "position": "{{name}}, guide {{index}} of {{total}}",
@@ -251,7 +251,7 @@
         "maker": "Samsung",
         "steps": [
           "App info → Battery → Unrestricted",
-          "Battery → Background usage limits → Never sleeping apps → add Brainling",
+          "Battery → Background usage limits → Never sleeping apps → add Thumbwell",
           "Turn off “Put unused apps to sleep”"
         ]
       },
@@ -261,7 +261,7 @@
         "steps": [
           "App info → Autostart ON",
           "Battery saver → No restrictions",
-          "Recents: long-press Brainling card → Lock",
+          "Recents: long-press Thumbwell card → Lock",
           "Other permissions → pop-up windows while in background (only if needed)"
         ]
       },
@@ -271,14 +271,14 @@
         "steps": [
           "App info → Battery usage → Allow background activity",
           "Allow auto launch",
-          "Recents → lock the Brainling card"
+          "Recents → lock the Thumbwell card"
         ]
       },
       "vivo": {
         "name": "Vivo / iQOO · Funtouch / OriginOS",
         "maker": "Vivo",
         "steps": [
-          "Battery → Background power consumption → Brainling → Allow",
+          "Battery → Background power consumption → Thumbwell → Allow",
           "i Manager → App manager → Autostart → ON"
         ]
       },
@@ -318,7 +318,7 @@
       "finish": "Finish",
       "passTitle_one": "{{count}} reel counted!",
       "passTitle_other": "{{count}} reels counted!",
-      "passBody": "Brainling is ready. Go easy on it.",
+      "passBody": "Thumbwell is ready. Go easy on it.",
       "failTitle": "We couldn’t see reels",
       "failBody_one": "{{count}} counted. Try again, or check your phone’s background settings.",
       "failBody_other": "{{count}} counted. Try again, or check your phone’s background settings.",
@@ -329,19 +329,19 @@
   },
   "tester": {
     "title": "Tester setup",
-    "intro": "Brainling counts the short videos you watch (Reels, Shorts, TikTok, Spotlight) so you can see your daily scroll habit. Thanks for testing!",
+    "intro": "Thumbwell counts the short videos you watch (Reels, Shorts, TikTok, Spotlight) so you can see your daily scroll habit. Thanks for testing!",
     "disclosureHeading": "Before you turn it on",
-    "stepsHeading": "Turn on Brainling in Accessibility",
+    "stepsHeading": "Turn on Thumbwell in Accessibility",
     "step1": "1. Tap \"Open Accessibility settings\" below.",
     "step2": "2. Open \"Installed apps\" (Samsung) or \"Downloaded apps\".",
-    "step3": "3. Tap Brainling and switch it On, then confirm.",
-    "step4": "4. Greyed out? Go to Settings > Apps > Brainling (App info) > ⋮ > Allow restricted settings, then try again.",
+    "step3": "3. Tap Thumbwell and switch it On, then confirm.",
+    "step4": "4. Greyed out? Go to Settings > Apps > Thumbwell (App info) > ⋮ > Allow restricted settings, then try again.",
     "playProtect": "Installed from an APK? Google Play Protect may block or warn about it. If so, pause Play Protect scanning in the Play Store (Profile > Play Protect > ⚙), install, then turn it back on.",
     "cta": "Open Accessibility settings",
     "ctaHint": "Opens Android accessibility settings",
     "statusLabel": "Accessibility service",
     "statusChecking": "Checking…",
-    "statusOn": "On: Brainling is counting",
+    "statusOn": "On: Thumbwell is counting",
     "statusOff": "Off",
     "continue": "Continue",
     "badgeNote": "While testing, a small purple badge shows today's count at the top of the screen when you watch reels."

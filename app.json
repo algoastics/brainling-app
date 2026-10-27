@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Brainling",
-    "slug": "brainling",
+    "name": "Thumbwell",
+    "slug": "thumbwell",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.algoastics.brainling"
+      "bundleIdentifier": "com.algoastics.thumbwell"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,14 +18,15 @@
         "backgroundColor": "#6B4EFF"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.algoastics.brainling",
+      "package": "com.algoastics.thumbwell",
       "allowBackup": false,
       "permissions": ["android.permission.INTERNET", "android.permission.VIBRATE"],
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -61,7 +62,9 @@
           "android": {
             "enableMinifyInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "usesCleartextTraffic": false
+            "usesCleartextTraffic": false,
+            "minSdkVersion": 26,
+            "targetSdkVersion": 35
           }
         }
       ],
@@ -84,7 +87,7 @@
           "jvmArgs": "-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
         }
       ],
-      "./modules/brainling-core/app.plugin.js",
+      "./modules/thumbwell-core/app.plugin.js",
       [
         "./plugins/withReleaseBlockedPermissions",
         {
@@ -92,7 +95,7 @@
         }
       ]
     ],
-    "scheme": "brainling",
+    "scheme": "thumbwell",
     "experiments": {
       "typedRoutes": true
     },

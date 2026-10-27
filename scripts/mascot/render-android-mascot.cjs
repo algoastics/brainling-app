@@ -10,7 +10,7 @@ const path = require('path');
 const { Resvg } = require('@resvg/resvg-js');
 
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'modules/brainling-core/android/src/main/res/drawable-nodpi');
+const out = path.join(root, 'modules/thumbwell-core/android/src/main/res/drawable-nodpi');
 const art = fs.readFileSync(path.join(root, 'src/components/mascot/art.ts'), 'utf8');
 const INK = '#22183F';
 const lid = (d, w = 3.2) =>
@@ -106,7 +106,7 @@ while ((m = re.exec(art))) {
     open = open.replace(pattern, replacement);
   }
   if (!find.test(open)) throw new Error(`eye pattern not found for ${mood}`);
-  render(open, `brainling_mascot_${mood}.png`);
-  render(open.replace(find, repl), `brainling_mascot_${mood}_blink.png`);
+  render(open, `thumbwell_mascot_${mood}.png`);
+  render(open.replace(find, repl), `thumbwell_mascot_${mood}_blink.png`);
   console.log('rendered', mood);
 }

@@ -19,7 +19,7 @@ jest.mock('expo-intent-launcher', () => ({
   },
   startActivityAsync: jest.fn(() => Promise.resolve({ resultCode: 0 })),
 }));
-jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.brainling' }));
+jest.mock('expo-application', () => ({ applicationId: 'com.algoastics.thumbwell' }));
 jest.mock('@/storage', () => jest.requireActual('../../../test/memoryStorage'));
 
 beforeEach(() => {
@@ -68,7 +68,7 @@ describe('S09 battery', () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/oem'));
     expect(startActivityAsync).toHaveBeenLastCalledWith(
       'android.settings.APPLICATION_DETAILS_SETTINGS',
-      { data: 'package:com.algoastics.brainling' },
+      { data: 'package:com.algoastics.thumbwell' },
     );
   });
 });

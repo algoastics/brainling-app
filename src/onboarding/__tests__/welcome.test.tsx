@@ -26,7 +26,7 @@ describe('S02 welcome carousel', () => {
   it('describes each illustration and hides the account link (S12 is v1.1)', async () => {
     await render(<WelcomeScreen />);
     expect(screen.getByLabelText('300 reels today, counted across your apps')).toBeTruthy();
-    expect(screen.getByLabelText('A happy Brainling turning into a fried one')).toBeTruthy();
+    expect(screen.getByLabelText('A happy Thumbwell turning into a fried one')).toBeTruthy();
     expect(screen.queryByText('I already have an account')).toBeNull();
   });
 });

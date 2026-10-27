@@ -31,7 +31,7 @@ describe('Mascot', () => {
 
   it('announces the state and its line', async () => {
     await render(<Mascot state="fried" />);
-    expect(screen.getByLabelText('Brainling is fried: I feel… crispy.')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Thumbwell is fried: I feel… crispy.')).toBeOnTheScreen();
   });
 
   it('grows 1% per level', async () => {

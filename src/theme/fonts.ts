@@ -23,6 +23,6 @@ export const fontAssets = {
 };
 
 /** Returns `[loaded, error]`; the app keeps the splash screen up until fonts settle. */
-export function useBrainlingFonts(): [boolean, Error | null] {
+export function useThumbwellFonts(): [boolean, Error | null] {
   return useFonts(fontAssets);
 }

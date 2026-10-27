@@ -1,4 +1,4 @@
-import type { DayCounts } from 'brainling-core';
+import type { DayCounts } from 'thumbwell-core';
 
 import type { MascotState } from '@/theme';
 
@@ -9,7 +9,7 @@ export type PlatformMood = Extract<MascotState, 'glowing' | 'happy' | 'meh' | 'f
  * Temporary internal testing scale (single place to tune). A count below `happy` is glowing,
  * below `meh` happy, below `fried` meh, below `zombie` fried, and at or above `zombie` a zombie:
  * glowing 0-9, happy 10-29, meh 30-44, fried 45-69, zombie 70+. Keep in sync with the native
- * overlay's MascotMood.kt (modules/brainling-core/.../detection/MascotMood.kt).
+ * overlay's MascotMood.kt (modules/thumbwell-core/.../detection/MascotMood.kt).
  */
 export const PLATFORM_MOOD_THRESHOLDS = { happy: 10, meh: 30, fried: 45, zombie: 70 } as const;
 

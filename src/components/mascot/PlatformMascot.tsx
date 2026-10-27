@@ -25,7 +25,7 @@ export type PlatformMascotProps = {
 };
 
 /**
- * Internal placeholder (real design later): the Brainling mascot whose mood follows a platform's
+ * Internal placeholder (real design later): the Thumbwell mascot whose mood follows a platform's
  * reel count. Idle breathing loop, a pop when the count rises, a wobble when the mood changes.
  */
 export function PlatformMascot({ name, count, size = 88 }: PlatformMascotProps) {

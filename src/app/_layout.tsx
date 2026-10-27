@@ -6,7 +6,7 @@ import { BrandSplash } from '@/components/brand';
 import { useT } from '@/i18n';
 import { RootStack } from '@/navigation/RootStack';
 import { getStorage } from '@/storage';
-import { ThemeProvider, useBrainlingFonts } from '@/theme';
+import { ThemeProvider, useThumbwellFonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,7 +21,7 @@ function openStorage(): boolean {
 
 export default function RootLayout() {
   const t = useT();
-  const [fontsLoaded, fontError] = useBrainlingFonts();
+  const [fontsLoaded, fontError] = useThumbwellFonts();
   const [storageReady, setStorageReady] = useState(openStorage);
   const [introDone, setIntroDone] = useState(false);
   const ready = fontsLoaded || fontError !== null;

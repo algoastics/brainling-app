@@ -1,5 +1,5 @@
 /**
- * Brainling design tokens, ported from brainling-design/code/theme.ts and
+ * Thumbwell design tokens, ported from brainling-design/code/theme.ts and
  * tokens/brainling.tokens.json. Never hard-code hex values in components; read them from here.
  *
  * Deviation from the kit: light `muted` is darkened from #7C7598 (4.1:1 on bg) to #6E6789

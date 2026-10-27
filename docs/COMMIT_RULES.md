@@ -1,4 +1,4 @@
-# Brainling — Commit & Branch Rules
+# Thumbwell — Commit & Branch Rules
 
 ## 1. Branches
 - One branch per module: `module/<nn>-<name>`, two-digit number matching `module-plan.md`.
@@ -47,7 +47,7 @@ Examples:
 
 ## 3. Commit content rules
 - **One logical change per commit.** Don't mix a refactor with a feature, or a formatting change with a fix.
-- **Every commit builds, lints and typechecks** (`npm run typecheck && npm run lint && npm test -- --findRelatedTests` and `./gradlew :brainling-core:assembleDebug lint` for native changes). History must be bisectable.
+- **Every commit builds, lints and typechecks** (`npm run typecheck && npm run lint && npm test -- --findRelatedTests` and `./gradlew :thumbwell-core:assembleDebug lint` for native changes). History must be bisectable.
 - **Never commit:**
   - WIP / "tmp" / "fixup" commits (squash locally before pushing)
   - debug code (`console.log`, `Log.d` outside the logging wrapper, debug overlays outside debug source sets)

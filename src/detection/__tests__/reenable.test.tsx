@@ -8,7 +8,7 @@ const mockCore = {
   openAccessibilitySettings: jest.fn<() => Promise<void>>(),
 };
 
-jest.mock('brainling-core', () => ({
+jest.mock('thumbwell-core', () => ({
   __esModule: true,
   get default() {
     return mockCore;
@@ -40,7 +40,7 @@ describe('reenable route', () => {
   it('confirms and offers a way home once the service is back on', async () => {
     mockCore.isServiceEnabled.mockResolvedValue(true);
     await render(<ReenableScreen />);
-    await fireEvent.press(await screen.findByRole('button', { name: 'Back to Brainling' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back to Thumbwell' }));
     expect(mockRouter.replace).toHaveBeenCalledWith('/');
     expect(screen.queryByRole('button', { name: 'Open accessibility settings' })).toBeNull();
   });

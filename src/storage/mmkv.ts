@@ -8,7 +8,7 @@ let instance: MMKV | undefined;
 /** The app's encrypted key/value store (AES-256, key held in the Android Keystore). */
 export function getStorage(): MMKV {
   instance ??= createMMKV({
-    id: 'brainling',
+    id: 'thumbwell',
     encryptionKey: getOrCreateStorageKey(),
     encryptionType: 'AES-256',
   });

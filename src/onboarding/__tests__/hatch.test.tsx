@@ -27,7 +27,7 @@ describe('S05 hatch and name', () => {
     expect(screen.getByText('Tap 1 of 3')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Brain-pod' }));
     expect(screen.getByText('Tap 2 of 3')).toBeTruthy();
-    expect(screen.queryByText('Say hi to your Brainling!')).toBeNull();
+    expect(screen.queryByText('Say hi to your Thumbwell!')).toBeNull();
   });
 
   it('rejects a one-character name', async () => {

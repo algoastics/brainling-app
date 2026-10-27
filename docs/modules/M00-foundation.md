@@ -23,10 +23,10 @@ Branch: `module/00-foundation`. Tracks the M0 Definition of Done from `docs/MODU
 | `<Mascot>`: static art for all 7 health states + ghost from the design kit mascot sheet (no fallbacks needed) | `src/components/mascot/` |
 | S01 native splash, app icon, adaptive icon; in-app S01 with A01 logo pop + blink; S01-error retry | `assets/`, `app.json`, `src/components/brand/` |
 | Zustand + MMKV (AES-256, key in Android Keystore via expo-secure-store) | `src/storage/`, `src/state/` |
-| `com.algoastics.brainling`; allowBackup off, cleartext off, R8 + shrink in release; minimal permissions (SYSTEM_ALERT_WINDOW, storage, mic blocked) | `app.json` |
+| `com.algoastics.thumbwell`; allowBackup off, cleartext off, R8 + shrink in release; minimal permissions (SYSTEM_ALERT_WINDOW, storage, mic blocked) | `app.json` |
 | All MVP native libraries installed up front (list below) | `package.json` |
-| `modules/brainling-core` local Expo Module skeleton (Android, autolinked) | `modules/brainling-core/` |
-| Debug dev-client APK (arm64-v8a) builds from this branch | `brainling-builds/brainling-m0-debug-v2.apk` (not in repo) |
+| `modules/thumbwell-core` local Expo Module skeleton (Android, autolinked) | `modules/thumbwell-core/` |
+| Debug dev-client APK (arm64-v8a) builds from this branch | `thumbwell-builds/thumbwell-m0-debug-v2.apk` (not in repo) |
 
 ### Native libraries installed in M0 (so M1–M12 need no new native rebuild)
 
@@ -50,7 +50,7 @@ Supabase (JS only, v1.1).
 | CODEOWNERS + branch protection on `main` | Waiting for the reviewer's GitHub handle. |
 | ESLint rule: ink-on-primary below 16dp | Handoff §5 contrast rule; custom rule not written. |
 | App icons via `PackageManager.getApplicationIcon` | Native, ships with the M1 bridge; `AppChip` takes a device icon source. |
-| `brainling-core` config plugin | Added with M1 when the AccessibilityService is declared. |
+| `thumbwell-core` config plugin | Added with M1 when the AccessibilityService is declared. |
 | Network security config | With the first network call (M11 ruleset fetch). |
 | Manual checks | Device run of all tab stubs, preview at 1.3x font scale, TalkBack. |
 

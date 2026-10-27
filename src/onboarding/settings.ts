@@ -3,9 +3,9 @@ import { ActivityAction, startActivityAsync } from 'expo-intent-launcher';
 
 import type { OemTarget } from './oem';
 
-const packageUri = () => `package:${Application.applicationId ?? 'com.algoastics.brainling'}`;
+const packageUri = () => `package:${Application.applicationId ?? 'com.algoastics.thumbwell'}`;
 
-/** System "App info" page for Brainling (S07-restricted, Samsung/OnePlus/Pixel guides). */
+/** System "App info" page for Thumbwell (S07-restricted, Samsung/OnePlus/Pixel guides). */
 export async function openAppInfo(): Promise<boolean> {
   try {
     await startActivityAsync(ActivityAction.APPLICATION_DETAILS_SETTINGS, { data: packageUri() });

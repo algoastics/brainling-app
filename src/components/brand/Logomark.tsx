@@ -30,7 +30,7 @@ function Eyelid({ cx, eyelid }: { cx: number; eyelid: SharedValue<number> }) {
   return <AnimatedEllipse cx={cx} rx={EYE_R + 1} fill={body} animatedProps={props} />;
 }
 
-/** Brainling logomark (brand/logomark.svg) drawn natively so the eyes can blink. */
+/** Thumbwell logomark (brand/logomark.svg) drawn natively so the eyes can blink. */
 export function Logomark({ size = 160, eyelid }: LogomarkProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 200 200" accessibilityRole="image">

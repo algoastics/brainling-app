@@ -1,4 +1,4 @@
-import BrainlingCore from 'brainling-core';
+import ThumbwellCore from 'thumbwell-core';
 import * as Device from 'expo-device';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -70,7 +70,7 @@ const Row = memo(function Row({ label, state, onPress }: RowProps) {
 const stepState = (s: StepStatus): RowState => (s === 'done' ? 'ok' : 'skipped');
 
 async function snapshot(): Promise<CountSnapshot> {
-  const { date, total } = await BrainlingCore.getTodayCounts();
+  const { date, total } = await ThumbwellCore.getTodayCounts();
   return { date, total };
 }
 
@@ -83,7 +83,7 @@ function useSelfTest() {
   useEffect(() => {
     if (!baseline) return;
     const update = (c: CountSnapshot) => setSeen(reelsSince(baseline, c));
-    const counts = BrainlingCore.addListener('onCountChange', update);
+    const counts = ThumbwellCore.addListener('onCountChange', update);
     const app = AppState.addEventListener('change', (s) => {
       if (s === 'active') {
         void snapshot().then((c) => {

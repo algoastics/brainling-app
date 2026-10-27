@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="thumbwell_health_channel_name">Counting status</string>
+    <string name="thumbwell_health_channel_description">Tells you when reel counting stops because accessibility was turned off.</string>
+    <string name="thumbwell_reenable_title">Thumbwell stopped counting</string>
+    <string name="thumbwell_reenable_text">Accessibility was turned off for Thumbwell. Tap to turn it back on.</string>
+</resources>

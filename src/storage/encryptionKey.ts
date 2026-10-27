@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
-const KEY_NAME = 'brainling.mmkv.key';
+const KEY_NAME = 'thumbwell.mmkv.key';
 const KEY_BYTES = 16;
 
 function toHex(bytes: Uint8Array): string {

@@ -32,7 +32,7 @@ describe('getOrCreateStorageKey', () => {
     const key = getOrCreateStorageKey();
     expect(key).toMatch(/^[0-9a-f]{32}$/);
     expect(Crypto.getRandomBytes).toHaveBeenCalledWith(16);
-    expect(secureStore.setItem).toHaveBeenCalledWith('brainling.mmkv.key', key, {
+    expect(secureStore.setItem).toHaveBeenCalledWith('thumbwell.mmkv.key', key, {
       keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
     });
   });

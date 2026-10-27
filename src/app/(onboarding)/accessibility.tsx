@@ -1,4 +1,4 @@
-import BrainlingCore from 'brainling-core';
+import ThumbwellCore from 'thumbwell-core';
 import * as Haptics from 'expo-haptics';
 import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -23,7 +23,7 @@ import { ONBOARDING_ROUTES } from '@/onboarding/flow';
 import { useDisclosureAccepted } from '@/onboarding/useDisclosureGuard';
 import { palette, radius, space, useTheme } from '@/theme';
 
-const MOCK_ROWS = ['Accessibility', 'Installed apps', 'TalkBack', 'Brainling', 'Select to Speak'];
+const MOCK_ROWS = ['Accessibility', 'Installed apps', 'TalkBack', 'Thumbwell', 'Select to Speak'];
 const MOCK_W = 280;
 
 /**
@@ -43,7 +43,7 @@ export default function AccessibilityScreen() {
 
   const open = useCallback(() => {
     setAttempted(true);
-    void BrainlingCore.openAccessibilitySettings();
+    void ThumbwellCore.openAccessibilitySettings();
   }, []);
   const help = useCallback(() => router.push(ONBOARDING_ROUTES.restricted), []);
   const next = useCallback(() => router.push(ONBOARDING_ROUTES.notifications), []);

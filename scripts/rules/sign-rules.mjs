@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-// Ed25519 signing for Brainling detection rulesets. See docs/modules/M01-detection.md.
+// Ed25519 signing for Thumbwell detection rulesets. See docs/modules/M01-detection.md.
 //
 //   node scripts/rules/sign-rules.mjs keygen <keyId>
 //   node scripts/rules/sign-rules.mjs sign <keyId> <rules.json> <out.signed.json>
 //   node scripts/rules/sign-rules.mjs verify <publicKeyBase64> <keyId> <file.signed.json>
 //
 // Private keys live in .secrets/rules-signing/<keyId>.pem (git-ignored) and must never be
-// committed or copied into CI. The production key stays offline. Set BRAINLING_RULES_KEY_DIR to
+// committed or copied into CI. The production key stays offline. Set THUMBWELL_RULES_KEY_DIR (or legacy BRAINLING_RULES_KEY_DIR) to
 // read keys from another directory (e.g. the main checkout when signing from a git worktree).
 import { Buffer } from 'node:buffer';
 import { createPrivateKey, createPublicKey, generateKeyPairSync, sign, verify } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-const KEY_DIR = path.resolve(process.env.BRAINLING_RULES_KEY_DIR ?? '.secrets/rules-signing');
+const KEY_DIR = path.resolve(process.env.THUMBWELL_RULES_KEY_DIR ?? process.env.BRAINLING_RULES_KEY_DIR ?? '.secrets/rules-signing');
 const KEY_ID = /^[a-z0-9][a-z0-9-]{2,63}$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 

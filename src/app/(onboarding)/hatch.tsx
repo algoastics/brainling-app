@@ -135,7 +135,7 @@ const HatchEgg = memo(function HatchEgg({ onHatched }: { onHatched: () => void }
   );
 });
 
-/** S05 / S05-named — hatch the Brainling, then name it and pick a colour (stored locally only). */
+/** S05 / S05-named — hatch the Thumbwell, then name it and pick a colour (stored locally only). */
 export default function HatchScreen() {
   const t = useT();
   const { colors } = useTheme();

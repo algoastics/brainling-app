@@ -12,9 +12,9 @@ if [[ "${2:-}" != "--no-build" ]]; then
     ./gradlew -q assembleRelease -PreactNativeArchitectures=arm64-v8a)
   $ADB install -r android/app/build/outputs/apk/release/app-release.apk
 fi
-S=com.algoastics.brainling/com.algoastics.brainling.core.detection.BrainlingAccessibilityService
+S=com.algoastics.thumbwell/com.algoastics.thumbwell.core.detection.ThumbwellAccessibilityService
 $ADB shell settings put secure enabled_accessibility_services $S
 $ADB shell settings put secure accessibility_enabled 1
 sleep 12 # let the service bind and load rules
-$ADB shell dumpsys accessibility | grep -q "label=Brainling" || { echo "service not bound"; exit 1; }
+$ADB shell dumpsys accessibility | grep -q "label=Thumbwell" || { echo "service not bound"; exit 1; }
 E2E_SERIAL=$SERIAL python3 -u scripts/e2e/run.py "${1:-all}"
