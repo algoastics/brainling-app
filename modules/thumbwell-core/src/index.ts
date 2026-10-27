@@ -1,5 +1,18 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
+/** How long the floating Thumb stays awake after a counted reel before it rests. */
+export type BadgeDisplayTime = '1s' | '2s' | '3s' | 'always';
+
+/** Floating Thumb badge settings (S43-P0), stored natively. Defaults: on, '2s', false. */
+export type BadgeSettings = {
+  /** The "Floating badge" switch. */
+  enabled: boolean;
+  /** "Badge display time". */
+  displayTime: BadgeDisplayTime;
+  /** "Hide completely when resting": remove the Thumb between counts instead of tucking it. */
+  hideWhenResting: boolean;
+};
+
 export type DayCounts = {
   /** Thumbwell day (04:00 to 04:00 local), yyyy-MM-dd. */
   date: string;
@@ -165,6 +178,10 @@ declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
   /** Minutes after local midnight (0 to 1439) at which the day starts. Returns today's counts. */
   setDayStartMinutes(minutes: number): Promise<DayCounts>;
   getDayStartMinutes(): Promise<number>;
+  /** The floating badge switches; the badge position is stored natively and not exposed. */
+  getBadgeSettings(): Promise<BadgeSettings>;
+  /** Merges `patch` into the saved settings and returns them. Rejects on an unknown displayTime. */
+  setBadgeSettings(patch: Partial<BadgeSettings>): Promise<BadgeSettings>;
   /**
    * The installed app's own launcher icon as a base64 PNG (`sizePx` default 96), or null when it
    * is not installed. Only Instagram, YouTube and TikTok packages can be asked for.

@@ -8,6 +8,8 @@ import com.algoastics.thumbwell.core.data.CorePrefs
 import com.algoastics.thumbwell.core.data.CountRepository
 import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.data.ThumbwellDay
+import com.algoastics.thumbwell.core.detection.BadgeDisplayTime
+import com.algoastics.thumbwell.core.detection.BadgeSettings
 import com.algoastics.thumbwell.core.detection.DetectionDebug
 import com.algoastics.thumbwell.core.detection.ThumbwellAccessibilityService
 import com.algoastics.thumbwell.core.health.HealthMonitor
@@ -124,6 +126,31 @@ class ThumbwellCoreModule : Module() {
       limit.toMap()
     }
 
+    /**
+     * Floating badge settings (S43-P0): `{enabled, displayTime: '1s'|'2s'|'3s'|'always',
+     * hideWhenResting}`. Defaults: on, '2s', false. Stored natively; the badge reads them live.
+     */
+    AsyncFunction("getBadgeSettings") {
+      badgeMap(CorePrefs.get(context).badgeSettings())
+    }
+
+    /** Partial update: omitted fields keep their value. Returns the saved settings. */
+    AsyncFunction("setBadgeSettings") { patch: Map<String, Any?> ->
+      val prefs = CorePrefs.get(context)
+      val current = prefs.badgeSettings()
+      val time = patch["displayTime"]?.let { key ->
+        BadgeDisplayTime.entries.firstOrNull { it.key == key }
+          ?: throw IllegalArgumentException("bad displayTime")
+      }
+      val next = BadgeSettings(
+        enabled = patch["enabled"] as? Boolean ?: current.enabled,
+        displayTime = time ?: current.displayTime,
+        hideWhenResting = patch["hideWhenResting"] as? Boolean ?: current.hideWhenResting,
+      )
+      prefs.setBadgeSettings(next)
+      badgeMap(next)
+    }
+
     /** Deletes all counts, events, ad tallies, seen state, consent, limit and day start. */
     AsyncFunction("clearAllData") {
       ThumbwellAccessibilityService.requestClear()
@@ -184,6 +211,12 @@ class ThumbwellCoreModule : Module() {
       HealthMonitor.get(context).removeListener(healthListener)
     }
   }
+
+  private fun badgeMap(s: BadgeSettings): Map<String, Any> = mapOf(
+    "enabled" to s.enabled,
+    "displayTime" to s.displayTime.key,
+    "hideWhenResting" to s.hideWhenResting,
+  )
 
   companion object {
     private const val COUNT_EVENT = "onCountChange"

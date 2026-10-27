@@ -14,8 +14,8 @@ object FeatureFlags {
   /** Snapchat Spotlight (`snapchat`). Phase 1, opt-in. */
   @Volatile var snapchatEnabled = false
 
-  /** The over-app count pill and its animated mascot. Phase 1. */
-  @Volatile var countBadgeEnabled = false
+  /** The floating Thumb badge (F07). On in Phase 0; the user's "Floating badge" switch controls it. */
+  @Volatile var countBadgeEnabled = true
 
   /** True when the app family [key] may be counted in this build. */
   fun allowsApp(key: String): Boolean = when (key) {

@@ -101,7 +101,7 @@ class CountingStateTest {
   fun phase0FlagsAreOff() {
     assertFalse(FeatureFlags.facebookEnabled)
     assertFalse(FeatureFlags.snapchatEnabled)
-    assertFalse(FeatureFlags.countBadgeEnabled)
+    assertTrue(FeatureFlags.countBadgeEnabled)
     assertFalse(FeatureFlags.allowsApp("facebook"))
     assertFalse(FeatureFlags.allowsApp("facebook_lite"))
     assertFalse(FeatureFlags.allowsApp("snapchat"))

@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import type { CountingStatus, DailyLimit, DayCounts } from 'thumbwell-core';
+import type { BadgeSettings, CountingStatus, DailyLimit, DayCounts } from 'thumbwell-core';
 
 /** A running, consented counting status (override fields per test). */
 export const runningStatus: CountingStatus = {
@@ -12,7 +12,7 @@ export const runningStatus: CountingStatus = {
   disclosureVersion: '1',
   apps: { instagram: { enabled: true }, youtube: { enabled: true }, tiktok: { enabled: true } },
   dayStartMinutes: 240,
-  flags: { facebook: false, snapchat: false, countBadge: false },
+  flags: { facebook: false, snapchat: false, countBadge: true },
 };
 
 export const dayCounts = (total: number, apps: Record<string, number> = {}): DayCounts => ({
@@ -32,6 +32,8 @@ export const core = {
   setDailyLimit: jest.fn<(n: number) => Promise<DailyLimit>>(),
   getDayStartMinutes: jest.fn<() => Promise<number>>(),
   setDayStartMinutes: jest.fn<(n: number) => Promise<DayCounts>>(),
+  getBadgeSettings: jest.fn<() => Promise<BadgeSettings>>(),
+  setBadgeSettings: jest.fn<(patch: Partial<BadgeSettings>) => Promise<BadgeSettings>>(),
   setConsent: jest.fn<(v: string) => Promise<{ atMs: number; version: string }>>(),
   getAppIcon: jest.fn<(pkg: string) => Promise<string | null>>(),
   openAccessibilitySettings: jest.fn<() => Promise<void>>(),
@@ -39,6 +41,8 @@ export const core = {
   isServiceEnabled: jest.fn<() => Promise<boolean>>(),
   addListener: jest.fn(() => ({ remove: jest.fn() })),
 };
+
+let badge: BadgeSettings = { enabled: true, displayTime: '2s', hideWhenResting: false };
 
 export function resetCore() {
   for (const fn of Object.values(core)) fn.mockReset();
@@ -52,6 +56,12 @@ export function resetCore() {
   }));
   core.getDayStartMinutes.mockResolvedValue(240);
   core.setDayStartMinutes.mockResolvedValue(dayCounts(0));
+  badge = { enabled: true, displayTime: '2s', hideWhenResting: false };
+  core.getBadgeSettings.mockImplementation(async () => ({ ...badge }));
+  core.setBadgeSettings.mockImplementation(async (patch) => {
+    badge = { ...badge, ...patch };
+    return { ...badge };
+  });
   core.setConsent.mockImplementation(async (version) => ({ atMs: 1, version }));
   core.getAppIcon.mockResolvedValue('AAAA');
   core.openAccessibilitySettings.mockResolvedValue(undefined);

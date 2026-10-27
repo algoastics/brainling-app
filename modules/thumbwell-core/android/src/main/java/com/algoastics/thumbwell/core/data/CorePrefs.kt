@@ -2,7 +2,12 @@ package com.algoastics.thumbwell.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.algoastics.thumbwell.core.detection.BadgeDisplayTime
+import com.algoastics.thumbwell.core.detection.BadgePosition
+import com.algoastics.thumbwell.core.detection.BadgeSettings
+import com.algoastics.thumbwell.core.detection.BadgeSide
 import java.security.SecureRandom
+import java.util.concurrent.CopyOnWriteArrayList
 
 /** The accessibility disclosure the user must have accepted before anything is counted. */
 object Disclosure {
@@ -99,11 +104,52 @@ class CorePrefs private constructor(context: Context) {
     edit.commit()
   }
 
-  /** Deletes every setting this store keeps (consent, limit, day start, day mark, salt). */
+  private val badgeListeners = CopyOnWriteArrayList<() -> Unit>()
+
+  /** Floating badge switches (S43-P0): on by default, 2 s, tuck at the edge. */
+  fun badgeSettings(): BadgeSettings = BadgeSettings(
+    enabled = prefs.getBoolean(KEY_BADGE_ON, true),
+    displayTime = BadgeDisplayTime.fromKey(prefs.getString(KEY_BADGE_TIME, null)),
+    hideWhenResting = prefs.getBoolean(KEY_BADGE_HIDE, false),
+  )
+
+  fun setBadgeSettings(settings: BadgeSettings) {
+    prefs.edit()
+      .putBoolean(KEY_BADGE_ON, settings.enabled)
+      .putString(KEY_BADGE_TIME, settings.displayTime.key)
+      .putBoolean(KEY_BADGE_HIDE, settings.hideWhenResting)
+      .commit()
+    badgeListeners.forEach { it() }
+  }
+
+  /** Where the badge was last dropped: the edge and the top of the pill in dp. */
+  fun badgePosition(): BadgePosition = BadgePosition(
+    side = if (prefs.getString(KEY_BADGE_SIDE, null) == "left") BadgeSide.LEFT else BadgeSide.RIGHT,
+    yDp = prefs.getFloat(KEY_BADGE_Y, BadgePosition.DEFAULT_Y_DP),
+  )
+
+  fun setBadgePosition(position: BadgePosition) {
+    prefs.edit()
+      .putString(KEY_BADGE_SIDE, if (position.side == BadgeSide.LEFT) "left" else "right")
+      .putFloat(KEY_BADGE_Y, position.yDp)
+      .apply()
+  }
+
+  /** Called (on the writing thread) after the badge settings change. */
+  fun addBadgeListener(listener: () -> Unit) {
+    badgeListeners.add(listener)
+  }
+
+  fun removeBadgeListener(listener: () -> Unit) {
+    badgeListeners.remove(listener)
+  }
+
+  /** Deletes every setting this store keeps (consent, limit, day start, day mark, badge, salt). */
   @Synchronized
   fun clearAll() {
     prefs.edit().clear().commit()
     consentCache = null
+    badgeListeners.forEach { it() }
   }
 
   /** Random per-install salt for fingerprint hashes; never leaves the device. */
@@ -125,6 +171,11 @@ class CorePrefs private constructor(context: Context) {
     private const val KEY_LIMIT_PENDING = "daily_limit_pending"
     private const val KEY_LIMIT_FROM = "daily_limit_pending_from"
     private const val KEY_SALT = "fingerprint_salt"
+    private const val KEY_BADGE_ON = "badge_enabled"
+    private const val KEY_BADGE_TIME = "badge_display_time"
+    private const val KEY_BADGE_HIDE = "badge_hide_when_resting"
+    private const val KEY_BADGE_SIDE = "badge_side"
+    private const val KEY_BADGE_Y = "badge_y_dp"
     const val MINUTES_PER_DAY = 24 * 60
 
     @Volatile private var instance: CorePrefs? = null
