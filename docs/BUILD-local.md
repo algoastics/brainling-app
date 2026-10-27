@@ -27,10 +27,20 @@ Not run by the author of this file: these are the exact steps, taken from the pr
 4. The APK is at `android/app/build/outputs/apk/release/app-release.apk`.
 5. Install over USB (replace the serial; `RF8X605YFVM` is only an example):
    ```bash
-   ~/Library/Android/sdk/platform-tools/adb -s RF8X605YFVM install -r app/build/outputs/apk/release/app-release.apk
+   ~/Library/Android/sdk/platform-tools/adb -s RF8X605YFVM install -r --user 0 app/build/outputs/apk/release/app-release.apk
    ```
-   `-r` keeps the app data. For a clean first-run test, `adb -s <serial> uninstall
-   com.algoastics.thumbwell` first.
+   Run it ONCE. `--user 0` installs for the phone's main user only, so a Samsung Dual Messenger
+   (`DUAL_APP`), Secure Folder or work profile user never gets a second copy. `-r` keeps the app
+   data. If it fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the debug key changed (every
+   `--clean` prebuild makes a new one): `adb -s <serial> uninstall com.algoastics.thumbwell`, then
+   install again. For a clean first-run test, uninstall first as well.
+6. If an icon still shows twice, run the read-only check (never installs or removes anything):
+   ```bash
+   cd ~/Documents/"Algoastics Github"/brainling-integrate && scripts/check-android-identity.sh RF8X605YFVM
+   ```
+   It checks the manifest (one LAUNCHER filter, no alias), the APK (one launchable activity, one
+   package id) and lists the phone's users, the Thumbwell/Brainling packages and launcher entries
+   per user. One package id and one launcher entry means the duplicate is the phone's launcher.
 
 ## Signing: this APK uses the debug key
 

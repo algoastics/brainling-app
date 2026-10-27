@@ -27,8 +27,10 @@ cd android && \
   ANDROID_HOME=$HOME/Library/Android/sdk \
   ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
 # 3. Install over USB.
-~/Library/Android/sdk/platform-tools/adb -s RF8X605YFVM install -r app/build/outputs/apk/release/app-release.apk
+~/Library/Android/sdk/platform-tools/adb -s RF8X605YFVM install -r --user 0 app/build/outputs/apk/release/app-release.apk
 ```
+
+Run the install once; see `docs/BUILD-local.md` if an icon shows twice (`scripts/check-android-identity.sh`).
 
 Notes:
 
