@@ -183,27 +183,27 @@ object BadgePlacement {
     return y.coerceIn(keepTop, max)
   }
 
-  /** Where the pieces of the resting badge sit; all x values in px. */
-  data class RestLayout(val windowX: Int, val windowW: Int, val pillLeft: Int, val thumbLeft: Int)
+  /** How far each piece moves from the awake badge to the resting one (A42); same unit as the inputs. */
+  data class RestShift(val thumbDx: Float, val thumbDy: Float, val countDx: Float)
 
   /**
-   * Resting badge: the pill stays on screen and the sleeping Thumb sits beside it, half of it past
-   * the screen edge ([visible] px stay on screen). [pillW] is 0 when the pill is not shown at rest.
-   * [pillLeft] and [thumbLeft] are inside the window; the window starts [pad] before its first part.
-   * RIGHT: pill, then Thumb at the edge. LEFT: Thumb at the edge, then pill. They touch, never overlap.
+   * A42 as in the Figma frames (resting-right 57:977, resting-left 57:996, rule 74:1952): the pill
+   * never changes size or position. The sleeping Thumb slides ONTO the pill's edge end, its centre
+   * on the screen edge so half of it is off screen; it overlaps the pill's 46 dp socket there.
+   * RIGHT: Thumb moves right to the pill's right end (about +63 dp) and the count moves
+   * [socket] - [gap] (30 dp) inward. LEFT: Thumb moves about -21 dp to the left end; the count stays.
+   * The Thumb also drops so its centre sits on the pill's centre.
+   * [thumbLeft] is the awake Thumb's left edge relative to the pill's left edge.
    */
-  fun restLayout(side: BadgeSide, screenWidth: Int, pillW: Int, thumbW: Int, visible: Int, pad: Int): RestLayout =
-    if (side == BadgeSide.RIGHT) {
-      val thumbScreen = screenWidth - visible
-      RestLayout(thumbScreen - pillW - pad, pad + pillW + thumbW, pad, pad + pillW)
-    } else {
-      val thumbScreen = -(thumbW - visible)
-      RestLayout(thumbScreen - pad, pad + thumbW + pillW, pad + thumbW, pad)
-    }
-
-  /** x of the Thumb inside a resting window so half of it is off the screen edge. */
-  fun restingThumbX(side: BadgeSide, windowWidth: Int, thumbWidth: Int, visible: Int): Int =
-    if (side == BadgeSide.LEFT) -(thumbWidth - visible) else windowWidth - visible
+  fun restShift(
+    side: BadgeSide, pillW: Float, pillH: Float, thumbW: Float, thumbH: Float,
+    thumbLeft: Float, thumbRise: Float, socket: Float, gap: Float,
+  ): RestShift {
+    val targetLeft = if (side == BadgeSide.RIGHT) pillW - thumbW / 2f else -thumbW / 2f
+    val dy = pillH / 2f - (thumbH / 2f - thumbRise)
+    val countDx = if (side == BadgeSide.RIGHT) -(socket - gap) else 0f
+    return RestShift(targetLeft - thumbLeft, dy, countDx)
+  }
 
   fun dpToPx(dp: Float, density: Float): Int = (dp * density + 0.5f).toInt()
   fun pxToDp(px: Int, density: Float): Float = px / density
