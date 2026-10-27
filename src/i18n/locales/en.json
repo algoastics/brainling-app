@@ -131,6 +131,17 @@
     "countingPaused": "Paused",
     "dayStart": "Day starts at",
     "disclosure": "Accessibility disclosure",
+    "badge": {
+      "floating": "Floating badge",
+      "floatingHelp": "Shows today’s count over Instagram, YouTube and TikTok",
+      "time": "Badge display time",
+      "timeValue_1s": "1 s",
+      "timeValue_2s": "2 s",
+      "timeValue_3s": "3 s",
+      "timeValue_always": "Always",
+      "hide": "Hide completely when resting",
+      "hideHelp": "Hides the Thumb between counts instead of tucking it at the edge"
+    },
     "privacy": "Privacy policy",
     "feedback": "Send feedback",
     "about": "About",
@@ -144,6 +155,12 @@
       "same": "This is your current limit.",
       "pending": "A change to {{count}} reels is already waiting for tomorrow.",
       "error": "Could not save your limit. Try again."
+    },
+    "badgeDialog": {
+      "title": "Badge display time",
+      "body": "How long the Thumb stays awake after a counted reel, before it settles to rest.",
+      "done": "Done",
+      "error": "Could not save the time. Try again."
     },
     "dayDialog": {
       "title": "Day starts at",

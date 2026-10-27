@@ -211,6 +211,43 @@ describe('settings (S43-P0)', () => {
     await waitFor(() => expect(core.setDayStartMinutes).toHaveBeenCalledWith(300));
   });
 
+  it('shows the badge rows with their defaults (S43-P0)', async () => {
+    await render(<SettingsScreen />);
+    expect(await screen.findByText('Floating badge')).toBeTruthy();
+    expect(screen.getByText('Shows today’s count over Instagram, YouTube and TikTok')).toBeTruthy();
+    expect(screen.getByTestId('row-badge-switch').props.value).toBe(true);
+    expect(screen.getByRole('button', { name: 'Badge display time, 2 s' })).toBeTruthy();
+    expect(screen.getByText('Hide completely when resting')).toBeTruthy();
+    expect(screen.getByTestId('row-badge-hide-switch').props.value).toBe(false);
+  });
+
+  it('saves the badge switches natively', async () => {
+    await render(<SettingsScreen />);
+    await fireEvent(await screen.findByTestId('row-badge-switch'), 'valueChange', false);
+    await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ enabled: false }));
+    await fireEvent(screen.getByTestId('row-badge-hide-switch'), 'valueChange', true);
+    await waitFor(() =>
+      expect(core.setBadgeSettings).toHaveBeenCalledWith({ hideWhenResting: true }),
+    );
+    expect(screen.getByTestId('row-badge-switch').props.value).toBe(false);
+  });
+
+  it('picks the badge display time from the chips', async () => {
+    await render(<SettingsScreen />);
+    await fireEvent.press(await screen.findByTestId('row-badge-time'));
+    expect(
+      screen.getByText(
+        'How long the Thumb stays awake after a counted reel, before it settles to rest.',
+      ),
+    ).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('badge-time-always'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    await waitFor(() =>
+      expect(core.setBadgeSettings).toHaveBeenCalledWith({ displayTime: 'always' }),
+    );
+    expect(await screen.findByRole('button', { name: 'Badge display time, Always' })).toBeTruthy();
+  });
+
   it('sends the user to the disclosure to fix paused counting', async () => {
     core.getCountingStatus.mockResolvedValue({
       ...runningStatus,

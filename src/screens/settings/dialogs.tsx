@@ -1,4 +1,4 @@
-import ThumbwellCore, { type DailyLimit } from 'thumbwell-core';
+import ThumbwellCore, { type BadgeDisplayTime, type DailyLimit } from 'thumbwell-core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -111,6 +111,59 @@ export function DayStartDialog({ minutes, onClose, onSaved }: DayStartDialogProp
       {failed ? (
         <Text variant="caption" color="statusDangerStrong" accessibilityLiveRegion="polite">
           {t('settings.dayDialog.error')}
+        </Text>
+      ) : null}
+    </Dialog>
+  );
+}
+
+export const BADGE_TIME_OPTIONS: readonly BadgeDisplayTime[] = ['1s', '2s', '3s', 'always'];
+
+type BadgeTimeDialogProps = {
+  value: BadgeDisplayTime;
+  /** Saves the choice; rejects when it could not be saved. */
+  onSave: (value: BadgeDisplayTime) => Promise<void>;
+  onClose: () => void;
+};
+
+/** Pick how long the badge stays awake after a counted reel (1 s, 2 s, 3 s or Always). */
+export function BadgeTimeDialog({ value, onSave, onClose }: BadgeTimeDialogProps) {
+  const t = useT();
+  const [chosen, setChosen] = useState(value);
+  const [failed, setFailed] = useState(false);
+
+  const done = async () => {
+    setFailed(false);
+    try {
+      await onSave(chosen);
+      onClose();
+    } catch {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <Dialog
+      visible
+      onDismiss={onClose}
+      title={t('settings.badgeDialog.title')}
+      body={t('settings.badgeDialog.body')}
+      actions={[{ label: t('settings.badgeDialog.done'), onPress: done, kind: 'primary' }]}
+    >
+      <View accessibilityRole="radiogroup" style={styles.chips}>
+        {BADGE_TIME_OPTIONS.map((option) => (
+          <Chip
+            key={option}
+            testID={`badge-time-${option}`}
+            label={t(`settings.badge.timeValue_${option}`)}
+            selected={chosen === option}
+            onPress={() => setChosen(option)}
+          />
+        ))}
+      </View>
+      {failed ? (
+        <Text variant="caption" color="statusDangerStrong" accessibilityLiveRegion="polite">
+          {t('settings.badgeDialog.error')}
         </Text>
       ) : null}
     </Dialog>

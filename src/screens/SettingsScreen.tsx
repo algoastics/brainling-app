@@ -7,7 +7,13 @@ import { Linking, StyleSheet } from 'react-native';
 
 import { Dialog, ListGroup, ListRow, Screen, Text, TopBar } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
-import { resetAppIconCache, useCountingStatus, useDailyLimit, useDayStart } from '@/detection';
+import {
+  resetAppIconCache,
+  useBadgeSettings,
+  useCountingStatus,
+  useDailyLimit,
+  useDayStart,
+} from '@/detection';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT } from '@/limit/limitRule';
 import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
@@ -16,9 +22,9 @@ import { getStorage } from '@/storage';
 import { buildFeedbackMailto } from '@/support/feedback';
 import { space } from '@/theme';
 
-import { DayStartDialog, LimitDialog } from './settings/dialogs';
+import { BadgeTimeDialog, DayStartDialog, LimitDialog } from './settings/dialogs';
 
-type Editing = 'limit' | 'dayStart' | 'delete' | null;
+type Editing = 'limit' | 'dayStart' | 'badgeTime' | 'delete' | null;
 
 /** S43-P0 Settings: limit, counting status, day start, privacy, feedback, about, delete data. */
 export function SettingsScreen() {
@@ -26,6 +32,7 @@ export function SettingsScreen() {
   const { status, refresh: refreshStatus } = useCountingStatus();
   const { limit, refresh: refreshLimit } = useDailyLimit();
   const { minutes, refresh: refreshDayStart } = useDayStart();
+  const { settings: badge, refresh: refreshBadge, update: updateBadge } = useBadgeSettings();
   const resetApp = useAppStore((s) => s.resetApp);
   const [editing, setEditing] = useState<Editing>(null);
   const [deleteFailed, setDeleteFailed] = useState(false);
@@ -35,7 +42,8 @@ export function SettingsScreen() {
       void refreshStatus();
       void refreshLimit();
       void refreshDayStart();
-    }, [refreshStatus, refreshLimit, refreshDayStart]),
+      void refreshBadge();
+    }, [refreshStatus, refreshLimit, refreshDayStart, refreshBadge]),
   );
 
   const dayStart = minutes ?? DEFAULT_DAY_START_MINUTES;
@@ -119,6 +127,33 @@ export function SettingsScreen() {
           onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
         />
       </ListGroup>
+      {badge ? (
+        <ListGroup>
+          <ListRow
+            testID="row-badge"
+            icon="badge"
+            title={t('settings.badge.floating')}
+            subtitle={t('settings.badge.floatingHelp')}
+            switchValue={badge.enabled}
+            onSwitchChange={(enabled) => void updateBadge({ enabled })}
+          />
+          <ListRow
+            testID="row-badge-time"
+            icon="timer"
+            title={t('settings.badge.time')}
+            value={t(`settings.badge.timeValue_${badge.displayTime}`)}
+            onPress={() => setEditing('badgeTime')}
+          />
+          <ListRow
+            testID="row-badge-hide"
+            icon="moon"
+            title={t('settings.badge.hide')}
+            subtitle={t('settings.badge.hideHelp')}
+            switchValue={badge.hideWhenResting}
+            onSwitchChange={(hideWhenResting) => void updateBadge({ hideWhenResting })}
+          />
+        </ListGroup>
+      ) : null}
       <ListGroup>
         <ListRow
           testID="row-privacy"
@@ -190,6 +225,16 @@ export function SettingsScreen() {
             void refreshDayStart();
             void refreshLimit();
           }}
+        />
+      ) : null}
+      {editing === 'badgeTime' && badge ? (
+        <BadgeTimeDialog
+          value={badge.displayTime}
+          onSave={async (displayTime) => {
+            await ThumbwellCore.setBadgeSettings({ displayTime });
+            await refreshBadge();
+          }}
+          onClose={() => setEditing(null)}
         />
       ) : null}
       <Dialog

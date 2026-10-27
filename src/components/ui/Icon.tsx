@@ -9,10 +9,13 @@ import {
   Info,
   Lock,
   Minus,
+  Moon,
   Plus,
+  RectangleHorizontal,
   Settings,
   Shield,
   Sparkles,
+  Timer,
   Trash2,
   X,
   type LucideIcon,
@@ -38,6 +41,9 @@ export const iconSet = {
   chevron: ChevronRight,
   close: X,
   shield: Shield,
+  badge: RectangleHorizontal,
+  timer: Timer,
+  moon: Moon,
 } as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof iconSet;

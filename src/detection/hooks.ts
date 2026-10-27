@@ -1,4 +1,5 @@
 import ThumbwellCore, {
+  type BadgeSettings,
   type CountingStatus,
   type DailyLimit,
   type DayCounts,
@@ -112,6 +113,30 @@ export function useDailyLimit(): { limit: DailyLimit | null; refresh: () => Prom
   const refresh = useCallback(() => read(() => ThumbwellCore.getDailyLimit()), [read]);
   useOnMountAndForeground(refresh);
   return { limit, refresh };
+}
+
+/** The floating badge switches (S43-P0). `null` until the first read; `update` saves a change. */
+export function useBadgeSettings(): {
+  settings: BadgeSettings | null;
+  refresh: () => Promise<void>;
+  update: (patch: Partial<BadgeSettings>) => Promise<void>;
+} {
+  const [settings, setSettings] = useState<BadgeSettings | null>(null);
+  const { read } = useLatest(setSettings);
+  const refresh = useCallback(() => read(() => ThumbwellCore.getBadgeSettings()), [read]);
+  const update = useCallback(
+    async (patch: Partial<BadgeSettings>) => {
+      setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+      try {
+        setSettings(await ThumbwellCore.setBadgeSettings(patch));
+      } catch {
+        await refresh();
+      }
+    },
+    [refresh],
+  );
+  useOnMountAndForeground(refresh);
+  return { settings, refresh, update };
 }
 
 /** Minutes after midnight at which the logical day starts. `null` until the first read. */

@@ -1,5 +1,5 @@
 import { Children, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { radius, space, useTheme } from '@/theme';
 
@@ -16,6 +16,9 @@ export type ListRowProps = {
   /** Trailing glyph: a chevron (opens a screen) or the external-link mark (leaves the app). */
   trailing?: 'chevron' | 'external';
   danger?: boolean;
+  /** Makes the row a switch row (Figma 52x32 switch); `onSwitchChange` receives the new value. */
+  switchValue?: boolean;
+  onSwitchChange?: (value: boolean) => void;
   onPress?: () => void;
   testID?: string;
 };
@@ -28,6 +31,8 @@ export function ListRow({
   value,
   trailing,
   danger = false,
+  switchValue,
+  onSwitchChange,
   onPress,
   testID,
 }: ListRowProps) {
@@ -54,6 +59,16 @@ export function ListRow({
         <Text variant="label" color="brandAccentText">
           {value}
         </Text>
+      ) : null}
+      {switchValue !== undefined ? (
+        <Switch
+          testID={testID ? `${testID}-switch` : undefined}
+          accessibilityLabel={title}
+          value={switchValue}
+          onValueChange={onSwitchChange}
+          trackColor={{ false: colors.borderStrong, true: colors.brandPrimary }}
+          thumbColor="#FFFFFF"
+        />
       ) : null}
       {trailing ? (
         <Icon name={trailing === 'external' ? 'external' : 'chevron'} size={20} color="textMuted" />
