@@ -13,4 +13,8 @@
         <item quantity="other">Today: %1$d reels</item>
     </plurals>
     <string name="thumbwell_lock_home_toast">Taking you to your home screen</string>
+    <plurals name="thumbwell_badge_description">
+        <item quantity="one">Thumbwell, %1$d reel today. Tap to open.</item>
+        <item quantity="other">Thumbwell, %1$d reels today. Tap to open.</item>
+    </plurals>
 </resources>

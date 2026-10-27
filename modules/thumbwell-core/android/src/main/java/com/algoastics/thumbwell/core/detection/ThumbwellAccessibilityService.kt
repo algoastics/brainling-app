@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import com.algoastics.thumbwell.core.BuildConfig
 import com.algoastics.thumbwell.core.FeatureFlags
 import com.algoastics.thumbwell.core.data.CorePrefs
@@ -17,6 +18,7 @@ import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.health.HealthMonitor
 import com.algoastics.thumbwell.core.lock.LimitEngine
 import com.algoastics.thumbwell.core.lock.LockController
+import com.algoastics.thumbwell.core.lock.OverlayGuard
 import com.algoastics.thumbwell.core.rules.AppRule
 import com.algoastics.thumbwell.core.rules.RuleSet
 import com.algoastics.thumbwell.core.rules.RulesManager
@@ -41,13 +43,18 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   private val scheduled = mutableSetOf<String>()
   private val rulesListener: (RuleSet) -> Unit = { updated -> handler.post { applyRules(updated) } }
 
-  // Tester live count badge (BuildConfig.TESTER_MODE). Counts arrive on the repository thread and
+  // Floating Thumb badge (FeatureFlags.countBadgeEnabled + the user's switch). Counts arrive on the repository thread and
   // are cached here on the main thread, so showing the badge never touches the database.
   private var badge: CountBadge? = null
   private var badgePackage: String? = null
   private var badgeAppKey: String? = null
   private var todayCounts: Map<String, Int> = emptyMap()
   private val countsListener: (DayCounts) -> Unit = { day -> handler.post { onCounts(day.apps) } }
+  private val badgeSettingsListener: () -> Unit = {
+    handler.post {
+      if (!prefs.badgeSettings().enabled) hideBadge() else badge?.settingsChanged()
+    }
+  }
   private val badgeWatch = object : Runnable {
     override fun run() {
       val pkg = badgePackage ?: return
@@ -97,8 +104,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     limitEngine = LimitEngine.get(this)
     lock = LockController(this, limitEngine, prefs, ::isOnReels)
     lock.start()
-    if (FeatureFlags.countBadgeEnabled && BuildConfig.TESTER_MODE) {
-      badge = CountBadge(this)
+    if (FeatureFlags.countBadgeEnabled) {
+      badge = CountBadge(this, prefs, ::openThumbwell)
+      prefs.addBadgeListener(badgeSettingsListener)
       counts.addListener(countsListener)
       Thread({ countsListener(counts.today()) }, "thumbwell-badge-init").start()
     }
@@ -241,27 +249,65 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   private fun onCounts(apps: Map<String, Int>) {
     todayCounts = apps
     val key = badgeAppKey ?: return
-    badge?.show(key, apps[key] ?: 0)
+    if (badgePackage != null) badge?.show(apps[key] ?: 0)
   }
 
-  /** Shows the badge for [packageName]'s app; a no-op when it already shows the same text. */
-  private fun showBadge(packageName: String, appKey: String) {
+  /**
+   * Shows or hides the badge from the gate: switch on, counting allowed, on this app's reels
+   * surface, no lock overlay, no focused text input. Shows THAT app's count.
+   */
+  private fun updateBadge(packageName: String, appKey: String, root: AccessibilityNodeInfo, locked: Boolean) {
     val pill = badge ?: return
+    val open = BadgeGate.visible(
+      enabled = prefs.badgeSettings().enabled,
+      countingAllowed = countingAllowed(),
+      onReelsSurface = true,
+      lockShowing = locked || lock.isShowing,
+      textInputOrKeyboard = focusedTextInput(root),
+    )
+    if (!open) {
+      hideBadge()
+      return
+    }
     val wasShown = pill.isShown && badgePackage == packageName
     badgePackage = packageName
     badgeAppKey = appKey
-    pill.show(appKey, todayCounts[appKey] ?: 0)
+    pill.show(todayCounts[appKey] ?: 0)
     if (!wasShown) {
       handler.removeCallbacks(badgeWatch)
       handler.postDelayed(badgeWatch, BADGE_WATCH_MS)
     }
   }
 
+  /** Focus and flags only; the text of a field is never read. */
+  private fun focusedTextInput(root: AccessibilityNodeInfo): Boolean {
+    val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
+    return OverlayGuard.isTextInput(focused.isEditable, focused.className?.toString())
+  }
+
   private fun hideBadge() {
     handler.removeCallbacks(badgeWatch)
     badgePackage = null
     badgeAppKey = null
-    badge?.hide()
+    badge?.hideNow()
+  }
+
+  /** The reels surface is gone: the badge fades out after 600 ms unless the surface returns. */
+  private fun leaveBadge() {
+    handler.removeCallbacks(badgeWatch)
+    badgePackage = null
+    badgeAppKey = null
+    badge?.leave()
+  }
+
+  private fun openThumbwell() {
+    val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return
+    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+      startActivity(launch)
+    } catch (e: RuntimeException) {
+      Log.w(TAG, "open failed: ${e.javaClass.simpleName}")
+    }
   }
 
   private fun onPageIndex(session: Session, index: Int) {
@@ -297,7 +343,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
 
     if (root == null || surface == null) {
       lock.onSurfaceGone(packageName)
-      if (badgePackage == packageName) hideBadge()
+      if (badgePackage == packageName) leaveBadge()
       val exit = when {
         root != null -> ReelSession.Exit.CLOSED
         activeRoot == null -> ReelSession.Exit.COVERED
@@ -315,10 +361,12 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     }
 
     session.retryStep = Int.MAX_VALUE
-    showBadge(packageName, rule.key)
     session.onSurface = true
     // The limit lock covers the surface: reels seen under it are not counted (Room is untouched).
-    if (lock.onSurface(packageName, surface.bounds, root)) return
+    // The lock has priority over the badge, so the badge is decided after the lock.
+    val locked = lock.onSurface(packageName, surface.bounds, root)
+    updateBadge(packageName, rule.key, root, locked)
+    if (locked) return
     // Re-selected on every evaluation; a stale or invisible node is never kept.
     val pager = NodeInspector.findPager(root, rule, packageName, surface)
       ?.takeIf { it.node.refresh() && it.node.isVisibleToUser }
@@ -463,6 +511,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       sessions.forEach { (pkg, s) -> closeDwell(s, now); persist(pkg, s) }
       counts.removeListener(countsListener)
     }
+    if (::prefs.isInitialized) prefs.removeBadgeListener(badgeSettingsListener)
+    badge?.release()
+    badge = null
     handler.removeCallbacksAndMessages(null)
     scheduled.clear()
     rulesManager?.removeListener(rulesListener)

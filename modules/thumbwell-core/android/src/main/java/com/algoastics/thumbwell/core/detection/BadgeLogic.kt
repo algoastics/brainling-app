@@ -171,6 +171,9 @@ class BadgeMachine(settings: BadgeSettings = BadgeSettings()) {
   private var visible = false
   private var hidePending = false
 
+  /** True while the fade-out after leaving the surface is pending. */
+  val leaving: Boolean get() = hidePending
+
   /** The gate ([BadgeGate]) changed. [count] is today's count for the foreground app. */
   fun setVisible(now: Boolean, count: Int): List<BadgeAction> {
     val out = ArrayList<BadgeAction>()
