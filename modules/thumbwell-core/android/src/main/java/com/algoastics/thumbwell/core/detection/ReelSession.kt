@@ -30,7 +30,20 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     BACKGROUND,
   }
 
-  data class Result(val decision: Decision, val player: PlayerKey?, val index: Int?, val reason: String)
+  /**
+   * [reelKey], [startedAtMs] (monotonic, when the reel settled on screen) and [dwellMs] (settle time
+   * so far) are set for COUNTED and ad results; [isAd] marks a sponsored reel that was excluded.
+   */
+  data class Result(
+    val decision: Decision,
+    val player: PlayerKey?,
+    val index: Int?,
+    val reason: String,
+    val reelKey: String? = null,
+    val startedAtMs: Long = 0L,
+    val dwellMs: Long = 0L,
+    val isAd: Boolean = false,
+  )
 
   private class Player {
     var index: Int? = null
@@ -226,6 +239,7 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       pendingSince = nowMs
     }
     if (nowMs - pendingSince < settleMs) return Result(Decision.SETTLING, key, p.index, reason)
+    val startedAt = pendingSince
     p.markSeen(reel, p.index)
     p.index?.let(p.skipped::remove)
     pageSig?.let(p.seenSigs::add)
@@ -233,9 +247,9 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     // Checked only once the reel settled: a sponsored reel is marked seen (never recounted).
     if (isAd()) {
       adsSeen++
-      return Result(Decision.SEEN, key, p.index, "ad")
+      return Result(Decision.SEEN, key, p.index, "ad", reel, startedAt, nowMs - startedAt, isAd = true)
     }
-    return Result(Decision.COUNTED, key, p.index, reason)
+    return Result(Decision.COUNTED, key, p.index, reason, reel, startedAt, nowMs - startedAt)
   }
 
   /** Sponsored reels skipped (in memory only; for a later JS stat). */
@@ -243,6 +257,70 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
     private set
 
   fun hasPending(): Boolean = pendingReel != null
+
+  /**
+   * Day start: forgets every player's seen history. The reel on screen right now stays seen so it
+   * is not counted a second time at 04:00; nothing else is remembered.
+   */
+  fun clearHistory() {
+    val keep = currentKey?.let { k -> current?.let { p -> k to p } }
+    players.clear()
+    pendingReel = null
+    keep?.let { (k, p) ->
+      val shown = reelId(p.index, p.lastSig)
+      val fresh = Player().also {
+        it.index = p.index
+        it.lastSig = p.lastSig
+        it.path = p.path
+        it.attachedAtMs = p.attachedAtMs
+        it.evalIndex = p.evalIndex
+        if (shown in p.seen) it.markSeen(shown, p.index)
+      }
+      players[k] = fresh
+      current = fresh
+    }
+  }
+
+  /**
+   * The persistable seen state: per player (that has a structural path) its position and seen
+   * positions. Identity hashes of views are process-local and not kept. No text. Null when empty.
+   */
+  fun snapshot(): String? {
+    val list = players.entries.filter { (_, p) -> p.path != null && p.seenIndexes.isNotEmpty() }
+      .toList().takeLast(MAX_PERSISTED_PLAYERS)
+    if (list.isEmpty()) return null
+    val array = org.json.JSONArray()
+    for ((_, p) in list) {
+      array.put(
+        org.json.JSONObject()
+          .put("path", p.path)
+          .put("index", p.index ?: org.json.JSONObject.NULL)
+          .put("seen", org.json.JSONArray(p.seenIndexes.toList()))
+          .put("stepOnly", p.stepOnly),
+      )
+    }
+    return org.json.JSONObject().put("v", 1).put("players", array).toString()
+  }
+
+  /** Loads a [snapshot] as away players (exit = BACKGROUND), matched later by structural path. */
+  fun restore(json: String) {
+    val root = try { org.json.JSONObject(json) } catch (e: org.json.JSONException) { return }
+    if (root.optInt("v") != 1) return
+    val array = root.optJSONArray("players") ?: return
+    for (i in 0 until array.length()) {
+      val o = array.optJSONObject(i) ?: continue
+      val path = o.optString("path", "").ifEmpty { null } ?: continue
+      val seen = o.optJSONArray("seen") ?: continue
+      val p = Player()
+      p.path = path
+      p.restores = 1
+      p.exit = Exit.BACKGROUND
+      p.stepOnly = o.optBoolean("stepOnly")
+      if (!o.isNull("index")) p.index = o.optInt("index")
+      for (j in 0 until minOf(seen.length(), MAX_SEEN)) p.markSeen("i${seen.getInt(j)}", seen.getInt(j))
+      players[PlayerKey(RESTORED_WINDOW, path.hashCode().toLong() * 31 + i)] = p
+    }
+  }
 
   private fun attach(key: PlayerKey, pageSig: Long?, nowMs: Long, path: String?) {
     // A remembered player: the same node, or (the app rebuilt the view on back navigation) a
@@ -264,7 +342,13 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
       p.exit != null && p.longLived && p.path == path && k.windowId == key.windowId &&
         (awayIndex?.let(p::inRange) ?: (p.stepOnly && TAB_MARK in path && !contentClicked))
     }?.value?.copy()
-    val known = byNode ?: byWindow ?: byPath
+    // After process death the window and node ids are gone: a restored snapshot matches by the
+    // structural path alone (and an index that continues its seen range, when one is known).
+    val byRestored = if (byNode != null || byWindow != null || byPath != null || path == null) null else
+      players.entries.lastOrNull { (k, p) ->
+        k.windowId == RESTORED_WINDOW && p.path == path && (awayIndex?.let(p::inRange) ?: true)
+      }?.also { players.remove(it.key) }?.value
+    val known = byNode ?: byWindow ?: byPath ?: byRestored
     val tab = known?.longLived == true
     val returning = known?.exit != null
     val sigKnown = pageSig != null && known?.lastSig != null
@@ -318,14 +402,21 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
   }
 
   companion object {
-    /** A reel counts once it has been settled on screen this long. */
-    const val SETTLE_MS = 750L
+    /**
+     * A reel counts once it has been settled on screen this long (D36: 1,000 ms in Phase 0). The one
+     * default; the signed ruleset `dwellMs` may only raise it.
+     */
+    const val SETTLE_MS = 1_000L
     /** Remembered ephemeral players besides the current one. */
     private const val MAX_EPHEMERAL = 32
     /** Remembered long-lived tab players (never evicted by ephemeral ones). */
     private const val MAX_TABS = 4
     /** Seen indices kept per player. */
     const val MAX_SEEN = 200
+    /** Window id of players restored from a snapshot (real windows have ids >= 0). */
+    const val RESTORED_WINDOW = -1
+    /** Players kept in a persisted snapshot. */
+    private const val MAX_PERSISTED_PLAYERS = 6
     /** Appended to a structural path with the selected bottom-tab position. */
     const val TAB_MARK = "|tab="
   }

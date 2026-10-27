@@ -42,4 +42,20 @@ class ThumbwellDayTest {
     assertEquals(at(berlin, 2026, 10, 25, 4), ThumbwellDay.nextCloseMs(evening, berlin))
     assertEquals("2026-10-24", ThumbwellDay.key(at(berlin, 2026, 10, 25, 3, 30), berlin))
   }
+
+  @Test
+  fun userChosenDayStartMovesTheBoundary() {
+    val six = 6 * 60
+    assertEquals("2026-10-21", ThumbwellDay.key(at(karachi, 2026, 10, 22, 5, 59), karachi, six))
+    assertEquals("2026-10-22", ThumbwellDay.key(at(karachi, 2026, 10, 22, 6, 0), karachi, six))
+    assertEquals(at(karachi, 2026, 10, 23, 6), ThumbwellDay.nextCloseMs(at(karachi, 2026, 10, 22, 7), karachi, six))
+    // 04:30 start: minutes count, not just hours.
+    assertEquals("2026-10-21", ThumbwellDay.key(at(karachi, 2026, 10, 22, 4, 29), karachi, 4 * 60 + 30))
+    assertEquals("2026-10-22", ThumbwellDay.key(at(karachi, 2026, 10, 22, 4, 30), karachi, 4 * 60 + 30))
+  }
+
+  @Test
+  fun defaultStartIsFourAm() {
+    assertEquals(240, ThumbwellDay.DEFAULT_START_MINUTES)
+  }
 }

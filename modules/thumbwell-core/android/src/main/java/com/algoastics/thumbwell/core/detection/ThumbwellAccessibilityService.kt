@@ -9,7 +9,10 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.algoastics.thumbwell.core.BuildConfig
+import com.algoastics.thumbwell.core.FeatureFlags
+import com.algoastics.thumbwell.core.data.CorePrefs
 import com.algoastics.thumbwell.core.data.CountRepository
+import com.algoastics.thumbwell.core.data.CountedReel
 import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.health.HealthMonitor
 import com.algoastics.thumbwell.core.rules.AppRule
@@ -24,6 +27,7 @@ import com.algoastics.thumbwell.core.rules.RulesManager
 class ThumbwellAccessibilityService : AccessibilityService() {
   private val handler = Handler(Looper.getMainLooper())
   private lateinit var counts: CountRepository
+  private lateinit var prefs: CorePrefs
   private lateinit var health: HealthMonitor
   private var rulesManager: RulesManager? = null
   private var rules: RuleSet? = null
@@ -49,8 +53,15 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     }
   }
 
-  /** Browsing state for one package; in memory only (nothing about reels is persisted). */
+  /** The counted reel whose final dwell is still running (monotonic start, wall time as row key). */
+  private class OpenCount(val appKey: String, val countedAtMs: Long, val startedAtMs: Long, val index: Int?)
+
+  /**
+   * Browsing state for one package. Held in memory; the per-player seen set is also snapshotted to
+   * Room ([persist]) so it survives process death, and cleared at day start.
+   */
   private class Session(settleMs: Long) {
+    var open: OpenCount? = null
     val reels = ReelSession(settleMs)
     var onSurface = false
     var surfaceHeight = 0
@@ -75,9 +86,11 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     connected = true
     Log.i(TAG, "service connected sessions=${sessions.size}")
     counts = CountRepository.get(this)
+    prefs = CorePrefs.get(this)
+    loadSeenStates()
     health = HealthMonitor.get(this)
     health.onServiceConnected()
-    if (BuildConfig.TESTER_MODE) {
+    if (FeatureFlags.countBadgeEnabled && BuildConfig.TESTER_MODE) {
       badge = CountBadge(this)
       counts.addListener(countsListener)
       Thread({ countsListener(counts.today()) }, "thumbwell-badge-init").start()
@@ -92,6 +105,51 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     rulesManager = manager
     manager?.addListener(rulesListener)
     manager?.active?.let(::applyRules)
+  }
+
+  /**
+   * Loads the saved seen state once per process, off the main thread. Nothing is counted until it
+   * is loaded, so a restart never recounts what the player already showed.
+   */
+  private fun loadSeenStates() {
+    if (seenLoaded) return
+    Thread({
+      val states = try { counts.loadSeenStates() } catch (e: Exception) { emptyMap() }
+      handler.post {
+        PENDING_STATES.putAll(states)
+        seenLoaded = true
+      }
+    }, "thumbwell-seen-load").start()
+  }
+
+  /** Counting runs only with consent logged for the current disclosure and the seen state loaded. */
+  private fun countingAllowed(): Boolean = seenLoaded && prefs.consentValid()
+
+  /** At most every 15 s: when the logical day changed, clears the seen state once. */
+  private fun checkDayRollover() {
+    val nowElapsed = SystemClock.elapsedRealtime()
+    if (nowElapsed - lastDayCheckAt < DAY_CHECK_MS && sessionDay != null) return
+    lastDayCheckAt = nowElapsed
+    val day = prefs.currentDayKey(System.currentTimeMillis())
+    val previous = sessionDay
+    sessionDay = day
+    if (previous != null && previous != day) {
+      Log.i(TAG, "day rollover: seen state cleared")
+      sessions.values.forEach { it.reels.clearHistory() }
+      PENDING_STATES.clear()
+      counts.clearSeenStates()
+    }
+  }
+
+  private fun persist(packageName: String, session: Session) {
+    session.reels.snapshot()?.let { counts.saveSeenState(packageName, it) }
+  }
+
+  /** Writes the final dwell of the reel still running in [session] (monotonic clock). */
+  private fun closeDwell(session: Session, nowElapsed: Long) {
+    val open = session.open ?: return
+    session.open = null
+    counts.finishDwell(open.appKey, open.countedAtMs, nowElapsed - open.startedAtMs)
   }
 
   /** Activates [updated]: narrows the observed packages and resets counters if timing changed. */
@@ -116,6 +174,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     val packageName = event.packageName?.toString() ?: return
     val rule = active.ruleFor(packageName) ?: return
     health.heartbeat()
+    if (!countingAllowed()) return
+    checkDayRollover()
     val session = session(packageName, active)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
@@ -194,7 +254,11 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   }
 
   private fun session(packageName: String, active: RuleSet): Session =
-    sessions.getOrPut(packageName) { Session(maxOf(ReelSession.SETTLE_MS, active.dwellMs)) }
+    sessions.getOrPut(packageName) {
+      Session(maxOf(ReelSession.SETTLE_MS, active.dwellMs)).also { s ->
+        PENDING_STATES.remove(packageName)?.let(s.reels::restore)
+      }
+    }
 
   private fun schedule(packageName: String, delayMs: Long) {
     if (!scheduled.add(packageName)) return
@@ -207,6 +271,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   private fun evaluate(packageName: String) {
     val active = rules ?: return
     val rule = active.ruleFor(packageName) ?: return
+    if (!countingAllowed()) return
     val session = sessions[packageName] ?: return
     val activeRoot = rootInActiveWindow
     val root = activeRoot?.takeIf { it.packageName?.toString() == packageName }
@@ -280,11 +345,26 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       NodeInspector.hasAdLabel(pager, surface.node ?: root, adLabels)
     }
     val counted = result.decision == ReelSession.Decision.COUNTED
+    // The previous reel is over once the player points at another position.
+    session.open?.let { if (session.reels.index != it.index) closeDwell(session, now) }
     session.reels.attachLog?.let { logLine(session, packageName, it); session.reels.attachLog = null }
     logDecision(session, packageName, result)
     if (counted) {
-      counts.record(rule.key)
+      val reel = CountedReel(
+        appKey = rule.key,
+        packageName = packageName,
+        surface = surface.signal,
+        identity = "${result.reelKey}|$path",
+        dwellMs = result.dwellMs,
+      )
+      closeDwell(session, now)
+      val at = counts.record(reel)
+      session.open = OpenCount(rule.key, at, result.startedAtMs, result.index)
+      persist(packageName, session)
       DetectionDebug.treeSnapshot(this, packageName, root, "count")
+    } else if (result.isAd) {
+      counts.recordAd(rule.key)
+      persist(packageName, session)
     }
     DetectionDebug.record(
       DetectionInfo(
@@ -310,7 +390,9 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   private fun leavePlayer(session: Session, packageName: String, exit: ReelSession.Exit) {
     session.flips.reset()
     session.pagerBounds = null
+    closeDwell(session, SystemClock.elapsedRealtime())
     if (!session.attached) return
+    persist(packageName, session)
     session.attached = false
     session.hadPager = false
     session.reels.exit(exit)
@@ -348,7 +430,11 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     if (!connected) return
     connected = false
     hideBadge()
-    if (::counts.isInitialized) counts.removeListener(countsListener)
+    if (::counts.isInitialized) {
+      val now = SystemClock.elapsedRealtime()
+      sessions.forEach { (pkg, s) -> closeDwell(s, now); persist(pkg, s) }
+      counts.removeListener(countsListener)
+    }
     handler.removeCallbacksAndMessages(null)
     scheduled.clear()
     rulesManager?.removeListener(rulesListener)
@@ -362,6 +448,13 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   companion object {
     private val SESSIONS = mutableMapOf<String, Session>()
     private var lastRules: RuleSet? = null
+
+    /** Seen-state snapshots read from Room, applied as each package's session is created. */
+    private val PENDING_STATES = mutableMapOf<String, String>()
+    @Volatile private var seenLoaded = false
+    private var sessionDay: String? = null
+    private var lastDayCheckAt = 0L
+    private const val DAY_CHECK_MS = 15_000L
     private const val TAG = "ThumbwellDetect"
     private const val THROTTLE_MS = 250L
     private const val BADGE_WATCH_MS = 1_000L

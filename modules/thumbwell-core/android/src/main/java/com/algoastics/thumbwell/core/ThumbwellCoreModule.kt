@@ -3,6 +3,7 @@ package com.algoastics.thumbwell.core
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import com.algoastics.thumbwell.core.data.CorePrefs
 import com.algoastics.thumbwell.core.data.CountRepository
 import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.detection.DetectionDebug
@@ -54,6 +55,35 @@ class ThumbwellCoreModule : Module() {
       CountRepository.get(context).today().toMap()
     }
 
+    /** Per-day counts and ads seen, newest first (default 30 days, max 400). */
+    AsyncFunction("getDailyCounts") { limit: Int? ->
+      CountRepository.get(context).history(limit ?: DEFAULT_HISTORY_DAYS)
+    }
+
+    /** Counting status for the "counting paused" UI: service, consent, per-app enabled, flags. */
+    AsyncFunction("getCountingStatus") {
+      CountingStatus.read(context)
+    }
+
+    /** Logs the user's consent for [version] of the disclosure (timestamp = now). */
+    AsyncFunction("setConsent") { version: String ->
+      CorePrefs.get(context).setConsent(version).toMap()
+    }
+
+    AsyncFunction("getConsent") {
+      CorePrefs.get(context).consent()?.toMap()
+    }
+
+    /** Minutes after local midnight at which the Thumbwell day starts (default 240 = 04:00). */
+    AsyncFunction("getDayStartMinutes") {
+      CorePrefs.get(context).dayStartMinutes()
+    }
+
+    AsyncFunction("setDayStartMinutes") { minutes: Int ->
+      CorePrefs.get(context).setDayStartMinutes(minutes)
+      CountRepository.get(context).today().toMap()
+    }
+
     AsyncFunction("getHealth") {
       HealthMonitor.get(context).check(HealthMonitor.REASON_QUERY).toMap()
     }
@@ -94,5 +124,6 @@ class ThumbwellCoreModule : Module() {
   companion object {
     private const val COUNT_EVENT = "onCountChange"
     private const val HEALTH_EVENT = "onHealthChange"
+    private const val DEFAULT_HISTORY_DAYS = 30
   }
 }
