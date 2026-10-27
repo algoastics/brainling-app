@@ -58,7 +58,6 @@ function serviceXml() {
     android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="false"
-    android:isAccessibilityTool="false"
     android:description="@string/${DESCRIPTION_KEY}" />
 `;
 }

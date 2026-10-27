@@ -219,7 +219,7 @@ class ReelSessionTest {
   fun backToASkippedReelCountsOnceThenNeverAgain() {
     page(reelsTab, 0) // reel 1 counts
     assertEquals(1, counted)
-    page(reelsTab, 1, ms = 500) // reel 2 passed in < 750 ms
+    page(reelsTab, 1, ms = 500) // reel 2 passed in < 1,000 ms
     page(reelsTab, 2) // reel 3 counts
     assertEquals(2, counted)
     page(reelsTab, 1, ms = 1_500) // back to reel 2 and stay

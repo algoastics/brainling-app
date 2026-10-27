@@ -1,5 +1,6 @@
 package com.algoastics.thumbwell.core.rules
 
+import com.algoastics.thumbwell.core.FeatureFlags
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -74,7 +75,7 @@ data class RuleSet(
   val apps: List<AppRule>,
 ) {
   private val byPackage: Map<String, AppRule> =
-    apps.filter { it.enabled }.flatMap { app -> app.packageNames.map { it to app } }.toMap()
+    apps.filter { it.enabled && FeatureFlags.allowsApp(it.key) }.flatMap { app -> app.packageNames.map { it to app } }.toMap()
 
   fun ruleFor(packageName: CharSequence?): AppRule? = packageName?.let { byPackage[it.toString()] }
 

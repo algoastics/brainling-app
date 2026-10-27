@@ -1,5 +1,6 @@
 package com.algoastics.thumbwell.core.detection
 
+import com.algoastics.thumbwell.core.rules.anyRuleFor
 import com.algoastics.thumbwell.core.detection.ReelSession.Exit
 import com.algoastics.thumbwell.core.rules.RuleSet
 import org.junit.Assert.assertEquals
@@ -14,7 +15,7 @@ import java.io.File
  */
 class SnapchatSpotlightTest {
   private val rules = RuleSet.parse(File("../rules/rules.json").readText())
-  private val rule = requireNotNull(rules.ruleFor("com.snapchat.android"))
+  private val rule = rules.anyRuleFor("com.snapchat.android")
   private val layout = LayoutFixture.load("snapchat_spotlight_assumed.txt")
 
   private class N(val text: String? = null, val desc: String? = null, vararg val kids: N)

@@ -1,5 +1,7 @@
 package com.algoastics.thumbwell.core.rules
 
+import com.algoastics.thumbwell.core.FeatureFlags
+import com.algoastics.thumbwell.core.detection.ReelSession
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -18,25 +20,31 @@ class RuleSetTest {
   """.trimIndent()
 
   @Test
-  fun sourceRulesEnableAllFiveAppFamilies() {
+  fun phase0RulesEnableOnlyInstagramYoutubeTiktok() {
     val enabledKeys = source.apps.filter { it.enabled }.map { it.key }.toSet()
+    assertEquals(setOf("instagram", "youtube", "tiktok"), enabledKeys)
+    // Facebook, Snapchat and TikTok Lite stay in the data but are switched off.
+    val disabled = source.apps.filter { !it.enabled }.map { it.key }.toSet()
+    assertEquals(setOf("tiktok_lite", "facebook", "facebook_lite", "snapchat"), disabled)
     assertEquals(
-      setOf("instagram", "youtube", "tiktok", "tiktok_lite", "facebook", "facebook_lite", "snapchat"),
-      enabledKeys,
+      setOf("com.instagram.android", "com.google.android.youtube", "com.zhiliaoapp.musically", "com.ss.android.ugc.trill"),
+      source.enabledPackages,
     )
-    assertEquals(800L, source.dwellMs)
+    assertEquals(1000L, source.dwellMs)
+    assertEquals(ReelSession.SETTLE_MS, source.dwellMs)
     assertEquals(20, source.dedupeSize)
   }
 
   @Test
   fun variantsMapToTheirFamily() {
-    assertEquals("youtube", source.ruleFor("app.revanced.android.youtube")?.key)
-    assertEquals("youtube", source.ruleFor("com.google.android.apps.youtube.kids")?.key)
     assertEquals("tiktok", source.ruleFor("com.ss.android.ugc.trill")?.key)
-    assertEquals("tiktok", source.ruleFor("com.ss.android.ugc.aweme")?.key)
-    assertEquals(listOf("simplayer_api_player_view"), source.ruleFor("com.zhiliaoapp.musically.go")?.surfaceIds)
-    assertEquals(listOf("video_view"), source.ruleFor("com.facebook.lite")?.surfaceIds)
-    assertEquals(listOf("spotlight_container"), source.ruleFor("com.snapchat.android")?.surfaceIds)
+    // Off in Phase 0: no rule is returned, but the data is kept for Phase 1.
+    assertNull(source.ruleFor("com.zhiliaoapp.musically.go"))
+    assertNull(source.ruleFor("com.facebook.lite"))
+    assertNull(source.ruleFor("com.snapchat.android"))
+    assertEquals(listOf("simplayer_api_player_view"), source.anyRuleFor("com.zhiliaoapp.musically.go").surfaceIds)
+    assertEquals(listOf("video_view"), source.anyRuleFor("com.facebook.lite").surfaceIds)
+    assertEquals(listOf("spotlight_container"), source.anyRuleFor("com.snapchat.android").surfaceIds)
     assertNull(source.ruleFor("com.whatsapp"))
   }
 
@@ -48,7 +56,7 @@ class RuleSetTest {
       listOf("sender_username_or_fullname", "sender_timestamp", "reply_bar_edittext"),
       instagram.dmSignatureIds,
     )
-    val facebook = requireNotNull(source.ruleFor("com.facebook.katana"))
+    val facebook = source.anyRuleFor("com.facebook.katana")
     assertEquals(2, facebook.contentDescriptions.size)
     assertNotNull(facebook.structure?.descendant)
   }
@@ -162,5 +170,26 @@ class RuleSetTest {
     val slower = RuleSet.parse(JSONObject(sourceText).put("dwellMs", 1200).toString())
     assertEquals(false, source.countingDiffers(same))
     assertEquals(true, source.countingDiffers(slower))
+  }
+
+  @Test
+  fun aFlagKeepsAnEnabledAppOffEvenWhenARulesetEnablesIt() {
+    val enabled = RuleSet.parse(
+      withApps(
+        """{"key":"facebook","packageNames":["com.facebook.katana"],"enabled":true,"surfaceIds":["x"]},
+           {"key":"instagram","packageNames":["com.instagram.android"],"enabled":true,"surfaceIds":["x"]}""",
+      ),
+    )
+    assertNull(enabled.ruleFor("com.facebook.katana"))
+    assertEquals("instagram", enabled.ruleFor("com.instagram.android")?.key)
+    try {
+      FeatureFlags.facebookEnabled = true
+      val flipped = RuleSet.parse(
+        withApps("""{"key":"facebook","packageNames":["com.facebook.katana"],"enabled":true,"surfaceIds":["x"]}"""),
+      )
+      assertEquals("facebook", flipped.ruleFor("com.facebook.katana")?.key)
+    } finally {
+      FeatureFlags.facebookEnabled = false
+    }
   }
 }

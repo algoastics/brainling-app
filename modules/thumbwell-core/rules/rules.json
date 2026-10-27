@@ -1,9 +1,9 @@
 {
   "schema": 3,
-  "version": 4,
+  "version": 5,
   "issuedAt": "2026-10-22T00:00:00Z",
   "expiresAt": "2027-10-22T00:00:00Z",
-  "dwellMs": 800,
+  "dwellMs": 1000,
   "dedupeSize": 20,
   "sessionGapMs": 600000,
   "surfaceRetryDelaysMs": [150, 300, 600, 1000, 1600, 2500],
@@ -19,11 +19,7 @@
     {
       "key": "youtube",
       "adLabels": ["Sponsored", "Ad"],
-      "packageNames": [
-        "com.google.android.youtube",
-        "app.revanced.android.youtube",
-        "com.google.android.apps.youtube.kids"
-      ],
+      "packageNames": ["com.google.android.youtube"],
       "enabled": true,
       "surfaceIds": ["reel_player_page_container"],
       "pagerIds": ["reel_recycler"]
@@ -31,11 +27,7 @@
     {
       "key": "tiktok",
       "adLabels": ["Sponsored", "Ad"],
-      "packageNames": [
-        "com.zhiliaoapp.musically",
-        "com.ss.android.ugc.trill",
-        "com.ss.android.ugc.aweme"
-      ],
+      "packageNames": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
       "enabled": true,
       "surfaceIds": ["player_view"],
       "pagerIds": ["viewpager"],
@@ -45,14 +37,14 @@
       "key": "tiktok_lite",
       "adLabels": ["Sponsored", "Ad"],
       "packageNames": ["com.zhiliaoapp.musically.go", "com.tiktok.lite.go"],
-      "enabled": true,
+      "enabled": false,
       "surfaceIds": ["simplayer_api_player_view"]
     },
     {
       "key": "facebook",
       "adLabels": ["Sponsored"],
       "packageNames": ["com.facebook.katana"],
-      "enabled": true,
+      "enabled": false,
       "contentDescriptions": [
         "FbShortsComposerAttachmentComponentSpec_STICKER",
         "FbShortsComposerAttachmentComponentSpec_GIF"
@@ -76,14 +68,14 @@
       "key": "facebook_lite",
       "adLabels": ["Sponsored"],
       "packageNames": ["com.facebook.lite"],
-      "enabled": true,
+      "enabled": false,
       "surfaceIds": ["video_view"]
     },
     {
       "key": "snapchat",
       "adLabels": ["Sponsored", "Ad"],
       "packageNames": ["com.snapchat.android"],
-      "enabled": true,
+      "enabled": false,
       "surfaceIds": ["spotlight_container"]
     }
   ]

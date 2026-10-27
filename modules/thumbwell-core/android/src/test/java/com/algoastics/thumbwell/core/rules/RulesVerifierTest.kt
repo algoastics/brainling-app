@@ -47,13 +47,13 @@ class RulesVerifierTest {
 
   @Test
   fun acceptsCorrectlySignedRules() {
-    assertEquals(3, verifier.verify(envelope(sourceText)).version)
+    assertEquals(RuleSet.parse(sourceText).version, verifier.verify(envelope(sourceText)).version)
   }
 
   @Test
   fun rejectsTamperedPayload() {
     val signed = JSONObject(envelope(sourceText))
-    val tampered = sourceText.replace("\"dwellMs\": 800", "\"dwellMs\": 100")
+    val tampered = sourceText.replace("\"dwellMs\": 1000", "\"dwellMs\": 100")
     signed.put("payload", Base64.toBase64String(tampered.toByteArray()))
     assertRejected(RulesRejection.BAD_SIGNATURE) { verifier.verify(signed.toString()) }
   }
@@ -94,8 +94,8 @@ class RulesVerifierTest {
     val rules = RuleSet.parse(sourceText)
     val now = rules.issuedAtMs + 1
     assertNull(RulesPolicy.check(rules, activeVersion = 2, highestVersion = 2, nowMs = now))
-    assertEquals(RulesRejection.ROLLBACK, RulesPolicy.check(rules, 2, highestVersion = 4, nowMs = now))
-    assertEquals(RulesRejection.NOT_NEWER, RulesPolicy.check(rules, activeVersion = 3, highestVersion = 3, nowMs = now))
+    assertEquals(RulesRejection.ROLLBACK, RulesPolicy.check(rules, 2, highestVersion = rules.version + 1, nowMs = now))
+    assertEquals(RulesRejection.NOT_NEWER, RulesPolicy.check(rules, activeVersion = rules.version, highestVersion = rules.version, nowMs = now))
     assertEquals(RulesRejection.EXPIRED, RulesPolicy.check(rules, 2, 2, nowMs = rules.expiresAtMs))
   }
 }
