@@ -51,6 +51,8 @@ class LockController(
   private var provisional = false
   private var provisionalSince = 0L
   private val pauseAgain = Runnable { audio.pauseAgain() }
+  private val homeFallback = HomeFallback()
+  private var coverShownAt = 0L
 
   private val stateListener: (LockState) -> Unit = { state -> handler.post { onState(state) } }
 
@@ -75,7 +77,10 @@ class LockController(
         LockWatch.Action.KEEP -> {
           // A cover shown on entry, before any reels surface, is removed when none ever appears.
           if (provisional && EarlyCover.expired(provisionalSince, now)) hide()
-          else handler.postDelayed(this, WATCH_MS)
+          else {
+            if (homeFallback.due(coverShownAt, now, flow.busy)) goHome(now)
+            handler.postDelayed(this, WATCH_MS)
+          }
         }
       }
     }
@@ -108,6 +113,7 @@ class LockController(
     }
     handler.removeCallbacksAndMessages(null)
     flow.reset()
+    homeFallback.reset()
     hide()
     surfacePackage = null
     surfaceBounds = null
@@ -120,7 +126,19 @@ class LockController(
     overlay.hide()
     overlayPackage = null
     provisional = false
+    coverShownAt = 0L
     audio.release()
+  }
+
+  /**
+   * The sound still plays under the cover (focus and PAUSE key do not reach every reels app): HOME
+   * sends the app to the background, which stops it for certain. The watch then sees the launcher
+   * and hides the cover; the lock comes back on the next fresh reels entry while still locked.
+   */
+  private fun goHome(now: Long) {
+    homeFallback.record(now)
+    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+    Log.i(TAG, "lock: home fallback (sound stops with the app)")
   }
 
   /**
@@ -151,7 +169,7 @@ class LockController(
     )
     if (verdict != OverlayGuard.Verdict.SHOW) return
     overlayPackage = packageName
-    val box = OverlayGuard.coverBox(app ?: Box(0, 0, metrics.widthPixels, metrics.heightPixels), app, metrics.widthPixels, metrics.heightPixels)
+    val box = coverBox(app ?: Box(0, 0, metrics.widthPixels, metrics.heightPixels), app, metrics.widthPixels, metrics.heightPixels)
     overlay.show(box, content(state))
     if (!overlay.isShown) return
     provisional = true
@@ -162,6 +180,7 @@ class LockController(
 
   /** The cover is up: restart the foreground watch, stop the sound. */
   private fun onCoverShown() {
+    if (coverShownAt == 0L) coverShownAt = SystemClock.elapsedRealtime()
     overlay.setBusy(flow.busy)
     foreground.reset()
     handler.removeCallbacks(watch)
@@ -247,7 +266,7 @@ class LockController(
       OverlayGuard.Verdict.SHOW -> {
         val wasProvisional = provisional
         overlayPackage = pkg
-        overlay.show(OverlayGuard.coverBox(surface, app, screenW, screenH), content(state))
+        overlay.show(coverBox(surface, app, screenW, screenH), content(state))
         provisional = false
         if (overlay.isShown) {
           onCoverShown()
@@ -258,6 +277,15 @@ class LockController(
       OverlayGuard.Verdict.WAIT_TEXT_INPUT -> if (provisional) hide()
       OverlayGuard.Verdict.NOT_ACTIVE -> Unit
     }
+  }
+
+  /** The cover box, with the status bar and heads-up band left free so notification banners show. */
+  private fun coverBox(surface: Box, app: Box?, screenW: Int, screenH: Int): Box {
+    val resources = service.resources
+    val id = resources.getIdentifier("status_bar_height", "dimen", "android")
+    val statusBar = if (id > 0) resources.getDimensionPixelSize(id) else 0
+    val band = OverlayGuard.topBandPx(statusBar, resources.displayMetrics.density)
+    return OverlayGuard.leaveTopBand(OverlayGuard.coverBox(surface, app, screenW, screenH), band)
   }
 
   /** Focus and flags only; the text of a field is never read. */

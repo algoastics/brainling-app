@@ -5,6 +5,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.util.Log
 import android.view.KeyEvent
 
 /** The three AudioManager calls the lock needs, so the logic is testable on the JVM. */
@@ -23,6 +24,14 @@ interface AudioPort {
  * [engage] when the lock shows: take audio focus and send a media PAUSE. [release] when it hides:
  * give the focus back. Idempotent both ways and never holds the focus past the lock, so nothing
  * leaks. No permission is needed and nothing is collected. Main thread only.
+ *
+ * BEST EFFORT, not a guarantee. On Android 15 and up an app targeting API 35 (Thumbwell does) may
+ * request audio focus only as the top app or with a foreground service; an accessibility service is
+ * neither, so the request returns AUDIOFOCUS_REQUEST_FAILED (logged below) and the reels app is
+ * never told to stop. The media PAUSE key only reaches an app that holds an active MediaSession,
+ * and reels players mostly do not. Reading other apps' sessions (MediaSessionManager.getActiveSessions)
+ * needs a notification listener, which Thumbwell does not ask for. What stops the sound for certain
+ * is sending the app to the background: the HOME fallback in [LockController] ([HomeFallback]).
  */
 class LockAudio(private val port: AudioPort) {
   private var engaged = false
@@ -70,7 +79,9 @@ class SystemAudioPort(context: Context) : AudioPort {
         .setOnAudioFocusChangeListener(onFocusChange)
         .build()
       request = built
-      return manager.requestAudioFocus(built) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+      val result = manager.requestAudioFocus(built)
+      Log.i("ThumbwellLock", "audio focus request result=$result (1 granted, 0 failed)")
+      return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
     @Suppress("DEPRECATION")
     return manager.requestAudioFocus(onFocusChange, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) ==
