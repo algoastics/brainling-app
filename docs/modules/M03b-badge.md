@@ -69,6 +69,16 @@ The service builds the badge on connect and calls `release()` in `shutdown()`. `
 remove are idempotent and nothing leaks. A settings change reaches the service through a `CorePrefs`
 listener posted to the main thread.
 
+## Fresh open always shows it (regression fix)
+
+Whether the badge "was already shown" lives only in `BadgeMachine` (`onSurface(count)`, `visible`
+cleared by `setVisible(false)` and by `onHideDue`). It used to be a second flag in `CountBadge` that
+stayed true after the 600 ms leave fade, so a return to the reels surface (or a reopen after a kill
+from Recents) added nothing. Also: a window still fading out is removed before a new one is added, a
+window the system detached is dropped and re-added, a fresh app entry starts from a clean badge, and
+events that arrive while the seen state loads after a process start are replayed once it is loaded
+(no scroll needed). Tests: `BadgeReopenTest`.
+
 ## Known limits
 
 - No keyboard-window check: the service does not request interactive windows. A focused text input

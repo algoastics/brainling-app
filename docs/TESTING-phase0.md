@@ -281,6 +281,21 @@ default. Check each on Instagram Reels, YouTube Shorts and TikTok:
    swaps instantly, no bob, blink or roll.
 9. Frame check (optional): record at 60 fps during a count; the roll and pop-out should not drop frames.
 10. Battery with the badge on: section F, step 8.
+11. **Fresh open always shows the badge (regression check).** On the reels surface of Instagram,
+    then TikTok: open Recents and swipe the app away, then open it again and go to the reels
+    surface. The badge must show (no counted reel needed). Repeat after Home then reopen, and after
+    switching Reels to Feed to Reels (the badge fades out after 600 ms on the Feed and must come back).
+12. **After Thumbwell itself is killed.** Swipe Thumbwell away from Recents (do not force stop it),
+    then open Instagram, YouTube or TikTok on the reels surface: the accessibility service restarts
+    on its own and the badge shows as soon as the surface is on screen, before any reel is counted.
+    (Settings -> Accessibility -> Thumbwell must still read On.)
+13. **Samsung One UI 8 battery settings.** If 11 or 12 fail only on the phone, check, in this order:
+    Settings -> Battery -> Background usage limits: turn **Put unused apps to sleep** off, and make
+    sure Thumbwell is not in **Sleeping apps** or **Deep sleeping apps** (remove it). Settings ->
+    Apps -> Thumbwell -> Battery: choose **Unrestricted** (not Optimized or Restricted). A **Force
+    stop** of Thumbwell (App info) switches the
+    accessibility service off until it is turned on again in Settings -> Accessibility -> Installed
+    apps -> Thumbwell; swiping the card in Recents does not. Note the result in the test log.
 
 ## I. Overlay safety guard (F07 item 10) and store-text consistency (F18)
 
