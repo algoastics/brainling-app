@@ -36,7 +36,7 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 - **Safety:** never shown while a text input has input focus (node `isEditable` or an `EditText`
   class; the text is never read). Split screen or any window clearly smaller than the screen
   (under 90% wide or 75% tall) does not get an overlay; the service uses the same BACK-then-HOME flow
-  instead. Hidden when the surface is gone, the app is no longer in front (500 ms watchdog), the screen
+  instead. Hidden when the surface is gone, the app is no longer in front (watchdog; another window must stay in front 400 ms, one odd sample never hides it, `LockWatch` + `BadgeForeground`), the screen
   turns off, the service is interrupted or unbound, or the lock lifts. `show` and `hide` are idempotent;
   main thread only.
 - A reel seen while the overlay covers the surface is not counted (evaluation returns before the
@@ -50,7 +50,7 @@ The lock never stays over Android Settings, Accessibility settings or the packag
 uninstall dialog (`OverlaySafetyPackages`, same list as the badge). `LockController.onSafetyWindow()`
 hides it (hide only: no BACK, no HOME, "Leave reels" is unchanged), forgets the surface, and the lock
 is not shown again until a tracked reels surface is on screen again (a new entry). The 500 ms watch
-is now 250 ms and checks the list on each tick.
+is now 250 ms and checks the list on each tick: a safety package hides at once, any other window only after it has stayed in front 400 ms (the same debounce as the badge).
 
 ## JS API
 

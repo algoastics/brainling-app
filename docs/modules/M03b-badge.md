@@ -28,9 +28,12 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
   stops after 10 s, the blink continues. A leave hides it after a 400 ms debounce (`BadgeForeground`), so
   a transient window never hides it while scrolling; a safety package hides at once.
 - After the display time (1 s, 2 s, 3 s) the Thumb settles (240 ms): it sleeps (eyes
-  closed, 0.93 scale, 40% opacity) tucked half past the screen edge, and **the count pill stays on
-  screen at 70% opacity** right beside it (PM decision, option B; the original spec hid the pill).
-  Pill and sleeping Thumb touch and never overlap; the pill slides inward to make room. Each counted
+  closed, 0.93 scale, 40% opacity) half past the screen edge, and **the count pill stays on screen
+  at 70% opacity** (PM decision, option B; the original spec hid the pill). Geometry is the Figma
+  A42 frames (57:977, 57:996, rule 74:1952): the pill never changes size or position; the Thumb
+  slides ONTO the pill's edge end (about +63 dp on the right edge, -21 dp on the left, centre on the
+  screen edge, centred vertically on the pill) over the pill's 46 dp socket, in front of it; on the
+  right edge the count also moves 30 dp inward, on the left it stays. Translate and alpha only. Each counted
   reel restarts the timer. "Hide completely when resting" hides the whole badge (Thumb and count)
   instead. "Always" never rests. Flip `BadgeRest.PILL_VISIBLE` to false for the Thumb alone.
 - Layering: the Thumb is drawn in front of the pill (elevation 6 dp vs the pill's 2 dp, 3 dp when
