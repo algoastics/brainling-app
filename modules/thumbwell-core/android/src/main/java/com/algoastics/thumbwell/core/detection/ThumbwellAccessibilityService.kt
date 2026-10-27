@@ -20,6 +20,8 @@ import com.algoastics.thumbwell.core.data.CountRepository
 import com.algoastics.thumbwell.core.data.CountedReel
 import com.algoastics.thumbwell.core.data.DayCounts
 import com.algoastics.thumbwell.core.health.HealthMonitor
+import com.algoastics.thumbwell.core.lock.AppEntry
+import com.algoastics.thumbwell.core.lock.EarlyCover
 import com.algoastics.thumbwell.core.lock.LimitEngine
 import com.algoastics.thumbwell.core.lock.LockController
 import com.algoastics.thumbwell.core.lock.OverlayGuard
@@ -61,6 +63,24 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   }
   private var screenOffRegistered = false
   private val foreground = BadgeForeground()
+  private lateinit var homes: HomePackages
+  // Which tracked app was opened last, and the 150 ms watch that notices it was left (Home,
+  // Recents, another app) so the next open is a fresh entry. It also hides the badge and lock.
+  private val appEntry = AppEntry()
+  private val entryForeground = BadgeForeground()
+  private val foregroundWatch = object : Runnable {
+    override fun run() {
+      val pkg = appEntry.current ?: return
+      val activePkg = rootInActiveWindow?.packageName?.toString()
+      when (entryForeground.check(activePkg, pkg, SystemClock.elapsedRealtime(), homePackages = homes.get())) {
+        BadgeForeground.Verdict.HIDE_NOW, BadgeForeground.Verdict.LEAVE_NOW, BadgeForeground.Verdict.HIDE -> {
+          debugLog("left $pkg (active=$activePkg)")
+          onLeftApp()
+        }
+        else -> handler.postDelayed(this, FOREGROUND_WATCH_MS)
+      }
+    }
+  }
   private val screenOff = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
       hideBadge()
@@ -74,8 +94,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       if (guardSafetyWindow(activePkg)) return
       // One sample of another window (system UI, a popup, a null root) must not hide the badge
       // while reels are scrolling: it hides only after another window stays in front.
-      when (foreground.check(activePkg, pkg, SystemClock.elapsedRealtime())) {
-        BadgeForeground.Verdict.HIDE, BadgeForeground.Verdict.HIDE_NOW -> {
+      when (foreground.check(activePkg, pkg, SystemClock.elapsedRealtime(), homePackages = homes.get())) {
+        BadgeForeground.Verdict.HIDE, BadgeForeground.Verdict.HIDE_NOW, BadgeForeground.Verdict.LEAVE_NOW -> {
           debugLog("badge hide: $pkg left the foreground (active=$activePkg)")
           hideBadge()
         }
@@ -122,7 +142,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     health = HealthMonitor.get(this)
     health.onServiceConnected()
     limitEngine = LimitEngine.get(this)
-    lock = LockController(this, limitEngine, prefs, ::isOnReels)
+    homes = HomePackages(this)
+    lock = LockController(this, limitEngine, prefs, ::isOnReels) { homes.get() }
     lock.start()
     // Screen off: remove the badge and every timer it runs (blink, bob). It returns on the next event.
     val screenOffFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
@@ -228,6 +249,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     if (!countingAllowed()) return
     checkDayRollover()
     val session = session(packageName, active)
+    noteEntry(packageName, rule, session)
     when (event.eventType) {
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
         val verdict = if (session.onSurface) onScrolled(session, rule, event) else "off-surface"
@@ -250,6 +272,34 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       else -> DetectionDebug.logEvent(this, packageName, event, "content")
     }
     schedule(packageName, THROTTLE_MS)
+  }
+
+  /**
+   * The first event of a tracked app that is the active window is an entry (the user just opened
+   * it). While locked, a reels-first app (TikTok) is covered at once, before its reels surface is
+   * detected, and the sound stops; any app is evaluated at once, not after the 250 ms throttle. The
+   * limit-reel rule (cover the NEXT item after the first swipe) does not apply: this is not the
+   * live limit reel.
+   */
+  private fun noteEntry(packageName: String, rule: AppRule, session: Session) {
+    if (appEntry.current == packageName) return
+    val activeRoot = rootInActiveWindow
+    if (!appEntry.onEvent(packageName, activeRoot?.packageName?.toString() == packageName)) return
+    entryForeground.reset()
+    handler.removeCallbacks(foregroundWatch)
+    handler.postDelayed(foregroundWatch, FOREGROUND_WATCH_MS)
+    session.retryStep = 0
+    debugLog("entered $packageName")
+    if (EarlyCover.coversOnEntry(rule.key)) lock.onEntry(packageName, activeRoot)
+    schedule(packageName, 0L)
+  }
+
+  /** Home, Recents or another app took over: hide the badge and the lock now, forget the entry. */
+  private fun onLeftApp() {
+    handler.removeCallbacks(foregroundWatch)
+    appEntry.left()
+    hideBadge()
+    if (::lock.isInitialized) lock.onLeftApp()
   }
 
   /**
@@ -394,8 +444,13 @@ class ThumbwellAccessibilityService : AccessibilityService() {
 
     if (root == null || surface == null) {
       lock.onSurfaceGone(packageName)
+      val onTop = ForegroundWindows.classify(
+        activeRoot?.packageName?.toString(), null, packageName, homes.get(),
+      )
       if (guardSafetyWindow(activeRoot?.packageName?.toString())) {
         // Settings, Accessibility settings or an installer dialog is on top: hidden at once.
+      } else if (onTop == ForegroundWindows.Kind.HOME || onTop == ForegroundWindows.Kind.RECENTS) {
+        onLeftApp() // Home or Recents: the badge and the lock go now, not after the fade
       } else if (badgePackage == packageName) leaveBadge()
       val exit = when {
         root != null -> ReelSession.Exit.CLOSED
@@ -533,6 +588,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
   }
 
   override fun onInterrupt() {
+    appEntry.left()
     hideBadge()
     if (::lock.isInitialized) lock.hide()
   }
@@ -597,7 +653,8 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     private const val DAY_CHECK_MS = 15_000L
     private const val TAG = "ThumbwellDetect"
     private const val THROTTLE_MS = 250L
-    private const val BADGE_WATCH_MS = 500L
+    private const val BADGE_WATCH_MS = 150L
+    private const val FOREGROUND_WATCH_MS = 150L
 
     /** Set by "delete my data": the service drops its in-memory players on the next event. */
     @Volatile private var clearRequested = false

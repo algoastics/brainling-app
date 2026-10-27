@@ -35,6 +35,8 @@ class LockController(
   private val prefs: CorePrefs,
   /** True while [packageName] is foreground with a reels surface on screen. */
   private val isOnReels: (packageName: String) -> Boolean,
+  /** Launcher (home) packages of this device; Home and Recents hide the lock at once. */
+  private val homePackages: () -> Set<String> = { emptySet() },
 ) {
   private val handler = Handler(Looper.getMainLooper())
   private val trigger = LockTrigger()
@@ -45,6 +47,10 @@ class LockController(
   private var overlayPackage: String? = null
   private var started = false
   private val foreground = BadgeForeground()
+  private val audio = LockAudio(SystemAudioPort(service))
+  private var provisional = false
+  private var provisionalSince = 0L
+  private val pauseAgain = Runnable { audio.pauseAgain() }
 
   private val stateListener: (LockState) -> Unit = { state -> handler.post { onState(state) } }
 
@@ -60,12 +66,17 @@ class LockController(
       val activePkg = service.rootInActiveWindow?.packageName?.toString()
       if (!overlay.isShown) return
       // Never hide on one sample of another window: it must stay in front for the debounce.
-      val verdict = foreground.check(activePkg, pkg.orEmpty(), SystemClock.elapsedRealtime())
+      val now = SystemClock.elapsedRealtime()
+      val verdict = foreground.check(activePkg, pkg.orEmpty(), now, homePackages = homePackages())
       val active = LockRules.activeAt(engine.state, System.currentTimeMillis())
       when (LockWatch.decide(active, verdict)) {
-        LockWatch.Action.SAFETY_HIDE -> onSafetyWindow()
+        LockWatch.Action.SAFETY_HIDE, LockWatch.Action.LEAVE_HIDE -> onSafetyWindow()
         LockWatch.Action.HIDE -> hide()
-        LockWatch.Action.KEEP -> handler.postDelayed(this, WATCH_MS)
+        LockWatch.Action.KEEP -> {
+          // A cover shown on entry, before any reels surface, is removed when none ever appears.
+          if (provisional && EarlyCover.expired(provisionalSince, now)) hide()
+          else handler.postDelayed(this, WATCH_MS)
+        }
       }
     }
   }
@@ -105,8 +116,59 @@ class LockController(
   /** Hides the overlay now (screen off, service interrupted, app left reels). Idempotent. */
   fun hide() {
     handler.removeCallbacks(watch)
+    handler.removeCallbacks(pauseAgain)
     overlay.hide()
     overlayPackage = null
+    provisional = false
+    audio.release()
+  }
+
+  /**
+   * The user left the app: Home, Recents or another app (an immediate leave). Hides the lock at
+   * once and forgets the surface; the lock returns only on a fresh reels entry while still locked.
+   */
+  fun onLeftApp() = onSafetyWindow()
+
+  /**
+   * [packageName] was just opened (its first event) while it is the active window. A lock that is
+   * already active covers it at once, before any reels surface is detected, and the sound stops.
+   * Guards as for [maybeShow]: never over a text input, split screen or a small window is left to
+   * the normal path. The cover is provisional: the reels surface, when found, confirms it and sets
+   * its bounds ([maybeShow]); with none after [EarlyCover.GRACE_MS] it is removed.
+   */
+  fun onEntry(packageName: String, root: AccessibilityNodeInfo?) {
+    trigger.onSurfaceEntered() // an entry, not the live limit reel: nothing waits for a swipe
+    if (overlay.isShown) return
+    val state = engine.state
+    val active = LockRules.activeAt(state, System.currentTimeMillis())
+    val metrics = service.resources.displayMetrics
+    val app = root?.let { n -> Rect().also(n::getBoundsInScreen) }?.let { Box(it.left, it.top, it.right, it.bottom) }
+    val verdict = OverlayGuard.decide(
+      active = active,
+      consent = prefs.consentValid(),
+      focusedTextInput = focusedTextInput(root),
+      multiWindow = OverlayGuard.isMultiWindow(app, metrics.widthPixels, metrics.heightPixels),
+    )
+    if (verdict != OverlayGuard.Verdict.SHOW) return
+    overlayPackage = packageName
+    val box = OverlayGuard.coverBox(app ?: Box(0, 0, metrics.widthPixels, metrics.heightPixels), app, metrics.widthPixels, metrics.heightPixels)
+    overlay.show(box, content(state))
+    if (!overlay.isShown) return
+    provisional = true
+    provisionalSince = SystemClock.elapsedRealtime()
+    onCoverShown()
+    Log.i(TAG, "lock shown on entry app=$packageName")
+  }
+
+  /** The cover is up: restart the foreground watch, stop the sound. */
+  private fun onCoverShown() {
+    overlay.setBusy(flow.busy)
+    foreground.reset()
+    handler.removeCallbacks(watch)
+    handler.postDelayed(watch, WATCH_MS)
+    audio.engage()
+    handler.removeCallbacks(pauseAgain)
+    handler.postDelayed(pauseAgain, PAUSE_AGAIN_MS)
   }
 
   /**
@@ -166,7 +228,8 @@ class LockController(
   private fun maybeShow(root: AccessibilityNodeInfo?) {
     val pkg = surfacePackage ?: return
     val surface = surfaceBounds ?: return
-    if (overlay.isShown) return
+    // A provisional cover (shown on entry) is confirmed and re-fitted to the surface below.
+    if (overlay.isShown && !provisional) return
     val state = engine.state
     val active = LockRules.activeAt(state, System.currentTimeMillis())
     if (!trigger.mayShow(active, true)) return
@@ -182,18 +245,18 @@ class LockController(
     )
     when (verdict) {
       OverlayGuard.Verdict.SHOW -> {
+        val wasProvisional = provisional
         overlayPackage = pkg
         overlay.show(OverlayGuard.coverBox(surface, app, screenW, screenH), content(state))
+        provisional = false
         if (overlay.isShown) {
-          overlay.setBusy(flow.busy)
-          foreground.reset()
-          handler.removeCallbacks(watch)
-          handler.postDelayed(watch, WATCH_MS)
-          Log.i(TAG, "lock shown app=$pkg")
+          onCoverShown()
+          Log.i(TAG, if (wasProvisional) "lock confirmed app=$pkg" else "lock shown app=$pkg")
         }
       }
       OverlayGuard.Verdict.BACK_FALLBACK -> leave()
-      OverlayGuard.Verdict.WAIT_TEXT_INPUT, OverlayGuard.Verdict.NOT_ACTIVE -> Unit
+      OverlayGuard.Verdict.WAIT_TEXT_INPUT -> if (provisional) hide()
+      OverlayGuard.Verdict.NOT_ACTIVE -> Unit
     }
   }
 
@@ -251,6 +314,7 @@ class LockController(
 
   private companion object {
     const val TAG = "ThumbwellLock"
-    const val WATCH_MS = 250L
+    const val WATCH_MS = 150L
+    const val PAUSE_AGAIN_MS = 400L
   }
 }
