@@ -275,17 +275,29 @@ default. Check each on Instagram Reels, YouTube Shorts and TikTok:
 2. Swipe to a counted reel: in Always only the changed digits roll (no pop). Leave the app and come
    back: the Thumb pops and flicks again. The count equals that app's count on Home. In Always the
    bob stops after about 10 s (the Thumb then stays still) and the blink continues every 3 to 5 s.
-3. Set Badge display time to 2 s. After 2 s with no new reel the Thumb goes to sleep: eyes closed, half past the screen edge
+3. Set Badge display time to 2 s. After 2 s with no new reel the Thumb goes to sleep: eyes closed,
    **and the white count pill stays on screen, still showing the count.** The whole resting badge
-   (Thumb and pill together) is at about 70% opacity. The pill does not move or resize; the Thumb slides onto its edge end (over
-   the pill's end, half off screen), and on the right edge the count moves a little inward. Bob and
-   blink stop and nothing moves while it rests. Compare with Figma 52:1000 / 52:1508.
-   Awake: the Thumb is fully visible **in front of** the pill's left end, never hidden behind it.
+   (Thumb and pill together) is at about 70% opacity. The pill does not move or resize; the Thumb
+   slides about 22 dp to the pill end that faces the screen centre and only its outer half shows
+   (inner half tucked, the count never covered). Do this on **both edges**: right-edge badge: Thumb
+   peeks out left of the pill, count at the pill's left; left-edge badge: Thumb peeks out right of the
+   pill, count on the left. Compare with Figma 57:977 (right) and 57:996 (left), and 52:1000 /
+   52:1508. Bob and blink stop and nothing moves while it rests.
+   Awake: the Thumb is fully visible **in front of** the pill, on the side that faces the screen
+   centre (left edge: Thumb right of the pill; right edge: Thumb left of it), never hidden behind it.
 4. Settings -> Badge display time: try 1 s, 3 s, then back to Always. 1 s, 2 s and 3 s pop out on a counted reel (rolling the digits) and then sleep with the 70% pill; a swipe within the time only rolls the digits.
 5. With Always selected the "Hide completely when resting" switch is dimmed and cannot be turned on.
    With 1, 2 or 3 s: Hide completely when resting on: the whole badge (Thumb and count) disappears between counts instead of resting. "Always" never rests.
-6. Drag the badge: it lifts, follows the finger and snaps to the nearer edge. Kill and reopen the
-   app: the position is kept. Tap or drag the resting badge (Thumb or pill): it wakes, no roll. Tap an awake badge: Thumbwell opens.
+6. Drag the badge slowly and fast: it lifts, follows the finger with no lag or trailing. Release: it
+   **glides** to the nearer edge in about a fifth of a second and decelerates; it must not blink
+   out and back in. Drag across the screen centre and release: the Thumb and the count swap sides
+   during the glide. While dragging all four pill corners are round and the violet ring shows; on
+   release the corners on the screen-edge side flatten as it glides (right edge: right corners
+   flat; left edge: left corners flat). Touch the badge in the middle of the glide: it finishes
+   at once and then follows the finger. Kill and reopen the app: the position is kept. Tap or drag the
+   resting badge (Thumb or pill): it wakes, no roll. Tap an awake badge: Thumbwell opens.
+   Also drag a resting badge (2 s mode): it wakes, follows the finger, snaps, and rests again after
+   the display time, on the new edge, with the Thumb on the other side.
 7. Hidden: Android Settings, Accessibility settings and the uninstall dialog (section I), home screen, another app, DMs inside Instagram, a focused text field or keyboard, counting
    paused (accessibility off or no consent), Floating badge off, and while the lock overlay shows.
 8. Android Settings -> Accessibility -> remove animations (or animator scale 0): the badge fades and

@@ -5,7 +5,7 @@ Native, inside the accessibility service process. Code:
 
 | File | Role |
 |---|---|
-| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, `restShift`: Figma A42 rest offsets), `BadgeRest` (resting look constants, `NODE_ALPHA` 0.7), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
+| `BadgeLogic.kt` | Pure Kotlin, unit-tested (`BadgeLogicTest`): `BadgeMachine` (gone / resting / awake and the actions each step emits), `BadgeGate`, `Odometer` (digit plan, 150 ms + 30 ms stagger), `BadgePlacement` (snap side, clamp, Thumb side, pill and window padding, `restShift`: Figma A42 rest offsets, the rest clip), `BadgeCorners` (per-corner radii and their blend), `FrameCoalescer` (one window update per frame while dragging), `BadgeRest` (resting look constants, `NODE_ALPHA` 0.7), `BadgeTiming`, `ReducedMotion`, `BadgeSettings`. |
 | `CountBadge.kt` | One `TYPE_ACCESSIBILITY_OVERLAY` window. Turns `BadgeAction`s into framework animators and timers on one main `Handler`. Drag, snap, tap. |
 | `OdometerView.kt` | The count: one clipped slot per character, rolling digits. |
 | `ThumbwellAccessibilityService.kt` | Decides the gate (`updateBadge`), feeds the count, hides on lock / input / surface gone. |
@@ -28,20 +28,43 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
   stops after 10 s, the blink continues. A leave hides it after a 400 ms debounce (`BadgeForeground`), so
   a transient window never hides it while scrolling; a safety package hides at once.
 - After the display time (1 s, 2 s, 3 s) the Thumb settles (240 ms): it sleeps (eyes
-  closed, 0.93 scale) half past the screen edge, and **the count pill stays on screen**, the whole
-  resting node (Thumb and pill) at **70% opacity** as one group (PM decision, option B; the original
-  spec hid the pill and dimmed the Thumb to 40%). Geometry is the Figma
-  A42 frames (57:977, 57:996, rule 74:1952): the pill never changes size or position; the Thumb
-  slides ONTO the pill's edge end (about +63 dp on the right edge, -21 dp on the left, centre on the
-  screen edge, centred vertically on the pill) over the pill's 46 dp socket, in front of it; on the
-  right edge the count also moves 30 dp inward, on the left it stays. Translate and alpha only. Each counted
-  reel restarts the timer. "Hide completely when resting" hides the whole badge (Thumb and count)
-  instead. "Always" never rests. Flip `BadgeRest.PILL_VISIBLE` to false for the Thumb alone.
+  closed, 0.93 scale) on the pill end that faces the screen centre, and **the count pill stays on
+  screen**, the whole resting node (Thumb and pill) at **70% opacity** as one group (PM decision,
+  option B; the original spec hid the pill and dimmed the Thumb to 40%). Geometry is the Figma A42
+  frames (57:977, 57:996, rule 74:1952): pill 84 wide, never changing size or position; the Thumb
+  moves about 21.7 dp (`thumbW / 2 - 5`) away from the pill, so its centre sits on the pill's end
+  facing the centre (left end on the right edge, right end on the left edge: mirror images), and
+  drops about 7 dp to the pill's centre line. Only its outer half shows (Figma "Thumb peek": the
+  inner half is tucked behind the pill; the app keeps the Thumb above the pill and clips it to the
+  outer half instead, in step with the slide, so it can never vanish behind the pill and never
+  covers the count). The count sits at 16 dp from the pill's left in both frames: on the left edge
+  it never moves, on the right edge it moves 30 dp left (out of the Thumb's socket). Translate and
+  alpha only (plus the clip). Each counted reel restarts the timer. "Hide completely when resting"
+  hides the whole badge (Thumb and count) instead. "Always" never rests. Flip
+  `BadgeRest.PILL_VISIBLE` to false for the Thumb alone.
+  Earlier builds put the resting Thumb on the screen-edge end, half off screen (rest +63 dp on the
+  right edge, -21 dp on the left); the Figma frames show it on the centre-facing end, so that was
+  changed (see `NEEDS_DECISION.md`, the scope text says "half off the edge").
+- Thumb side: the Thumb is always on the side that faces the screen centre. Badge on the LEFT edge:
+  Thumb right of the pill, count on the left; on the RIGHT edge: Thumb left of the pill, count on
+  the right. The pill's 46 dp socket is on the Thumb's side and the 16 dp gap on the other. The
+  Thumb art is not mirrored (Figma 57:977 and 57:996 use the same artwork on both edges).
+- Corners: docked on an edge, the corners on the screen-edge side are flat (radius 0) and the inner
+  ones fully round (`BadgeCorners`); while dragging all four are fully round with the violet ring.
+  On release the radii blend from round to flat during the snap.
 - Layering: the Thumb is drawn in front of the pill (elevation 6 dp vs the pill's 2 dp, 3 dp when
   dragged). Android orders views by elevation before child order; with the pill higher the Thumb used
   to be hidden behind it (device bug).
-- Drag: lifts (scale 1.2, violet ring), release snaps to the nearer edge (220 ms) and the position is
-  saved natively. Vertical keep-outs: 96 dp top, 120 dp bottom. A tap or drag on the resting badge wakes it (A40 with the current count, no roll);
+- Drag: lifts (scale 1.2, violet ring) and follows the finger. Touch events are coalesced: the last
+  position of a frame goes to the window manager in ONE `updateViewLayout` from a `Choreographer`
+  callback (`FrameCoalescer`), nothing is allocated per touch or frame. Release (A31) glides the SAME
+  window to the nearer edge in 220 ms (`SNAP_MS`, decelerate, no overshoot) by animating its layout x
+  and y; the badge is never hidden, removed or re-added. If the side flips, the Thumb and the count
+  slide to their new places in the same animation (the window is as wide on both sides, so it does
+  not resize). The final layout is committed once and the position saved natively once. A touch
+  during the snap finishes it at once. Rest waits (retry every 300 ms) while a drag or a snap runs.
+  The window reaches 12 dp past the screen edge and 28 dp past the centre-facing pill end (room for
+  the resting Thumb); it is still only as big as the badge. Vertical keep-outs: 96 dp top, 120 dp bottom. A tap or drag on the resting badge wakes it (A40 with the current count, no roll);
   a tap on an awake badge opens Thumbwell.
 - Reduced motion (animator or transition scale 0): fades and instant swaps, no spring, bob, blink or roll.
 - Nothing runs while resting or hidden. No haptics, no sound, no analytics event.
@@ -83,5 +106,6 @@ events that arrive while the seen state loads after a process start are replayed
 
 - No keyboard-window check: the service does not request interactive windows. A focused text input
   (and the foreground package check every second) hides the badge instead.
-- Springs are approximated with `OvershootInterpolator` / `DecelerateInterpolator` (no new deps).
-- Not yet measured on a device: animation smoothness, drag/snap, battery with the badge on.
+- Springs are approximated with `OvershootInterpolator` (pop-out and flick) and `DecelerateInterpolator` (the snap) (no new deps).
+- Not yet measured on a device: animation smoothness, drag lag, the snap glide, the rest clip, battery with the badge on.
+- Every window update during the 220 ms snap is still one window-manager call per frame; a screen-wide window would avoid it but would block touches (F07 item 6).
