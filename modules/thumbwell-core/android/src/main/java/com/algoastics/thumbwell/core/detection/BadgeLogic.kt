@@ -17,6 +17,21 @@ enum class BadgeDisplayTime(val key: String, val ms: Long?) {
   }
 }
 
+/**
+ * What the badge looks like while resting (PM decision, option B). One flag to flip: when
+ * [PILL_VISIBLE] is false the resting badge is the sleeping Thumb alone (the original spec).
+ */
+object BadgeRest {
+  /** The count pill stays on screen next to the sleeping Thumb while resting. */
+  const val PILL_VISIBLE = true
+
+  /** Opacity of the count pill while resting. */
+  const val PILL_ALPHA = 0.7f
+
+  /** Opacity of the sleeping Thumb. */
+  const val THUMB_ALPHA = 0.4f
+}
+
 /** The three native-stored badge switches (S43-P0). */
 data class BadgeSettings(
   val enabled: Boolean = true,
@@ -120,6 +135,24 @@ object BadgePlacement {
     val max = maxOf(keepTop, screenHeight - keepBottom - pillHeight)
     return y.coerceIn(keepTop, max)
   }
+
+  /** Where the pieces of the resting badge sit; all x values in px. */
+  data class RestLayout(val windowX: Int, val windowW: Int, val pillLeft: Int, val thumbLeft: Int)
+
+  /**
+   * Resting badge: the pill stays on screen and the sleeping Thumb sits beside it, half of it past
+   * the screen edge ([visible] px stay on screen). [pillW] is 0 when the pill is not shown at rest.
+   * [pillLeft] and [thumbLeft] are inside the window; the window starts [pad] before its first part.
+   * RIGHT: pill, then Thumb at the edge. LEFT: Thumb at the edge, then pill. They touch, never overlap.
+   */
+  fun restLayout(side: BadgeSide, screenWidth: Int, pillW: Int, thumbW: Int, visible: Int, pad: Int): RestLayout =
+    if (side == BadgeSide.RIGHT) {
+      val thumbScreen = screenWidth - visible
+      RestLayout(thumbScreen - pillW - pad, pad + pillW + thumbW, pad, pad + pillW)
+    } else {
+      val thumbScreen = -(thumbW - visible)
+      RestLayout(thumbScreen - pad, pad + thumbW + pillW, pad + thumbW, pad)
+    }
 
   /** x of the Thumb inside a resting window so half of it is off the screen edge. */
   fun restingThumbX(side: BadgeSide, windowWidth: Int, thumbWidth: Int, visible: Int): Int =

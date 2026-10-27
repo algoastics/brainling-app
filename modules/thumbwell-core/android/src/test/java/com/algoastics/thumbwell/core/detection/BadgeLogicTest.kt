@@ -176,6 +176,73 @@ class BadgeLogicTest {
       }
   }
 
+  @Test fun restingBadgeKeepsThePillAndTucksHalfTheThumbOffTheRightEdge() {
+    // screen 1080 px, pill 200 px, thumb 100 px with 50 px visible, pad 24 px
+    val r = BadgePlacement.restLayout(BadgeSide.RIGHT, 1080, 200, 100, 50, 24)
+    val pillScreenLeft = r.windowX + r.pillLeft
+    val thumbScreenLeft = r.windowX + r.thumbLeft
+    assertEquals(1030, thumbScreenLeft) // half of the Thumb is past the edge (1080)
+    assertEquals(thumbScreenLeft, pillScreenLeft + 200) // the Thumb touches the pill, no overlap
+    assertEquals(830, pillScreenLeft)
+    assertTrue(pillScreenLeft >= 0 && pillScreenLeft + 200 <= 1080) // the whole pill is on screen
+    assertEquals(24 + 200 + 100, r.windowW)
+  }
+
+  @Test fun restingBadgeKeepsThePillAndTucksHalfTheThumbOffTheLeftEdge() {
+    val r = BadgePlacement.restLayout(BadgeSide.LEFT, 1080, 200, 100, 50, 24)
+    val thumbScreenLeft = r.windowX + r.thumbLeft
+    val pillScreenLeft = r.windowX + r.pillLeft
+    assertEquals(-50, thumbScreenLeft) // half of the Thumb is left of x = 0
+    assertEquals(thumbScreenLeft + 100, pillScreenLeft)
+    assertEquals(50, pillScreenLeft)
+    assertEquals(24 + 100 + 200, r.windowW)
+  }
+
+  @Test fun restingBadgeWithoutThePillIsTheSleepingThumbAlone() {
+    val r = BadgePlacement.restLayout(BadgeSide.RIGHT, 1080, 0, 100, 50, 24)
+    assertEquals(1030, r.windowX + r.thumbLeft)
+    assertEquals(24 + 100, r.windowW)
+    val l = BadgePlacement.restLayout(BadgeSide.LEFT, 1080, 0, 100, 50, 24)
+    assertEquals(-50, l.windowX + l.thumbLeft)
+  }
+
+  @Test fun restingPillIsOnByDefaultAtSeventyPercent() {
+    assertTrue(BadgeRest.PILL_VISIBLE)
+    assertEquals(0.7f, BadgeRest.PILL_ALPHA, 0f)
+    assertEquals(0.4f, BadgeRest.THUMB_ALPHA, 0f)
+  }
+
+  @Test fun theCountIsNotDroppedWhileResting() {
+    // A reel counted while the Thumb sleeps wakes it with the new count; nothing is lost.
+    val m = BadgeMachine(BadgeSettings())
+    m.setVisible(true, 5)
+    assertEquals(BadgeMachine.Mode.RESTING, m.mode)
+    m.onCount(6)
+    assertEquals(BadgeMachine.Mode.AWAKE, m.mode)
+    assertEquals(6, m.shownCount)
+    m.onRestDue()
+    assertEquals(BadgeMachine.Mode.RESTING, m.mode)
+    assertEquals(6, m.shownCount) // the resting pill shows the last count
+    // A tap wakes it without a roll and without opening the app.
+    val (tap, actions) = m.onTap()
+    assertEquals(BadgeTap.WOKE, tap)
+    assertTrue(actions.any { it is BadgeAction.PopOut })
+    assertTrue(actions.none { it is BadgeAction.Roll })
+  }
+
+  @Test fun alwaysNeverRestsAndHideWhenRestingStillHidesEverything() {
+    val always = BadgeMachine(BadgeSettings(displayTime = BadgeDisplayTime.ALWAYS))
+    always.setVisible(true, 1)
+    always.onCount(2)
+    assertTrue(always.onRestDue().isEmpty())
+    assertEquals(BadgeMachine.Mode.AWAKE, always.mode)
+    val hide = BadgeMachine(BadgeSettings(hideWhenResting = true))
+    hide.setVisible(true, 1)
+    hide.onCount(2)
+    assertEquals(listOf(BadgeAction.FadeOutRemove), hide.onRestDue())
+    assertEquals(BadgeMachine.Mode.GONE, hide.mode)
+  }
+
   @Test fun odometerRollsOnlyChangedDigitsWithAStagger() {
     assertEquals(listOf(DigitRoll(0, '2', '3', 0L)), Odometer.plan(12, 13).filter { it.fromRight == 0 })
     // 12 -> 13: only the ones digit.
