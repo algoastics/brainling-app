@@ -10,6 +10,8 @@ badge, which is now the floating Thumb (see section H). Use this file for the pa
 
 ## 0. Build and install on your own phone (not EAS)
 
+Short version with the Play AAB answer: `docs/BUILD-local.md`.
+
 This is a local Gradle build. No EAS, no AAB, no Play. The release APK is signed with the
 debug keystore Expo generates, which is fine for side-loading.
 
@@ -54,8 +56,12 @@ Android 13 or newer if you have one.
 2. [ ] Welcome says it counts Instagram, YouTube and TikTok. Tap "Let's set it up".
 3. [ ] Daily limit (S04, step 2 of 3): default 60. Presets 30, 60, 100 select. Stepper moves by 5.
    Set 30 for now. "Continue".
-4. [ ] Disclosure (S06, step 3 of 3): text matches what the app really does. "Agree & continue"
-   is disabled until the box is ticked. Scroll hint works.
+4. [ ] Disclosure (S06, step 3 of 3), **version 2** (F03, D42): the second paragraph reads "We use this
+   only to count the short videos you watch and show you your count. While one of these apps is
+   open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you
+   scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to
+   cover the reels screen or go back." It matches what the app really does. "Agree & continue" is
+   disabled until the box is ticked. Scroll hint works.
 5. [ ] "Not now": you land on Home with the "Counting is paused" banner (consent missing). Tapping
    "Turn it back on" shows the disclosure again, never goes straight to Android settings.
 6. [ ] Agree: Guide (S07) opens. "Open Accessibility settings" lands in Android Accessibility.
@@ -68,6 +74,12 @@ Android 13 or newer if you have one.
 10. [ ] Stopwatch: first launch after install to the first reel counted on Home must be under 3
     minutes (also recorded in F).
 11. [ ] Kill and relaunch: straight to Home (no onboarding).
+12. [ ] **Version 1 consent is asked again.** On a phone that still has a build with disclosure
+    version 1 accepted (install the new APK over it, `adb install -r`): Home shows "Counting is
+    paused" (consent missing) and nothing is counted or covered. "Turn it back on" opens the
+    disclosure (S06) with the version 2 text, never Android settings. Agree: counting resumes. The
+    same happens from the "service turned off" notification (`thumbwell://reenable`). Consent is not
+    carried over silently.
 
 ## B. Counting (repeat for Instagram Reels, YouTube Shorts, TikTok)
 
@@ -126,7 +138,8 @@ Replace the limit for each step as noted. Test on Instagram, YouTube and TikTok.
 4. [ ] Day starts at: the dialog opens, pick a time; "Locked until" on the lock and the day roll
    follow it. Default 04:00.
 5. [ ] Counting row shows On / Paused and matches reality.
-6. [ ] Accessibility disclosure row opens the disclosure text again.
+6. [ ] Accessibility disclosure row opens the disclosure text again, the version 2 text with the
+   on-screen counter sentence.
 7. [ ] Privacy policy opens a browser. It is a placeholder (`https://example.com/thumbwell/privacy`)
    until the real URL is set in `src/config/appConfig.ts`.
 8. [ ] Send feedback opens your mail app with subject "Thumbwell feedback", the intro line and
@@ -226,9 +239,58 @@ default. Check each on Instagram Reels, YouTube Shorts and TikTok:
 5. Settings -> Hide completely when resting on: the Thumb disappears between counts instead of resting.
 6. Drag the badge: it lifts, follows the finger and snaps to the nearer edge. Kill and reopen the
    app: the position is kept. Tap a resting Thumb: it wakes. Tap an awake badge: Thumbwell opens.
-7. Hidden: home screen, another app, DMs inside Instagram, a focused text field or keyboard, counting
+7. Hidden: Android Settings, Accessibility settings and the uninstall dialog (section I), home screen, another app, DMs inside Instagram, a focused text field or keyboard, counting
    paused (accessibility off or no consent), Floating badge off, and while the lock overlay shows.
 8. Android Settings -> Accessibility -> remove animations (or animator scale 0): the badge fades and
    swaps instantly, no bob, blink or roll.
 9. Frame check (optional): record at 60 fps during a count; the roll and pop-out should not drop frames.
 10. Battery with the badge on: section F, step 8.
+
+## I. Overlay safety guard (F07 item 10) and store-text consistency (F18)
+
+### I.1 Badge and lock never over Settings, Accessibility settings or the uninstall dialog
+
+The badge and the lock overlay are hidden as soon as the foreground window is Android Settings, the
+Accessibility settings screens or a package installer / uninstall dialog (list:
+`OverlaySafetyPackages.kt`; hide only, nothing is pressed). Run it twice, once with the badge on a
+reels surface and once with the lock showing (limit reached; or limit 0):
+
+1. [ ] On a reels surface with the badge visible, pull the notification shade and tap the Settings
+   cog: Settings opens and **no badge** is drawn over it (hidden within about a quarter of a second).
+2. [ ] Open Settings -> Accessibility (and Thumbwell's entry in it) from the same state: no badge.
+3. [ ] Start an uninstall of Thumbwell while a reels app is in front (long-press the Thumbwell icon
+   -> App info -> Uninstall, or `adb shell am start -a android.intent.action.DELETE -d
+   package:com.algoastics.thumbwell`): the package installer's confirm dialog shows with **no badge
+   and no lock** over it. Cancel it.
+4. [ ] Repeat 1 to 3 with the lock overlay up: the lock disappears, Settings and the dialog are fully
+   usable, and **the lock does not come back** while you stay in Settings.
+5. [ ] Go back to the reels app: the badge returns (no lock) or, if the limit is reached, the lock
+   returns on the reels surface. It never returns before you are back on the reels surface.
+6. [ ] BACK and HOME are not pressed by the guard. "Leave reels" still does BACK, then HOME.
+7. [ ] Other-OEM phones (not on the Samsung RF8X605YFVM): repeat on Xiaomi, OPPO/realme, vivo, Huawei
+   or Honor if you have one. Note the real package of any screen where the overlay still shows, and
+   add it to `OverlaySafetyPackages`. (`adb shell dumpsys window | grep mCurrentFocus` while on it.)
+8. [ ] Pull down the notification shade and the quick settings over a reels app: no badge or lock over
+   them (SystemUI is in the list).
+
+Known limit: the service config only lists the tracked apps, so it gets no events from Settings
+itself. The guard therefore checks the active window on every event from a tracked app and every
+250 ms while an overlay is up, not on Settings' own window events.
+
+### I.2 Play and store text must match the build (F18)
+
+1. [ ] Service description: Android Settings -> Accessibility -> Thumbwell shows exactly "Thumbwell
+   counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a
+   small on-screen counter you can switch off, and, at your limit, covers the reels screen or goes
+   back. Everything is processed on your phone." (needs a prebuild; an old `android/` still has the
+   old text.)
+2. [ ] The S06 text (version 2), the service description above, the Play declaration core-feature
+   text (F18 item 7) and the listing sentence (F18 item 4, "While Instagram Reels, YouTube Shorts or
+   TikTok is open, Thumbwell shows a small movable counter on top of it. You can turn it off in
+   settings.") all say the same thing: an on-screen counter, switchable off, lock at the limit,
+   processed on the phone. All of this wording is proposed and pending Ahsan's and legal review.
+3. [ ] Demo video (about 60 to 90 s) records: open the app, the full S06 disclosure scrolled slowly,
+   consent, enabling the service, the decline flow and re-trigger, the count rising in a reels app,
+   **the badge appearing and updating inside a reels app, then switching it off in Settings ->
+   Floating badge and showing it removed**, and the lock overlay.
+4. [ ] Data safety answers unchanged (the counter shows numbers already on the phone).

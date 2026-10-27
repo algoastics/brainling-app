@@ -44,6 +44,14 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 - Needs a valid consent record, like counting. No consent, no lock.
 - Turning Accessibility off to escape is allowed; Home shows the counter-off state.
 
+## Overlay safety (F07 item 10)
+
+The lock never stays over Android Settings, Accessibility settings or the package installer /
+uninstall dialog (`OverlaySafetyPackages`, same list as the badge). `LockController.onSafetyWindow()`
+hides it (hide only: no BACK, no HOME, "Leave reels" is unchanged), forgets the surface, and the lock
+is not shown again until a tracked reels surface is on screen again (a new entry). The 500 ms watch
+is now 250 ms and checks the list on each tick.
+
 ## JS API
 
 - `getLockState(): Promise<{ locked, limit, total, lockedUntilMs | null }>`, recomputed on call.

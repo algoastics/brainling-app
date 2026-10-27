@@ -32,6 +32,14 @@ set 57:932), colours `thumbwell_badge_*` (light and night), font `assets/fonts/n
 - Reduced motion (animator or transition scale 0): fades and instant swaps, no spring, bob, blink or roll.
 - Nothing runs while resting or hidden. No haptics, no sound, no analytics event.
 
+## Overlay safety (F07 item 10)
+
+Never over Android Settings, Accessibility settings or the package installer / uninstall dialog.
+`OverlaySafetyPackages` (pure, tested) holds the exact and prefix package list including OEM
+variants. The service checks it on every event, on window changes against the active window, and
+every 250 ms while the badge is up (`BadgeGate.visible(..., safetyWindow)`); a match hides the badge
+at once. Only the foreground package name is read.
+
 ## Settings and API
 
 Stored in `CorePrefs`: `badge_enabled` (default true), `badge_display_time` (`1s`/`2s`/`3s`/`always`,

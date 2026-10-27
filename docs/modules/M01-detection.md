@@ -130,7 +130,10 @@ release.
   not closed twice. The seen state (`seen_state` table) survives process death and is cleared at
   day start.
 - **Consent gate**: nothing counts until `setConsent(version)` has logged a timestamp for
-  `Disclosure.CURRENT_VERSION` (mirror: `DISCLOSURE_VERSION` in `src/onboarding/disclosure.ts`).
+  `Disclosure.CURRENT_VERSION` (mirror: `DISCLOSURE_VERSION` in `src/consent/version.ts`). Both are
+  **"2"** (F03, D42: the on-screen counter sentence). Consent logged for any other version, such as
+  "1", is invalid (`Disclosure.accepts`): the status is paused with `consent_missing`, the user is
+  sent back to S06 and nothing is migrated.
 - **Count badge**: the floating Thumb, see `M03b-badge.md`. On (`FeatureFlags.countBadgeEnabled`) and user-controlled in Settings.
 
 JS API (`thumbwell-core`): `getTodayCounts()` (total, `apps`, `ads`), `getDailyCounts(limit?)`,
