@@ -6,15 +6,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DisclosureTest {
-  @Test fun currentVersionIsTwo() = assertEquals("2", Disclosure.CURRENT_VERSION)
+  @Test fun currentVersionIsThree() = assertEquals("3", Disclosure.CURRENT_VERSION)
 
-  @Test fun versionOneConsentIsNotAccepted() = assertFalse(Disclosure.accepts("1"))
+  @Test fun olderConsentIsNotAccepted() {
+    assertFalse(Disclosure.accepts("1"))
+    assertFalse(Disclosure.accepts("2"))
+  }
 
-  @Test fun versionTwoConsentIsAccepted() = assertTrue(Disclosure.accepts("2"))
+  @Test fun versionThreeConsentIsAccepted() = assertTrue(Disclosure.accepts("3"))
 
   @Test fun missingOrOtherConsentIsNotAccepted() {
     assertFalse(Disclosure.accepts(null))
     assertFalse(Disclosure.accepts(""))
-    assertFalse(Disclosure.accepts("3"))
+    assertFalse(Disclosure.accepts("4"))
   }
 }

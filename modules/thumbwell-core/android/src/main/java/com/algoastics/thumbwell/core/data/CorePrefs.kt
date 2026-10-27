@@ -12,10 +12,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** The accessibility disclosure the user must have accepted before anything is counted. */
 object Disclosure {
   /** Bump when the S06 disclosure text changes; consent for an older version stops counting. */
-  const val CURRENT_VERSION = "2"
+  const val CURRENT_VERSION = "3"
 
   /**
-   * True only for consent logged for exactly [CURRENT_VERSION]. An older version (for example "1")
+   * True only for consent logged for exactly [CURRENT_VERSION]. An older version (for example "1" or "2")
    * is never migrated: the user is asked again and nothing is counted until then.
    */
   fun accepts(loggedVersion: String?): Boolean = loggedVersion == CURRENT_VERSION
