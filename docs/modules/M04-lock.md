@@ -9,6 +9,8 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 | `LimitEngine.kt` | Today's total (counter store, Room) against the effective daily limit (`DailyLimit`: lower applies now, raise from the next logical day). Fires only on change. |
 | `LockOverlay.kt` | The S22-P0 view, a `TYPE_ACCESSIBILITY_OVERLAY` window (no `SYSTEM_ALERT_WINDOW`). |
 | `LockController.kt` | Glue inside the service: when to cover, guards, "Leave reels", watchdog, screen-off. |
+| `LockAudio.kt` | Stops the sound while the lock is up: `LockAudio` (pure, over an `AudioPort`) and `SystemAudioPort` (AudioManager). |
+| `LockEntry.kt` | `AppEntry` (first event of an opened app) and `EarlyCover` (which apps are covered on entry). |
 
 ## Behaviour
 
@@ -43,6 +45,41 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
   count). Counting continues everywhere else, and Room stays the source of truth.
 - Needs a valid consent record, like counting. No consent, no lock.
 - Turning Accessibility off to escape is allowed; Home shows the counter-off state.
+
+## Audio, re-entry and leaving (real-phone fixes)
+
+- **Audio.** When the lock shows, `LockAudio.engage()` requests audio focus (`AudioFocusRequest`,
+  `AUDIOFOCUS_GAIN`, `USAGE_MEDIA`) and dispatches a media PAUSE key (down and up, again 400 ms
+  later). `release()` abandons the focus whenever the lock hides, so nothing is held past it. Both
+  are idempotent. `AUDIOFOCUS_GAIN` is permanent on purpose: with a transient request the reels app
+  may resume by itself when the focus is abandoned. No new permission. Disclosure and Data safety:
+  this is a local audio-focus request and a media key, nothing is collected or sent, so no change.
+  It pauses other apps' media too (music), as any focus request does.
+- **Late lock on re-entry (root cause).** The lock was only evaluated after a reels surface was
+  detected (event, 250 ms throttle, then the surface retry delays), so TikTok showed a video for
+  1 to 2 s first. Now the first event of an app that is the active window is an *entry*
+  (`AppEntry`). While locked, a reels-first app (`EarlyCover.COVER_ON_ENTRY_KEYS`, TikTok) is covered
+  at once with a provisional cover over the app window, the sound stops, and the reels surface when
+  found re-fits it to the reels area (`maybeShow`); with no surface after 3 s it is removed. Every
+  app is evaluated at once instead of after the throttle. The "lock covers the NEXT item after the
+  first swipe" rule is only for the live limit reel (`LockTrigger.onState`), never for an entry.
+  Guards are unchanged: never over a text input, split screen or a small window takes the normal
+  path, safety packages. Instagram and YouTube open on a feed, so they are not covered before the
+  surface is seen; add their rule key to `COVER_ON_ENTRY_KEYS` to change that.
+- **Lingering after leaving (root cause).** Only safety packages hid at once; Home, Recents and
+  everything else waited for the 400 ms debounce plus a 500 ms (badge) or 250 ms (lock) poll, and the
+  service only receives events from the tracked apps, so a launcher is never reported by an event.
+  Now `ForegroundWindows` classifies the window in front: the tracked app keeps, safety, **home /
+  launcher packages** (resolved with the HOME intent, `resolveActivity` plus `queryIntentActivities`,
+  with a `<queries>` entry and no permission, plus a built-in list) and **Recents class names**
+  (`RecentsActivity`, `RecentsTransitionActivity`) are an *immediate leave* (`BadgeForeground`
+  verdict `LEAVE_NOW`, `LockWatch.Action.LEAVE_HIDE`): the lock and the badge hide at once, the
+  surface is forgotten, and the lock returns only on a fresh reels entry while still over the limit.
+  Unknown or transient windows keep the 400 ms debounce. `com.android.systemui` as a package is not an
+  immediate leave. A 150 ms service watch (and 150 ms badge and lock watches) makes "at once" about
+  one tick. Recents on Pixel, Samsung, Xiaomi and ColorOS lives in the launcher package, so the package
+  rule catches it; the class-name rule needs the class name, which only events carry (the service
+  does not subscribe to launcher or SystemUI events).
 
 ## Overlay safety (F07 item 10)
 

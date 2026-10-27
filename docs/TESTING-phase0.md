@@ -131,6 +131,32 @@ Replace the limit for each step as noted. Test on Instagram, YouTube and TikTok.
 9. [ ] TalkBack on: the title and "Leave reels" are read.
 10. [ ] Day roll: change Day starts at to a time one minute ahead, wait: the lock lifts, count is 0.
 
+### C.1 Audio, instant lock on re-entry, instant hide on Home and Recents (Instagram AND TikTok)
+
+Start over the limit (limit 5, count 5 or more). Do each check once on Instagram and once on TikTok.
+
+11. [ ] **Audio paused on lock.** Play a reel with sound, swipe past the limit: the lock shows and the
+    sound stops (no audio from the next reel under it). Music from another app also pauses (a media
+    PAUSE key and audio focus are used). Tap Leave reels: nothing resumes by itself.
+12. [ ] **Instant lock on re-entry.** With the lock active, press Home, then open the app again.
+    TikTok: the lock is on the very first frame, the video never plays on screen or out loud, even
+    for a second (a cover over the whole app first, then fitted to the reels area). Instagram: open
+    it on the Reels tab: the lock shows on the first evaluation, no throttle. Instagram opening on
+    the feed/Home tab shows no lock until you open Reels (the feed and DMs stay usable).
+13. [ ] **TikTok on a non-reels first screen.** Open TikTok on Profile or Inbox while locked: the
+    cover shows and is removed after about 3 s when no reels surface appears.
+14. [ ] **Instant hide on Recents.** With the lock up, open Recents (button or swipe up and hold):
+    the lock (and, in a count test, the badge) is gone within about 0.15 s and never shrinks into
+    the app card. Swipe the app away or tap it again: the lock returns only once the reels surface
+    is back and you are still over the limit.
+15. [ ] **Instant hide on Home.** With the lock up (and again with the badge up under the limit),
+    press Home: both are gone at once, not after a pause.
+16. [ ] A notification shade, volume panel or a popup pulled over the app for under 0.4 s does not
+    hide the lock (those windows are debounced); Settings still hides it at once.
+17. [ ] Samsung / Xiaomi / ColorOS launchers: repeat 14 and 15 on the phone's own launcher. If the
+    lock lingers on an OEM, note its launcher package (`adb shell cmd package resolve-activity -a
+    android.intent.action.MAIN -c android.intent.category.HOME`).
+
 ## D. Settings
 
 1. [ ] Limit lower: set 100, then 60. Applies at once, Home shows 60.
