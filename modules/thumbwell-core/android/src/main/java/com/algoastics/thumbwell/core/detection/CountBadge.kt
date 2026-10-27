@@ -169,7 +169,7 @@ class CountBadge(
       orientation = LinearLayout.HORIZONTAL
       gravity = Gravity.CENTER_VERTICAL
       setPadding(dp(46f), 0, dp(16f), 0)
-      elevation = dp(2f).toFloat()
+      elevation = dp(PILL_ELEVATION).toFloat()
       alpha = 0f
       addView(counter, LinearLayout.LayoutParams(-2, -2))
     }
@@ -183,6 +183,10 @@ class CountBadge(
       scaleX = REST_SCALE
       scaleY = REST_SCALE
       alpha = 0f
+      // Android draws by elevation first and child order second. The pill has an elevation, so the
+      // Thumb needs a higher one or it is drawn BEHIND the pill (device bug, M3b). Keep it above
+      // every pill elevation, including the lifted one while dragging.
+      elevation = dp(THUMB_ELEVATION).toFloat()
     }
     val holder = FrameLayout(service).apply {
       clipChildren = false
@@ -627,7 +631,7 @@ class CountBadge(
     machine.reducedMotion = reduced()
     if (machine.mode == BadgeMachine.Mode.RESTING) apply(machine.wake())
     dragging = true
-    pill?.let { styleCapsule(snapped = false, lifted = true); it.elevation = dp(3f).toFloat() }
+    pill?.let { styleCapsule(snapped = false, lifted = true); it.elevation = dp(PILL_LIFTED_ELEVATION).toFloat() }
     if (!machine.reducedMotion) {
       content?.let {
         it.pivotX = (window?.width ?: 0) / 2f
@@ -654,7 +658,7 @@ class CountBadge(
       root.translationX = 0f
       content?.let { it.scaleX = 1f; it.scaleY = 1f }
       styleCapsule(snapped = true, lifted = false)
-      pill?.elevation = dp(2f).toFloat()
+      pill?.elevation = dp(PILL_ELEVATION).toFloat()
       if (root.isAttachedToWindow) windowManager.updateViewLayout(root, p)
       prefs.setBadgePosition(position)
       restartRest()
@@ -685,6 +689,9 @@ class CountBadge(
     const val THUMB_W = 53.333f
     const val THUMB_H = 60f
     const val THUMB_RISE = 18f
+    const val PILL_ELEVATION = 2f
+    const val PILL_LIFTED_ELEVATION = 3f
+    const val THUMB_ELEVATION = 6f // above both pill elevations: the Thumb is in front of the pill
     const val REST_W = 48f
     const val REST_H = 60f
     const val REST_ALPHA = 0.4f
