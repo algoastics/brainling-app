@@ -46,6 +46,6 @@ describe('disclosure version 2 (F03, D42)', () => {
     expect(plugin).toContain(
       "'Thumbwell counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a small on-screen counter you can switch off, and, at your limit, covers the reels screen or goes back. Everything is processed on your phone.'",
     );
-    expect(plugin).toContain('props.serviceDescription ??\n    SERVICE_DESCRIPTION');
+    expect(plugin).toMatch(/props\.serviceDescription\s*\?\?\s*SERVICE_DESCRIPTION/);
   });
 });
