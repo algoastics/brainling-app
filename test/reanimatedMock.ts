@@ -24,6 +24,30 @@ const lastOf = <T>(...values: T[]) => values[values.length - 1];
 type Builder = { duration: () => Builder; delay: () => Builder };
 const animation: Builder = { duration: () => animation, delay: () => animation };
 
+/** Piecewise-linear interpolation with clamped ends (Reanimated `interpolate`). */
+function interpolate(value: number, input: number[], output: number[]): number {
+  const last = input.length - 1;
+  if (value <= (input[0] ?? 0)) return output[0] ?? 0;
+  for (let i = 1; i <= last; i++) {
+    const hi = input[i] ?? 0;
+    if (value <= hi) {
+      const lo = input[i - 1] ?? 0;
+      const from = output[i - 1] ?? 0;
+      return from + ((value - lo) / (hi - lo)) * ((output[i] ?? from) - from);
+    }
+  }
+  return output[last] ?? 0;
+}
+
+/** Colour interpolation reduced to the nearest stop (enough for rendered final styles). */
+function interpolateColor(value: number, input: number[], output: string[]): string {
+  let nearest = 0;
+  input.forEach((stop, i) => {
+    if (Math.abs(stop - value) < Math.abs((input[nearest] ?? 0) - value)) nearest = i;
+  });
+  return output[nearest] ?? '';
+}
+
 const reanimated = {
   __esModule: true,
   default: {
@@ -42,6 +66,9 @@ const reanimated = {
   withSequence: lastOf,
   withRepeat: identity,
   cancelAnimation: () => undefined,
+  interpolate,
+  interpolateColor,
+  Extrapolation: { CLAMP: 'clamp' },
   Easing: { bezier: () => identity },
   FadeIn: animation,
   FadeOut: animation,
