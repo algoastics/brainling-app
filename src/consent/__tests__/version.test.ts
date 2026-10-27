@@ -13,19 +13,19 @@ const nativePrefs = readFileSync(
   'utf8',
 );
 
-describe('disclosure version 3 (F03, D42, pause)', () => {
-  it('is 3 and equals the native Disclosure.CURRENT_VERSION', () => {
-    expect(DISCLOSURE_VERSION).toBe('3');
+describe('disclosure version 2 (F03, D42)', () => {
+  it('is 2 and equals the native Disclosure.CURRENT_VERSION', () => {
+    expect(DISCLOSURE_VERSION).toBe('2');
     expect(nativePrefs).toContain(`const val CURRENT_VERSION = "${DISCLOSURE_VERSION}"`);
   });
 
-  it('uses the Scope v3 F03 wording, with the counter and pause sentences', () => {
+  it('uses the Scope v3 F03 wording, with the counter sentence', () => {
     expect(en.disclosure.title).toBe('Thumbwell uses Accessibility to count your reels.');
     expect(en.disclosure.p1).toBe(
       "To count Instagram Reels, YouTube Shorts and TikTok videos, Thumbwell uses Android's AccessibilityService API. Only while one of these apps is open, it reads the structure of the screen on your phone — which screen is showing, the labels of on-screen elements, and scroll events — to tell when a new short video starts.",
     );
     expect(en.disclosure.p2).toBe(
-      "We use this only to count the short videos you watch and show you your count. While one of these apps is open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to cover the reels screen, to pause the video that is playing (it may tap the screen once), and, when you tap Leave reels, to take you to the app's Home screen.",
+      'We use this only to count the short videos you watch and show you your count. While one of these apps is open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to cover the reels screen or go back.',
     );
     expect(en.disclosure.p3).toBe(
       'Everything is processed on your phone. Thumbwell does not store any text it sees, does not record your screen, and does not keep or send your messages, comments or anything about the videos. Your counts stay on your phone.',
@@ -44,7 +44,7 @@ describe('disclosure version 3 (F03, D42, pause)', () => {
       'utf8',
     );
     expect(plugin).toContain(
-      "'Thumbwell counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a small on-screen counter you can switch off, and, at your limit, covers the reels screen and may pause the video. Everything is processed on your phone.'",
+      "'Thumbwell counts the Instagram Reels, YouTube Shorts and TikTok videos you watch, shows your count on a small on-screen counter you can switch off, and, at your limit, covers the reels screen or goes back. Everything is processed on your phone.'",
     );
     expect(plugin).toMatch(/props\.serviceDescription\s*\?\?\s*SERVICE_DESCRIPTION/);
   });

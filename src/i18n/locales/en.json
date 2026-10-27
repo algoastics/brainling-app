@@ -44,7 +44,7 @@
     "pointLock": "Shows the lock screen when you hit your limit",
     "pointPrivacy": "Never reads your messages, never sends screen content anywhere",
     "p1": "To count Instagram Reels, YouTube Shorts and TikTok videos, Thumbwell uses Android's AccessibilityService API. Only while one of these apps is open, it reads the structure of the screen on your phone — which screen is showing, the labels of on-screen elements, and scroll events — to tell when a new short video starts.",
-    "p2": "We use this only to count the short videos you watch and show you your count. While one of these apps is open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to cover the reels screen, to pause the video that is playing (it may tap the screen once), and, when you tap Leave reels, to take you to the app's Home screen.",
+    "p2": "We use this only to count the short videos you watch and show you your count. While one of these apps is open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to cover the reels screen or go back.",
     "p3": "Everything is processed on your phone. Thumbwell does not store any text it sees, does not record your screen, and does not keep or send your messages, comments or anything about the videos. Your counts stay on your phone.",
     "p4": "You can turn this off at any time in Android Settings → Accessibility.",
     "scrollHint": "Scroll to read all",

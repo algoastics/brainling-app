@@ -104,13 +104,12 @@ describe('disclosure gating', () => {
     expect(core.openAccessibilitySettings).not.toHaveBeenCalled();
   });
 
-  it('shows the counter and pause sentences and logs consent for "3"', async () => {
+  it('shows the version 2 counter sentence and logs consent for "2"', async () => {
     await render(<DisclosureScreen />);
     expect(screen.getByText(/shows a small movable counter on top of it/)).toBeTruthy();
-    expect(screen.getByText(/to pause the video that is playing/)).toBeTruthy();
     await fireEvent.press(screen.getByTestId('disclosure-check'));
     await fireEvent.press(screen.getByRole('button', { name: 'Agree & continue' }));
-    await waitFor(() => expect(core.setConsent).toHaveBeenCalledWith('3'));
+    await waitFor(() => expect(core.setConsent).toHaveBeenCalledWith('2'));
   });
 
   it('does not continue when consent could not be logged', async () => {
