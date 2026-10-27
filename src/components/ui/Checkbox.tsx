@@ -11,13 +11,15 @@ export type CheckboxProps = {
   onChange: (value: boolean) => void;
   label: string;
   disabled?: boolean;
+  testID?: string;
 };
 
 /** C02 — Checkbox with a label; the whole row is the touch target. */
-export function Checkbox({ value, onChange, label, disabled = false }: CheckboxProps) {
+export function Checkbox({ value, onChange, label, disabled = false, testID }: CheckboxProps) {
   const { colors } = useTheme();
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: value, disabled }}
       accessibilityLabel={label}
@@ -36,7 +38,7 @@ export function Checkbox({ value, onChange, label, disabled = false }: CheckboxP
       >
         {value ? <Icon name="check" size={16} color="brandOnPrimary" strokeWidth={3} /> : null}
       </View>
-      <Text variant="body" style={styles.label}>
+      <Text variant="label" color="textSecondary" style={styles.label}>
         {label}
       </Text>
     </Pressable>
@@ -44,8 +46,14 @@ export function Checkbox({ value, onChange, label, disabled = false }: CheckboxP
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: space[12], minHeight: layout.minTouch },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space[12],
+    minHeight: layout.minTouch,
+  },
   box: {
+    marginTop: space[4],
     width: 24,
     height: 24,
     borderRadius: radius.xs - 2,

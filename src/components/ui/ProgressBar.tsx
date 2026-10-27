@@ -49,7 +49,10 @@ export function ProgressBar({ value, tone = 'brand', accessibilityLabel }: Progr
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
-      style={[styles.track, { backgroundColor: colors.bgPrimarySoft }]}
+      style={[
+        styles.track,
+        { backgroundColor: colors.bgSurface2, borderColor: colors.borderDefault },
+      ]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: fill }, fillStyle]} />
     </View>
@@ -61,6 +64,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: sizes.progressHeight,
     borderRadius: radius.pill,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: radius.pill },

@@ -20,7 +20,7 @@ export type TabBarProps = {
 
 /**
  * Tab bar (Figma "Tab bar": 72 high, surface, 1dp top border; the active tab gets a 56x32 soft
- * violet pill behind its icon and an accent label). Figma lists Home, Limits, Settings.
+ * violet pill behind its icon and an accent label). Phase 0 has Home and Settings only (the Figma frame's third tab is not built).
  */
 export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarProps) {
   const { colors } = useTheme();

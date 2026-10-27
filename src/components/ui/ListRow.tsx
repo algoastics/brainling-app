@@ -1,94 +1,126 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { space, useTheme } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 
+import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
-import { Icon } from './Icon';
-import { Toggle } from './Toggle';
-
-export type ListRowToggle = { value: boolean; onChange: (value: boolean) => void };
 
 export type ListRowProps = {
   title: string;
-  icon?: ReactNode;
   subtitle?: string;
+  /** Leading 40dp tile icon (Figma: soft violet tile, radius 12). */
+  icon?: IconName;
+  /** Trailing value text, in the accent colour. */
   value?: string;
-  chevron?: boolean;
-  toggle?: ListRowToggle;
+  /** Trailing glyph: a chevron (opens a screen) or the external-link mark (leaves the app). */
+  trailing?: 'chevron' | 'external';
   danger?: boolean;
   onPress?: () => void;
+  testID?: string;
 };
 
-/** C03 — ListRow. Min height 56; trailing value, chevron or toggle. */
+/** List row (Figma "List row"): optional icon tile, title and subtitle, value, chevron. */
 export function ListRow({
   title,
-  icon,
   subtitle,
+  icon,
   value,
-  chevron = false,
-  toggle,
+  trailing,
   danger = false,
   onPress,
+  testID,
 }: ListRowProps) {
   const { colors } = useTheme();
+  const ink = danger ? 'statusDangerStrong' : 'textPrimary';
   const content = (
     <>
-      {icon ? <View style={styles.icon}>{icon}</View> : null}
+      {icon ? (
+        <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
+          <Icon name={icon} size={20} color={danger ? 'statusDangerStrong' : 'brandAccentText'} />
+        </View>
+      ) : null}
       <View style={styles.text}>
-        <Text variant="body.lg" style={{ color: danger ? colors.bad : colors.ink }}>
+        <Text variant="body" color={ink}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="body.sm" color="muted">
+          <Text variant="caption" color="textMuted">
             {subtitle}
           </Text>
         ) : null}
       </View>
       {value ? (
-        <Text variant="body.md" color="ink2">
+        <Text variant="label" color="brandAccentText">
           {value}
         </Text>
       ) : null}
-      {toggle ? (
-        <Toggle value={toggle.value} onChange={toggle.onChange} accessibilityLabel={title} />
+      {trailing ? (
+        <Icon name={trailing === 'external' ? 'external' : 'chevron'} size={20} color="textMuted" />
       ) : null}
-      {chevron ? <Icon name="chevron" color="textMuted" /> : null}
     </>
   );
-
-  if (onPress && !toggle) {
+  if (!onPress) {
     return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={[title, subtitle, value].filter(Boolean).join(', ')}
-        onPress={onPress}
-        style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surface2 }]}
-      >
+      <View testID={testID} style={styles.row}>
         {content}
-      </Pressable>
+      </View>
     );
   }
-  return <View style={styles.row}>{content}</View>;
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={value ? `${title}, ${value}` : title}
+      onPress={onPress}
+      style={styles.row}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+/** A white group of rows with hairline dividers (Figma "Settings group": radius 20, 1.5dp border). */
+export function ListGroup({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  const rows = Children.toArray(children);
+  return (
+    <View
+      style={[
+        styles.group,
+        { backgroundColor: colors.bgSurface, borderColor: colors.borderDefault },
+      ]}
+    >
+      {rows.map((row, i) => (
+        <View
+          key={i}
+          style={
+            i < rows.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderDefault }
+          }
+        >
+          {row}
+        </View>
+      ))}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
+  group: { borderRadius: radius.lg, borderWidth: 1.5, overflow: 'hidden' },
   row: {
-    minHeight: 56,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[12],
     paddingHorizontal: space[16],
-    paddingVertical: space[8],
+    paddingVertical: space[12],
   },
-  icon: { width: 24, alignItems: 'center' },
-  text: { flex: 1, gap: 2 },
-  chevron: {
-    width: 9,
-    height: 9,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    transform: [{ rotate: '45deg' }],
-    marginRight: 4,
+  tile: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  text: { flex: 1, gap: space[2] },
 });

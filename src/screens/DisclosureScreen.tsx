@@ -1,0 +1,138 @@
+import ThumbwellCore from 'thumbwell-core';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Button, Checkbox, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
+import { appConfig } from '@/config/appConfig';
+import { DISCLOSURE_VERSION } from '@/consent/version';
+import { useT } from '@/i18n';
+import { useAppStore } from '@/state/appStore';
+import { radius, space, useTheme } from '@/theme';
+
+const POINTS = ['pointCount', 'pointLock', 'pointPrivacy'] as const;
+const PARAGRAPHS = ['p1', 'p2', 'p3', 'p4'] as const;
+
+/**
+ * S06 Accessibility disclosure (step 3 of 3 during onboarding). Shown before EVERY deep link to
+ * the system Accessibility settings, including the Home banner and the watchdog re-enable link.
+ * "Agree & continue" stays disabled until the box is ticked, then logs consent natively.
+ */
+export function DisclosureScreen() {
+  const t = useT();
+  const { colors } = useTheme();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const onboarding = from === undefined || from === 'onboarding';
+  const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+  const [checked, setChecked] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const agree = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await ThumbwellCore.setConsent(DISCLOSURE_VERSION);
+      router.replace('/guide');
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const notNow = () => {
+    if (onboarding) {
+      completeOnboarding();
+      router.replace('/(tabs)');
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
+  const openPrivacy = () => void Linking.openURL(appConfig.privacyPolicyUrl).catch(() => undefined);
+
+  return (
+    <Screen spread testID="disclosure">
+      <ScreenGroup>
+        {onboarding ? (
+          <Text variant="caption" color="textMuted">
+            {t('common.step', { current: 3, total: 3 })}
+          </Text>
+        ) : null}
+        <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
+          <Icon name="shield" size={24} color="brandAccentText" />
+        </View>
+        <Text variant="h1" accessibilityRole="header">
+          {t('disclosure.title')}
+        </Text>
+        <View style={styles.points}>
+          {POINTS.map((key) => (
+            <View key={key} style={styles.point}>
+              <Icon name="check" size={20} color="statusGoodText" />
+              <Text variant="label" style={styles.pointText}>
+                {t(`disclosure.${key}`)}
+              </Text>
+            </View>
+          ))}
+        </View>
+        <View
+          style={[styles.box, { backgroundColor: colors.bgSurface2 }]}
+          accessibilityLabel={t('disclosure.title')}
+        >
+          <ScrollView nestedScrollEnabled testID="disclosure-text" persistentScrollbar>
+            {PARAGRAPHS.map((key) => (
+              <Text key={key} variant="caption" color="textSecondary" style={styles.paragraph}>
+                {t(`disclosure.${key}`)}
+              </Text>
+            ))}
+          </ScrollView>
+        </View>
+        <Text variant="caption" color="textMuted">
+          {t('disclosure.scrollHint')}
+        </Text>
+      </ScreenGroup>
+      <ScreenGroup>
+        <Checkbox
+          testID="disclosure-check"
+          value={checked}
+          onChange={setChecked}
+          label={t('disclosure.check')}
+        />
+        {failed ? (
+          <Text variant="label" color="statusDangerStrong" accessibilityLiveRegion="polite">
+            {t('disclosure.saveError')}
+          </Text>
+        ) : null}
+        <Button label={t('disclosure.agree')} onPress={agree} disabled={!checked} loading={busy} />
+        <View style={styles.links}>
+          <Button kind="ghost" size="sm" label={t('disclosure.notNow')} onPress={notNow} />
+          <Button kind="ghost" size="sm" label={t('disclosure.privacy')} onPress={openPrivacy} />
+        </View>
+      </ScreenGroup>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  tile: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  points: { gap: space[8] },
+  point: { flexDirection: 'row', alignItems: 'center', gap: space[8] },
+  pointText: { flex: 1 },
+  box: {
+    height: 128,
+    borderRadius: radius.md,
+    paddingHorizontal: space[16],
+    paddingVertical: space[12],
+  },
+  paragraph: { marginBottom: space[8] },
+  links: { flexDirection: 'row', gap: space[12], justifyContent: 'center' },
+});

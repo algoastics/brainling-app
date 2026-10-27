@@ -4,7 +4,7 @@ import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 
-import { AppBar, Button, Card, ListRow, Screen, Text } from '@/components/ui';
+import { Button, Card, ListRow, Screen, Text, TopBar } from '@/components/ui';
 import { useServiceStatus, useTodayCounts } from '@/detection';
 import { space } from '@/theme';
 
@@ -61,8 +61,7 @@ function DetectionDebugScreen() {
   const last = debug?.last;
 
   return (
-    <Screen>
-      <AppBar title="Detection debug" onBack={() => router.back()} />
+    <Screen header={<TopBar title="Detection debug" onBack={() => router.back()} />}>
       <Card>
         <ListRow
           title="Accessibility service"
@@ -77,14 +76,14 @@ function DetectionDebugScreen() {
         <Button kind="ghost" label="Refresh" onPress={() => void refresh()} />
       </Card>
       <Card>
-        <Text variant="heading.h3">Today · {counts?.date ?? '—'}</Text>
-        <Text variant="display.lg">{counts?.total ?? 0}</Text>
+        <Text variant="h3">Today · {counts?.date ?? '—'}</Text>
+        <Text variant="display">{counts?.total ?? 0}</Text>
         {Object.entries(counts?.apps ?? {}).map(([app, n]) => (
           <ListRow key={app} title={app} value={String(n)} />
         ))}
       </Card>
       <Card>
-        <Text variant="heading.h3">Last detection</Text>
+        <Text variant="h3">Last detection</Text>
         {last ? (
           <View style={styles.rows}>
             <ListRow title="Package" subtitle={last.packageName} />
@@ -106,12 +105,12 @@ function DetectionDebugScreen() {
             <ListRow title="At" value={new Date(last.atMs).toLocaleTimeString()} />
           </View>
         ) : (
-          <Text color="muted">No reels surface seen yet.</Text>
+          <Text color="textMuted">No reels surface seen yet.</Text>
         )}
       </Card>
       <Card>
-        <Text variant="heading.h3">Capture layout</Text>
-        <Text color="muted">
+        <Text variant="h3">Capture layout</Text>
+        <Text color="textMuted">
           {debug?.captureArmed
             ? 'Recording: open a reels app and swipe. Every event and a tree per count/page is logged.'
             : 'Logs events plus view ids, classes, bounds and flags of a reels-app session. No text.'}

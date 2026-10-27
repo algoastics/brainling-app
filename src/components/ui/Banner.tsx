@@ -1,38 +1,42 @@
 import { StyleSheet, View } from 'react-native';
 
-import { radius, space, useTheme, type ColorTokens } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 
 import { Button } from './Button';
 import { Text } from './Text';
 import type { Action } from './types';
 
-export type BannerTone = 'info' | 'good' | 'warn' | 'bad';
+export type BannerTone = 'info' | 'warn';
 
 export type BannerProps = {
   title: string;
   body?: string;
   tone?: BannerTone;
   actions?: readonly Action[];
+  testID?: string;
 };
 
-const toneColors: Record<BannerTone, [keyof ColorTokens, keyof ColorTokens]> = {
-  info: ['infoSoft', 'info'],
-  good: ['goodSoft', 'good'],
-  warn: ['warnSoft', 'warn'],
-  bad: ['badSoft', 'bad'],
-};
-
-/** C10 — inline Banner for status messages (offline, service off, warnings). */
-export function Banner({ title, body, tone = 'info', actions = [] }: BannerProps) {
+/** Inline status banner (counting paused, etc.): notice-card look, warm border for `warn`. */
+export function Banner({ title, body, tone = 'info', actions = [], testID }: BannerProps) {
   const { colors } = useTheme();
-  const [bg, edge] = toneColors[tone];
   return (
     <View
+      testID={testID}
       accessibilityRole="summary"
-      style={[styles.banner, { backgroundColor: colors[bg], borderLeftColor: colors[edge] }]}
+      style={[
+        styles.banner,
+        {
+          backgroundColor: tone === 'warn' ? colors.bgSurface : colors.bgPrimarySoft,
+          borderColor: tone === 'warn' ? colors.statusWarn : 'transparent',
+        },
+      ]}
     >
-      <Text variant="body.lg">{title}</Text>
-      {body ? <Text color="ink2">{body}</Text> : null}
+      <Text variant="h3">{title}</Text>
+      {body ? (
+        <Text variant="body" color="textSecondary">
+          {body}
+        </Text>
+      ) : null}
       {actions.length > 0 ? (
         <View style={styles.actions}>
           {actions.map((a) => (
@@ -51,6 +55,6 @@ export function Banner({ title, body, tone = 'info', actions = [] }: BannerProps
 }
 
 const styles = StyleSheet.create({
-  banner: { borderRadius: radius.md, borderLeftWidth: 4, padding: space[16], gap: space[4] },
+  banner: { borderRadius: radius.lg, borderWidth: 2, padding: space[16], gap: space[4] },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space[8], marginTop: space[8] },
 });

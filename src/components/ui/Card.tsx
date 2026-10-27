@@ -1,29 +1,15 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { radius, space, useTheme, type ColorTokens } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 
-export type CardTone =
-  'default' | 'tint' | 'notice' | 'primary' | 'accent' | 'good' | 'warn' | 'bad' | 'info';
+/** default = white surface; tint = soft violet; notice = surface with a warm 2dp border. */
+export type CardTone = 'default' | 'tint' | 'notice';
 
 export type CardProps = {
   children: ReactNode;
-  /** @deprecated Cards prefer a border over a shadow; kept for old screens, ignored. */
-  elevated?: boolean;
   tone?: CardTone;
   style?: ViewStyle;
-};
-
-const toneBg: Record<CardTone, keyof ColorTokens> = {
-  default: 'bgSurface',
-  tint: 'bgPrimarySoft',
-  notice: 'bgSurface',
-  primary: 'bgPrimarySoft',
-  accent: 'bgPrimarySoft',
-  good: 'goodSoft',
-  warn: 'warnSoft',
-  bad: 'badSoft',
-  info: 'infoSoft',
 };
 
 /** Card (Figma "Card": radius 20, 1.5dp border not shadow, padding 20; tint and notice kinds). */
@@ -40,7 +26,7 @@ export function Card({ children, tone = 'default', style }: CardProps) {
       style={[
         styles.card,
         {
-          backgroundColor: colors[toneBg[tone]],
+          backgroundColor: tone === 'tint' ? colors.bgPrimarySoft : colors.bgSurface,
           borderColor: border,
           borderWidth: tone === 'notice' ? 2 : 1.5,
         },
@@ -53,5 +39,5 @@ export function Card({ children, tone = 'default', style }: CardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.lg, padding: space[20] },
+  card: { borderRadius: radius.lg, padding: space[20], gap: space[4] },
 });

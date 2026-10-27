@@ -1,349 +1,168 @@
 {
-  "app": {
-    "name": "Thumbwell",
-    "tagline": "Count less. Live more."
-  },
-  "splash": {
-    "storageError": "Something went wrong — restart",
-    "retry": "Retry"
-  },
-  "platforms": {
-    "title": "Today's reels",
-    "subtitle": "Thumbwell's mood follows how many reels you watch on each app.",
-    "count": "{{count}} reels",
-    "name": {
-      "instagram": "Instagram",
-      "youtube": "YouTube",
-      "tiktok": "TikTok",
-      "facebook": "Facebook",
-      "snapchat": "Snapchat"
-    }
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "step": "{{current}} of {{total}}"
   },
   "tabs": {
     "home": "Home",
-    "stats": "Stats",
-    "me": "Me"
+    "settings": "Settings"
   },
-  "me": {
-    "designSystem": "Design system",
-    "detectionDebug": "Detection debug"
-  },
-  "common": {
-    "back": "Back",
-    "close": "Close",
-    "proFeature": "Pro feature",
-    "pro": "PRO"
-  },
-  "a11y": {
-    "coins_one": "{{count}} coin",
-    "coins_other": "{{count}} coins",
-    "streak_one": "{{count}} day streak",
-    "streak_other": "{{count}} day streak",
-    "streakFrozen_one": "{{count}} day streak, frozen",
-    "streakFrozen_other": "{{count}} day streak, frozen"
+  "splash": {
+    "tagline": "Swipe less. Feel well.",
+    "storageError": "Thumbwell could not open its secure storage.",
+    "retry": "Try again"
   },
   "mascot": {
-    "label": "Thumbwell is {{state}}: {{line}}",
-    "state": {
-      "glowing": "glowing",
-      "happy": "happy",
-      "meh": "meh",
-      "fried": "fried",
-      "zombie": "a zombie",
-      "sleeping": "sleeping",
-      "recovering": "recovering",
-      "ghost": "a ghost"
+    "label": "Thumb, the Thumbwell mascot"
+  },
+  "welcome": {
+    "title": "Swipe less. Feel well.",
+    "body": "Thumbwell counts the Reels, Shorts and TikToks you watch and pauses them when you reach your daily limit. No account needed.",
+    "testTitle": "Test version",
+    "testBody": "Counting works on Instagram, YouTube and TikTok. Thanks for helping us test!",
+    "cta": "Let's set it up",
+    "takes": "Takes about a minute"
+  },
+  "limit": {
+    "title": "Set your daily reel limit",
+    "body": "All apps together. When you reach it, reels pause until tomorrow.",
+    "unit": "reels per day",
+    "less": "Fewer reels",
+    "more": "More reels",
+    "preset": "{{count}} reels",
+    "estimate": "About 1 reel = 20–30 seconds. {{count}} reels ≈ {{minutes}} minutes (estimate).",
+    "cardTitle": "At your limit",
+    "cardBody": "A calm lock screen covers Reels, Shorts and TikTok. DMs and the rest of each app still work.",
+    "cta": "Continue",
+    "saveError": "Could not save your limit. Try again."
+  },
+  "disclosure": {
+    "title": "Thumbwell uses Accessibility to count your reels.",
+    "pointCount": "Counts reels on your phone",
+    "pointLock": "Shows the lock screen when you hit your limit",
+    "pointPrivacy": "Never reads your messages, never sends screen content anywhere",
+    "p1": "To count Instagram Reels, YouTube Shorts and TikTok videos, Thumbwell uses Android's AccessibilityService API. Only while one of these apps is open, it reads the structure of the screen on your phone — which screen is showing, the labels of on-screen elements, and scroll events — to tell when a new short video starts.",
+    "p2": "We use this only to count the short videos you watch, show you your count, and, when you reach your limit, cover the reels screen or go back.",
+    "p3": "Everything is processed on your phone. Thumbwell does not store any text it sees, does not record your screen, and does not keep or send your messages, comments or anything about the videos. Your counts stay on your phone.",
+    "p4": "You can turn this off at any time in Android Settings → Accessibility.",
+    "scrollHint": "Scroll to read all",
+    "check": "I understand and agree that Thumbwell uses the Accessibility service as described above.",
+    "agree": "Agree & continue",
+    "notNow": "Not now",
+    "privacy": "Privacy details",
+    "saveError": "Could not save your choice. Try again."
+  },
+  "guide": {
+    "title": "Turn on Thumbwell in Accessibility",
+    "path": "Settings → Accessibility → Installed apps → Thumbwell → ON",
+    "panelTitle": "Accessibility",
+    "rowInstalled": "Installed apps",
+    "rowTalkback": "TalkBack",
+    "rowThumbwell": "Thumbwell",
+    "rowSpeak": "Select to Speak",
+    "headsUpTitle": "Heads-up",
+    "headsUp": "Android shows a strong warning for every Accessibility app. That is normal. Thumbwell only does what the previous screen lists.",
+    "open": "Open Accessibility settings",
+    "help": "Need help?",
+    "helpTitle": "Cannot find it?",
+    "helpBody": "Open Accessibility settings, choose Installed apps (on some phones Downloaded apps), tap Thumbwell and switch it on. Then come back here.",
+    "stillOff": "Still off, try again",
+    "stillOffBody": "Thumbwell is not switched on yet. Open Accessibility settings and turn it on.",
+    "restrictedTitle": "Switch greyed out?",
+    "restrictedBody": "Android 13 and newer blocks Accessibility for apps installed outside Google Play. Open App info, tap the three dots at the top right, choose Allow restricted settings, then turn Thumbwell on.",
+    "openAppInfo": "Open App info",
+    "successTitle": "Thumbwell is on",
+    "successBody": "Counting starts now. Reels, Shorts and TikToks you watch will show up on Home.",
+    "home": "Go to Home",
+    "panelHint": "Example of the Android Accessibility screen. Your phone may look a little different."
+  },
+  "home": {
+    "title": "Today",
+    "ofLimit": "of {{count}} reels today",
+    "left_one": "{{count}} reel left today",
+    "left_other": "{{count}} reels left today",
+    "over": "{{count}} over your limit today",
+    "none": "0 reels so far.",
+    "countingOn": "Counting on",
+    "pausedTitle": "Counting is paused",
+    "paused": {
+      "service_disabled": "Thumbwell is switched off in Accessibility settings, so nothing is being counted.",
+      "service_not_running": "Thumbwell is switched on but not running yet. Open Accessibility settings and switch it off and on again.",
+      "consent_missing": "Thumbwell needs your OK to use Accessibility before it can count.",
+      "no_rules": "Thumbwell has nothing to count right now."
     },
-    "line": {
-      "glowing": "Big brain energy today.",
-      "happy": "We’re doing great.",
-      "meh": "One more? …said every reel ever.",
-      "fried": "I feel… crispy.",
-      "zombie": "Braaains… (need sleep).",
-      "sleeping": "Shh.",
-      "recovering": "Fresh start. Go easy on me.",
-      "ghost": "I can’t feel your reels."
+    "turnOn": "Turn it back on",
+    "notInstalled": "Not installed",
+    "iconNote": "App icons come from the apps installed on your phone.",
+    "apps": {
+      "instagram": {
+        "name": "Instagram",
+        "unit": "Reels today"
+      },
+      "youtube": {
+        "name": "YouTube",
+        "unit": "Shorts today"
+      },
+      "tiktok": {
+        "name": "TikTok",
+        "unit": "Videos today"
+      }
+    },
+    "progress": "{{count}} of {{limit}} reels today"
+  },
+  "lock": {
+    "chip": "Daily limit reached",
+    "title": "That's {{count}} reels. Time for a break.",
+    "body": "Reels, Shorts and TikTok are locked until {{time}}. DMs and the rest of each app still work.",
+    "leave": "Leave reels",
+    "today": "Today: {{count}} reels"
+  },
+  "settings": {
+    "title": "Settings",
+    "limit": "Daily limit",
+    "limitValue": "{{count}} reels",
+    "limitPending": "{{count}} reels from tomorrow",
+    "counting": "Counting",
+    "countingOn": "On",
+    "countingPaused": "Paused",
+    "dayStart": "Day starts at",
+    "disclosure": "Accessibility disclosure",
+    "privacy": "Privacy policy",
+    "feedback": "Send feedback",
+    "about": "About",
+    "delete": "Delete my data",
+    "version": "Version",
+    "disclaimer": "Not affiliated with or endorsed by Meta, Google/YouTube, TikTok or Snap Inc. All trademarks belong to their owners.",
+    "limitDialog": {
+      "title": "Daily limit",
+      "lower": "A lower limit applies right away.",
+      "higher": "A higher limit applies from tomorrow, when your day starts at {{time}}.",
+      "same": "This is your current limit.",
+      "pending": "A change to {{count}} reels is already waiting for tomorrow.",
+      "error": "Could not save your limit. Try again."
+    },
+    "dayDialog": {
+      "title": "Day starts at",
+      "body": "Your count and your limit reset at this time every day.",
+      "error": "Could not save the time. Try again."
+    },
+    "deleteDialog": {
+      "title": "Delete my data?",
+      "body": "This removes your counts, your limit and your settings from this phone. Thumbwell will start over from the welcome screen.",
+      "confirm": "Delete",
+      "error": "Could not delete your data. Try again."
+    },
+    "feedbackSubject": "Thumbwell feedback",
+    "feedbackIntro": "Write your feedback above this line.",
+    "dev": {
+      "lockPreview": "Lock screen preview",
+      "debug": "Detection debug"
     }
   },
-  "reenable": {
-    "title": "Thumbwell stopped counting",
-    "body": "Thumbwell's accessibility service was turned off, so reels aren't being counted. This sometimes happens when a banking or payment app asks you to turn accessibility off.",
-    "steps": "Tap the button, find Thumbwell under Installed apps, and turn it on.",
-    "cta": "Open accessibility settings",
-    "ctaHint": "Opens Android accessibility settings",
-    "later": "Not now",
-    "done": "You're all set — Thumbwell is counting again.",
-    "home": "Back to Thumbwell"
-  },
-  "onboarding": {
-    "progress": "Step {{step}} of {{total}}",
-    "stepOf": "{{step}}/{{total}}",
-    "continue": "Continue",
-    "skip": "Skip",
-    "welcome": {
-      "next": "Next",
-      "getStarted": "Get started",
-      "cardPosition": "Card {{index}} of {{total}}",
-      "reelsToday": "reels today",
-      "card1": {
-        "title": "You scrolled 300 reels today. Did you notice?",
-        "body": "Thumbwell counts every reel and short — Instagram, YouTube, TikTok, Facebook and Snapchat.",
-        "art": "300 reels today, counted across your apps"
-      },
-      "card2": {
-        "title": "Meet your Thumbwell. It feels every reel.",
-        "body": "Stay under your budget and it glows. Doomscroll and it gets… crispy.",
-        "art": "A happy Thumbwell turning into a fried one"
-      },
-      "card3": {
-        "title": "Win the day. Keep your streak.",
-        "body": "Stay under your budget and your streak grows a little every day you scroll less.",
-        "art": "A glowing Thumbwell with a streak flame and a trophy"
-      }
-    },
-    "quiz": {
-      "title": "Which apps do you scroll?",
-      "subtitle": "Tick the apps you scroll.",
-      "apps": {
-        "instagram": "Instagram",
-        "youtube": "YouTube"
-      },
-      "guessTitle": "Guess your daily reels",
-      "guessLabel": "Your guess of reels per day",
-      "guessValue_one": "{{count}} reel",
-      "guessValue_other": "{{count}} reels",
-      "guessMin": "0",
-      "guessMax": "500+",
-      "goalsTitle": "Why are you here?",
-      "goals": {
-        "sleep": "Sleep better",
-        "focus": "Study/work focus",
-        "family": "Be present with family",
-        "curious": "Just curious"
-      }
-    },
-    "budget": {
-      "title": "Set your daily reel budget",
-      "subtitle": "This number decides your Thumbwell’s health and streak.",
-      "perDay": "reels a day",
-      "value_one": "{{count}} reel a day",
-      "value_other": "{{count}} reels a day",
-      "decrease": "Fewer reels",
-      "increase": "More reels",
-      "estimate": "About 1 reel = 20–30 seconds. {{count}} reels ≈ {{minutes}} min (estimate).",
-      "proTitle": "Pro: a different limit for each app",
-      "proSubtitle": "Set later in Limits",
-      "proHint": "Shows what Pro adds"
-    },
-    "m22": {
-      "title": "Per-app limits are Pro",
-      "body": "Give TikTok 10 and YouTube 30 — each app its own budget.",
-      "notNow": "Not now"
-    },
-    "hatch": {
-      "title": "Something is hatching…",
-      "subtitle_one": "Tap the brain-pod {{count}} time.",
-      "subtitle_other": "Tap the brain-pod {{count}} times.",
-      "eggLabel": "Brain-pod",
-      "tapCount": "Tap {{step}} of {{total}}",
-      "namedTitle": "Say hi to your Thumbwell!",
-      "nameLabel": "Name (2–14 characters, emoji OK)",
-      "nameError": "Name needs 2–14 characters.",
-      "colour": "Colour",
-      "colours": {
-        "pink": "Pink",
-        "ice": "Ice blue",
-        "mint": "Mint"
-      },
-      "moreInShop": "More in Shop",
-      "save": "Save name"
-    },
-    "disclosure": {
-      "title": "Thumbwell needs Accessibility to count your reels",
-      "points": {
-        "counts": "Counts reels on your phone",
-        "lock": "Shows the lock screen when you hit your limit",
-        "never": "Never reads your messages, never sends screen content anywhere"
-      },
-      "body": {
-        "what": "To count Reels, Shorts, TikToks and Spotlight videos, Thumbwell uses Android’s AccessibilityService API. While you use Instagram, Instagram Lite, YouTube, TikTok, Facebook, Facebook Lite or Snapchat, it reads screen layout information (which screen is open, the names of on-screen elements, and scroll events).",
-        "use": "We use this only to: count how many short videos you watch, show your count and mascot, and — if you set a limit — cover the reels screen or go back when you reach it.",
-        "never": "What we never do: we do not read or store your messages, comments, video titles or what is in the videos. We do not record your screen. Everything is processed on your phone and is not sent to us or anyone else.",
-        "off": "You can turn this off any time in Android Settings → Accessibility."
-      },
-      "consent": "I understand and agree that Thumbwell uses the Accessibility service as described above.",
-      "agree": "Agree & continue",
-      "agreeHint": "Tick the box above first",
-      "notNow": "Not now"
-    },
-    "restricted": {
-      "title": "Allow restricted settings first",
-      "subtitle": "Android 13+ blocks Accessibility for apps installed outside Google Play. Do this once:",
-      "steps": {
-        "appInfo": "Open App info for Thumbwell",
-        "menu": "Tap ⋮ (top right)",
-        "allow": "Tap “Allow restricted settings”",
-        "back": "Come back and turn on Accessibility"
-      },
-      "open": "Open App info",
-      "openHint": "Opens Thumbwell's App info in Android settings",
-      "done": "Done — turn on Accessibility"
-    },
-    "accessibility": {
-      "title": "Turn on Thumbwell in Accessibility",
-      "path": "Settings → Accessibility → Installed apps → Thumbwell → ON",
-      "open": "Open Accessibility settings",
-      "openHint": "Opens Android accessibility settings",
-      "help": "Need help?",
-      "stillOff": "Still off — try again",
-      "warning": "Android will show a scary warning. That’s normal for all Accessibility apps. We only do what’s listed on the previous screen.",
-      "banking": "Some banking or payment apps ask you to pause Accessibility apps while you use them. If one asks, pause Thumbwell — we’ll remind you to turn it back on.",
-      "successTitle": "Counting is ON",
-      "successBody": "Your Thumbwell can feel reels now."
-    },
-    "notifications": {
-      "title": "Let Thumbwell tap you on the shoulder",
-      "subtitle": "Limit warnings, streak reminders and a heads-up if counting stops. Max 4 a day.",
-      "allow": "Allow notifications",
-      "defaultName": "Your Thumbwell",
-      "examplesLabel": "Example notifications: 12 reels left today, your streak is safe, counting stopped",
-      "when": {
-        "now": "Thumbwell · now",
-        "twoMin": "Thumbwell · 2m",
-        "oneHour": "Thumbwell · 1h"
-      },
-      "examples": {
-        "limit": {
-          "title": "12 reels left today",
-          "body": "{{name}} is getting crispy."
-        },
-        "streak": {
-          "title": "Your streak is safe",
-          "body": "5 days under budget. Keep going!"
-        },
-        "stopped": {
-          "title": "Counting stopped",
-          "body": "Tap to turn Thumbwell back on."
-        }
-      }
-    },
-    "battery": {
-      "title": "Keep counting in the background",
-      "body": "Some phones stop apps to save battery. Then your count stops too.",
-      "usage": "We use under ~1–2% battery a day (target)",
-      "allow": "Allow",
-      "allowHint": "Opens Android battery optimisation settings. Choose Thumbwell, then Don't optimise."
-    },
-    "oem": {
-      "title": "One more step for your phone",
-      "subtitle": "{{maker}} phones are strict about background apps. Do these so counting never stops.",
-      "detected": "Detected: {{name}}",
-      "guideFor": "Guide for: {{name}}",
-      "vary": "Steps vary by OS version · help page has screenshots",
-      "open": "Open the setting",
-      "didIt": "I did it",
-      "failed": "Couldn’t open it. Settings → Apps → Thumbwell",
-      "previous": "Previous phone maker",
-      "next": "Next phone maker",
-      "position": "{{name}}, guide {{index}} of {{total}}",
-      "samsung": {
-        "name": "Samsung · One UI",
-        "maker": "Samsung",
-        "steps": [
-          "App info → Battery → Unrestricted",
-          "Battery → Background usage limits → Never sleeping apps → add Thumbwell",
-          "Turn off “Put unused apps to sleep”"
-        ]
-      },
-      "xiaomi": {
-        "name": "Xiaomi / Redmi / POCO · MIUI / HyperOS",
-        "maker": "Xiaomi",
-        "steps": [
-          "App info → Autostart ON",
-          "Battery saver → No restrictions",
-          "Recents: long-press Thumbwell card → Lock",
-          "Other permissions → pop-up windows while in background (only if needed)"
-        ]
-      },
-      "oppo": {
-        "name": "Oppo / realme · ColorOS / realme UI",
-        "maker": "Oppo",
-        "steps": [
-          "App info → Battery usage → Allow background activity",
-          "Allow auto launch",
-          "Recents → lock the Thumbwell card"
-        ]
-      },
-      "vivo": {
-        "name": "Vivo / iQOO · Funtouch / OriginOS",
-        "maker": "Vivo",
-        "steps": [
-          "Battery → Background power consumption → Thumbwell → Allow",
-          "i Manager → App manager → Autostart → ON"
-        ]
-      },
-      "oneplus": {
-        "name": "OnePlus · OxygenOS",
-        "maker": "OnePlus",
-        "steps": ["App info → Battery → Unrestricted / Don’t optimise", "Allow auto-launch"]
-      },
-      "pixel": {
-        "name": "Pixel / stock · Android",
-        "maker": "Pixel",
-        "steps": ["Battery → Unrestricted (the previous step is enough)"]
-      }
-    },
-    "setupCheck": {
-      "title": "Setup check",
-      "rows": {
-        "accessibility": "Accessibility",
-        "notifications": "Notifications",
-        "battery": "Battery",
-        "autostart": "Autostart ({{maker}})",
-        "overlay": "Overlay"
-      },
-      "status": {
-        "ok": "On",
-        "off": "Off — tap to fix",
-        "skipped": "Skipped",
-        "notNeeded": "Not needed"
-      },
-      "testTitle": "Self-test",
-      "testBody_one": "Open Instagram or YouTube, swipe {{count}} reel, come back.",
-      "testBody_other": "Open Instagram or YouTube, swipe {{count}} reels, come back.",
-      "progress": "{{seen}} of {{total}} reels counted",
-      "needsAccessibility": "Turn on Accessibility first.",
-      "run": "Run test",
-      "restart": "Restart test",
-      "finish": "Finish",
-      "passTitle_one": "{{count}} reel counted!",
-      "passTitle_other": "{{count}} reels counted!",
-      "passBody": "Thumbwell is ready. Go easy on it.",
-      "failTitle": "We couldn’t see reels",
-      "failBody_one": "{{count}} counted. Try again, or check your phone’s background settings.",
-      "failBody_other": "{{count}} counted. Try again, or check your phone’s background settings.",
-      "retry": "Try again",
-      "checkPhone": "Check phone settings",
-      "finishAnyway": "Finish anyway"
-    }
-  },
-  "tester": {
-    "title": "Tester setup",
-    "intro": "Thumbwell counts the short videos you watch (Reels, Shorts, TikTok, Spotlight) so you can see your daily scroll habit. Thanks for testing!",
-    "disclosureHeading": "Before you turn it on",
-    "stepsHeading": "Turn on Thumbwell in Accessibility",
-    "step1": "1. Tap \"Open Accessibility settings\" below.",
-    "step2": "2. Open \"Installed apps\" (Samsung) or \"Downloaded apps\".",
-    "step3": "3. Tap Thumbwell and switch it On, then confirm.",
-    "step4": "4. Greyed out? Go to Settings > Apps > Thumbwell (App info) > ⋮ > Allow restricted settings, then try again.",
-    "playProtect": "Installed from an APK? Google Play Protect may block or warn about it. If so, pause Play Protect scanning in the Play Store (Profile > Play Protect > ⚙), install, then turn it back on.",
-    "cta": "Open Accessibility settings",
-    "ctaHint": "Opens Android accessibility settings",
-    "statusLabel": "Accessibility service",
-    "statusChecking": "Checking…",
-    "statusOn": "On: Thumbwell is counting",
-    "statusOff": "Off",
-    "continue": "Continue",
-    "badgeNote": "While testing, a small purple badge shows today's count at the top of the screen when you watch reels."
+  "about": {
+    "title": "About",
+    "version": "Version {{version}} ({{build}})"
   }
 }

@@ -1,40 +1,37 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { TESTER_MODE, TESTER_SETUP_ROUTE } from '@/config/tester';
-import { ONBOARDING_ROUTES } from '@/onboarding/flow';
 import { useAppStore } from '@/state/appStore';
 import { useTheme } from '@/theme';
 
 /**
- * Root navigator. First launch lands in `(onboarding)` (the first available screen while
- * `(tabs)` is guarded); completing onboarding flips the guards, which drops the onboarding
- * history and redirects to Home. Tester builds ([TESTER_MODE]) skip onboarding and land on the
- * single Tester Setup screen instead.
+ * Root navigator. `index` is the splash and routes on first-run state: Welcome, Limit, Disclosure
+ * and Guide form the onboarding; Home and About need onboarding to be done (S06 "Not now" or the
+ * guide's "Go to Home" completes it). The lock preview and the detection debug screen exist in
+ * development builds only.
  */
 export function RootStack() {
   const { colors, scheme } = useTheme();
   const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
-  const testerSetupDone = useAppStore((s) => s.testerSetupDone);
-  const setupDone = TESTER_MODE ? testerSetupDone : onboardingCompleted;
   return (
     <>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={TESTER_MODE && !testerSetupDone}>
-          <Stack.Screen name="tester-setup" />
+      <Stack
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bgScreen } }}
+      >
+        <Stack.Screen name="index" options={{ animation: 'none' }} />
+        <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
+        <Stack.Screen name="limit" />
+        <Stack.Screen name="disclosure" />
+        <Stack.Screen name="guide" />
+        <Stack.Protected guard={onboardingCompleted}>
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen name="about" />
         </Stack.Protected>
-        <Stack.Protected guard={!TESTER_MODE && !onboardingCompleted}>
-          <Stack.Screen name="(onboarding)" />
+        <Stack.Protected guard={__DEV__}>
+          <Stack.Screen name="lock-preview" />
+          <Stack.Screen name="detection-debug" />
         </Stack.Protected>
-        <Stack.Protected
-          guard={setupDone}
-          redirectTo={TESTER_MODE ? TESTER_SETUP_ROUTE : ONBOARDING_ROUTES.welcome}
-        >
-          <Stack.Screen name="(tabs)" />
-        </Stack.Protected>
-        <Stack.Screen name="design-system" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="detection-debug" options={{ presentation: 'modal' }} />
-        {/* Unguarded: the watchdog deep-link must open whether or not onboarding is done. */}
+        {/* Unguarded: the watchdog deep link must open whether or not onboarding is done. */}
         <Stack.Screen name="reenable" />
       </Stack>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />

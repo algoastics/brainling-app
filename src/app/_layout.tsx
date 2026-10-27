@@ -1,12 +1,13 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { BrandSplash } from '@/components/brand';
+import { Button, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import { RootStack } from '@/navigation/RootStack';
 import { getStorage } from '@/storage';
-import { ThemeProvider, useThumbwellFonts } from '@/theme';
+import { ThemeProvider, space, useTheme, useThumbwellFonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,18 +20,28 @@ function openStorage(): boolean {
   }
 }
 
-export default function RootLayout() {
+function StorageError({ onRetry }: { onRetry: () => void }) {
   const t = useT();
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.error, { backgroundColor: colors.bgScreen }]}>
+      <Text variant="h3" style={styles.center}>
+        {t('splash.storageError')}
+      </Text>
+      <Button label={t('splash.retry')} onPress={onRetry} />
+    </View>
+  );
+}
+
+export default function RootLayout() {
   const [fontsLoaded, fontError] = useThumbwellFonts();
   const [storageReady, setStorageReady] = useState(openStorage);
-  const [introDone, setIntroDone] = useState(false);
   const ready = fontsLoaded || fontError !== null;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
-  const finishIntro = useCallback(() => setIntroDone(true), []);
   const retryStorage = useCallback(() => setStorageReady(openStorage()), []);
 
   if (!ready) return null;
@@ -38,19 +49,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        {storageReady ? <RootStack /> : null}
-        {!storageReady ? (
-          <BrandSplash
-            error={{
-              message: t('splash.storageError'),
-              retryLabel: t('splash.retry'),
-              onRetry: retryStorage,
-            }}
-          />
-        ) : !introDone ? (
-          <BrandSplash onIntroFinished={finishIntro} />
-        ) : null}
+        {storageReady ? <RootStack /> : <StorageError onRetry={retryStorage} />}
       </GestureHandlerRootView>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  error: { flex: 1, justifyContent: 'center', padding: space[24], gap: space[16] },
+  center: { textAlign: 'center' },
+});

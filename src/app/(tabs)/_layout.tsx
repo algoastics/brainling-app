@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 
-import { TabBar } from '@/components/ui';
+import { Icon, TabBar } from '@/components/ui';
 import { useT } from '@/i18n';
 
+const ICONS = { index: 'home', settings: 'settings' } as const;
+
+/** Phase 0 tab bar: Home and Settings only (the limit lives in Settings). */
 export default function TabsLayout() {
   const t = useT();
   return (
@@ -13,6 +16,13 @@ export default function TabsLayout() {
           items={state.routes.map((route) => ({
             key: route.key,
             label: descriptors[route.key]?.options.title ?? route.name,
+            icon: ({ color }) => (
+              <Icon
+                name={ICONS[route.name as keyof typeof ICONS] ?? 'home'}
+                size={24}
+                color={color}
+              />
+            ),
           }))}
           activeKey={state.routes[state.index]?.key ?? ''}
           onSelect={navigateToTab}
@@ -21,8 +31,7 @@ export default function TabsLayout() {
       )}
     >
       <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
-      <Tabs.Screen name="stats" options={{ title: t('tabs.stats') }} />
-      <Tabs.Screen name="me" options={{ title: t('tabs.me') }} />
+      <Tabs.Screen name="settings" options={{ title: t('tabs.settings') }} />
     </Tabs>
   );
 }

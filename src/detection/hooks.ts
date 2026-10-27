@@ -1,4 +1,8 @@
-import ThumbwellCore, { type CountingStatus, type DayCounts } from 'thumbwell-core';
+import ThumbwellCore, {
+  type CountingStatus,
+  type DailyLimit,
+  type DayCounts,
+} from 'thumbwell-core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
@@ -45,9 +49,18 @@ function useLatest<T>(set: (value: T) => void) {
   return { read, push };
 }
 
+/** Calls `fn` every `ms` while mounted; `null` switches it off. For cheap native reads. */
+export function useInterval(fn: () => unknown, ms: number | null) {
+  useEffect(() => {
+    if (ms === null) return;
+    const id = setInterval(() => void fn(), ms);
+    return () => clearInterval(id);
+  }, [fn, ms]);
+}
+
 /**
  * Today's per-app reel counts. Read on mount and when the app comes back to the
- * foreground, and pushed by the native `onCountChange` event in between. No polling.
+ * foreground, and pushed by the native `onCountChange` event in between.
  */
 export function useTodayCounts(): { counts: DayCounts | null; refresh: () => Promise<void> } {
   const [counts, setCounts] = useState<DayCounts | null>(null);
@@ -90,4 +103,59 @@ export function useCountingStatus(): {
   const refresh = useCallback(() => read(() => ThumbwellCore.getCountingStatus()), [read]);
   useOnMountAndForeground(refresh);
   return { status, refresh };
+}
+
+/** The daily limit (`effective` and any `pending` raise). `null` until the first read. */
+export function useDailyLimit(): { limit: DailyLimit | null; refresh: () => Promise<void> } {
+  const [limit, setLimit] = useState<DailyLimit | null>(null);
+  const { read } = useLatest(setLimit);
+  const refresh = useCallback(() => read(() => ThumbwellCore.getDailyLimit()), [read]);
+  useOnMountAndForeground(refresh);
+  return { limit, refresh };
+}
+
+/** Minutes after midnight at which the logical day starts. `null` until the first read. */
+export function useDayStart(): { minutes: number | null; refresh: () => Promise<void> } {
+  const [minutes, setMinutes] = useState<number | null>(null);
+  const { read } = useLatest(setMinutes);
+  const refresh = useCallback(() => read(() => ThumbwellCore.getDayStartMinutes()), [read]);
+  useOnMountAndForeground(refresh);
+  return { minutes, refresh };
+}
+
+const iconCache = new Map<string, string | null>();
+
+/** Forgets the loaded launcher icons (tests, and after the user deletes their data). */
+export function resetAppIconCache() {
+  iconCache.clear();
+}
+
+/**
+ * The launcher icon of the first installed package, as a base64 PNG, loaded at runtime from the
+ * installed app (never bundled). `undefined` while loading, `null` when none is installed.
+ */
+export function useAppIcon(packages: readonly string[]): string | null | undefined {
+  const cacheKey = packages.join('|');
+  const [icon, setIcon] = useState<string | null | undefined>(iconCache.get(cacheKey));
+  useEffect(() => {
+    if (iconCache.has(cacheKey)) return;
+    let live = true;
+    void (async () => {
+      let found: string | null = null;
+      for (const pkg of cacheKey.split('|')) {
+        try {
+          found = await ThumbwellCore.getAppIcon(pkg);
+        } catch {
+          found = null;
+        }
+        if (found) break;
+      }
+      if (found) iconCache.set(cacheKey, found);
+      if (live) setIcon(found);
+    })();
+    return () => {
+      live = false;
+    };
+  }, [cacheKey]);
+  return icon;
 }

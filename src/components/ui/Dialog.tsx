@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 
-import { radius, space, useTheme } from '@/theme';
+import { primitives, radius, space, useTheme } from '@/theme';
 
 import { Button } from './Button';
 import { Text } from './Text';
@@ -11,11 +12,13 @@ export type DialogProps = {
   onDismiss: () => void;
   title: string;
   body?: string;
+  /** Extra content between the body and the actions (pickers, notes). */
+  children?: ReactNode;
   actions: readonly Action[];
 };
 
-/** C10 — Dialog (radius 32). Android back dismisses via `onDismiss`. */
-export function Dialog({ visible, onDismiss, title, body, actions }: DialogProps) {
+/** Dialog (radius 32). Android back dismisses via `onDismiss`. */
+export function Dialog({ visible, onDismiss, title, body, children, actions }: DialogProps) {
   const { colors } = useTheme();
   return (
     <Modal
@@ -27,16 +30,22 @@ export function Dialog({ visible, onDismiss, title, body, actions }: DialogProps
       onRequestClose={onDismiss}
     >
       <View style={styles.root}>
-        <View style={[StyleSheet.absoluteFill, styles.scrim, { backgroundColor: colors.scrim }]} />
-        <View accessibilityViewIsModal style={[styles.dialog, { backgroundColor: colors.surface }]}>
-          <Text variant="heading.h2" accessibilityRole="header" style={styles.center}>
+        <View
+          style={[StyleSheet.absoluteFill, styles.scrim, { backgroundColor: primitives.plum900 }]}
+        />
+        <View
+          accessibilityViewIsModal
+          style={[styles.dialog, { backgroundColor: colors.bgSurface }]}
+        >
+          <Text variant="h2" accessibilityRole="header" style={styles.center}>
             {title}
           </Text>
           {body ? (
-            <Text color="ink2" style={styles.center}>
+            <Text color="textSecondary" style={styles.center}>
               {body}
             </Text>
           ) : null}
+          {children}
           <View style={styles.actions}>
             {actions.map((a) => (
               <Button key={a.label} label={a.label} onPress={a.onPress} kind={a.kind} />

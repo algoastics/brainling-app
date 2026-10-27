@@ -11,6 +11,6 @@ export const zustandStorage = {
   },
 };
 
-export const getStorage = () => ({});
+export const getStorage = () => ({ clearAll: () => mem.clear() });
 
 export const memoryStore = mem;
