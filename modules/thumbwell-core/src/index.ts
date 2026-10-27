@@ -164,6 +164,14 @@ declare class ThumbwellCoreModule extends NativeModule<ThumbwellCoreEvents> {
   isServiceEnabled(): Promise<boolean>;
   /** Opens the system accessibility settings (started on the main thread). */
   openAccessibilitySettings(): Promise<void>;
+  /**
+   * True when "Display over other apps" (SYSTEM_ALERT_WINDOW) is granted. With it the lock is drawn
+   * below notifications; without it a fallback window is used and notifications are not tappable
+   * while locked.
+   */
+  canDrawOverlays(): Promise<boolean>;
+  /** Opens the system "Display over other apps" page for Thumbwell (grant or turn off). */
+  openOverlaySettings(): Promise<void>;
   getTodayCounts(): Promise<DayCounts>;
   /** Per-day counts and ads seen, newest first. `limit` defaults to 30 (max 400). */
   getDailyCounts(limit?: number): Promise<DailyCounts[]>;

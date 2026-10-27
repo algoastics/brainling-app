@@ -1,7 +1,9 @@
 package com.algoastics.thumbwell.core
 
 import android.content.Context
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import com.algoastics.thumbwell.core.data.AppIcons
 import com.algoastics.thumbwell.core.data.CorePrefs
@@ -60,6 +62,29 @@ class ThumbwellCoreModule : Module() {
       context.startActivity(
         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
       )
+    }.runOnQueue(Queues.MAIN)
+
+    /** True when "Display over other apps" is granted, so the lock can be drawn below banners. */
+    AsyncFunction("canDrawOverlays") {
+      Settings.canDrawOverlays(context)
+    }
+
+    /**
+     * Opens the system "Display over other apps" page for this app (grant or turn off), or the app
+     * info page on a phone that has no such page. Started on the main thread.
+     */
+    AsyncFunction("openOverlaySettings") {
+      val uri = Uri.parse("package:${context.packageName}")
+      val overlay = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      try {
+        context.startActivity(overlay)
+      } catch (e: ActivityNotFoundException) {
+        context.startActivity(
+          Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+      }
     }.runOnQueue(Queues.MAIN)
 
     AsyncFunction("getTodayCounts") {
