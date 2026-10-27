@@ -118,7 +118,8 @@
     "title_other": "That's {{count}} reels. Time for a break.",
     "body": "Reels, Shorts and TikTok are locked until {{time}}. DMs and the rest of each app still work.",
     "leave": "Leave reels",
-    "today": "Today: {{count}} reels"
+    "today_one": "Today: {{count}} reel",
+    "today_other": "Today: {{count}} reels"
   },
   "settings": {
     "title": "Settings",

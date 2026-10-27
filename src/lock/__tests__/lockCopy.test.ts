@@ -32,7 +32,6 @@ describe('lock copy shared with the native overlay (S22-P0)', () => {
     ['thumbwell_lock_chip', 'chip'],
     ['thumbwell_lock_body', 'body'],
     ['thumbwell_lock_leave', 'leave'],
-    ['thumbwell_lock_today', 'today'],
   ])('%s matches lock.%s', (nativeName, key) => {
     expect(native(nativeName)).toBe(en.lock[key]);
   });
@@ -40,6 +39,12 @@ describe('lock copy shared with the native overlay (S22-P0)', () => {
   it('matches the singular and plural headline', () => {
     expect(native('thumbwell_lock_title', 'one')).toBe(en.lock.title_one);
     expect(native('thumbwell_lock_title', 'other')).toBe(en.lock.title_other);
+  });
+
+  it('matches the singular and plural "today" caption', () => {
+    expect(native('thumbwell_lock_today', 'one')).toBe(en.lock.today_one);
+    expect(native('thumbwell_lock_today', 'other')).toBe(en.lock.today_other);
+    expect(native('thumbwell_lock_today', 'one')).toBe('Today: {{count}} reel');
   });
 
   it('keeps the spec headline, singular for one reel', () => {

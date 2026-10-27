@@ -236,7 +236,8 @@ class LockLogicTest {
     assertEquals("That's %1\$d reels. Time for a break.", s["thumbwell_lock_title:other"])
     assertEquals("Leave reels", s["thumbwell_lock_leave"])
     assertEquals("Daily limit reached", s["thumbwell_lock_chip"])
-    assertEquals("Today: %1\$d reels", s["thumbwell_lock_today"])
+    assertEquals("Today: %1\$d reel", s["thumbwell_lock_today:one"])
+    assertEquals("Today: %1\$d reels", s["thumbwell_lock_today:other"])
     assertEquals(
       "Reels, Shorts and TikTok are locked until %1\$s. DMs and the rest of each app still work.",
       s["thumbwell_lock_body"],

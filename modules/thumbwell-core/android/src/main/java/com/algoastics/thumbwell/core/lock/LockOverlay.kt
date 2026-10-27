@@ -81,7 +81,8 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     title?.text = service.resources.getQuantityString(
       R.plurals.thumbwell_lock_title, content.limit, content.limit)
     body?.text = service.getString(R.string.thumbwell_lock_body, content.untilLabel)
-    today?.text = service.getString(R.string.thumbwell_lock_today, content.today)
+    today?.text = service.resources.getQuantityString(
+      R.plurals.thumbwell_lock_today, content.today, content.today)
   }
 
   fun setBusy(busy: Boolean) {
@@ -191,7 +192,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     column.addView(button, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)).apply {
       topMargin = dp(16)
     })
-    val todayView = text(service.getString(R.string.thumbwell_lock_today), 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
+    val todayView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_today, 0, 0), 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
       R.color.thumbwell_lock_muted_text)
     column.addView(todayView, spaced(12))
     frame.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))

@@ -8,6 +8,9 @@
     </plurals>
     <string name="thumbwell_lock_body">Reels, Shorts and TikTok are locked until %1$s. DMs and the rest of each app still work.</string>
     <string name="thumbwell_lock_leave">Leave reels</string>
-    <string name="thumbwell_lock_today">Today: %1$d reels</string>
+    <plurals name="thumbwell_lock_today">
+        <item quantity="one">Today: %1$d reel</item>
+        <item quantity="other">Today: %1$d reels</item>
+    </plurals>
     <string name="thumbwell_lock_home_toast">Taking you to your home screen</string>
 </resources>
