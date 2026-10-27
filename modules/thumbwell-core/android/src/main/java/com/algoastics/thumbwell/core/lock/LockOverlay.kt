@@ -78,7 +78,8 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
   fun bind(content: LockContent) {
     if (content == shownContent && root != null) return
     shownContent = content
-    title?.text = service.getString(R.string.thumbwell_lock_title, content.limit)
+    title?.text = service.resources.getQuantityString(
+      R.plurals.thumbwell_lock_title, content.limit, content.limit)
     body?.text = service.getString(R.string.thumbwell_lock_body, content.untilLabel)
     today?.text = service.getString(R.string.thumbwell_lock_today, content.today)
   }
@@ -153,7 +154,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mascotHeight),
     )
     bodyColumn.addView(
-      text(R.string.thumbwell_lock_chip, 14f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
+      text(service.getString(R.string.thumbwell_lock_chip), 14f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
         R.color.thumbwell_lock_chip_text).apply {
         background = GradientDrawable().apply {
           cornerRadius = dp(999).toFloat()
@@ -165,13 +166,13 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
         topMargin = dp(8)
       },
     )
-    val titleView = text(R.string.thumbwell_lock_title, 30f, Typeface.create("sans-serif", Typeface.BOLD),
+    val titleView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_title, 0, 0), 30f, Typeface.create("sans-serif", Typeface.BOLD),
       R.color.thumbwell_lock_title_text).apply {
       if (Build.VERSION.SDK_INT >= 28) isAccessibilityHeading = true
       accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
     }
     bodyColumn.addView(titleView, spaced(16))
-    val bodyView = text(R.string.thumbwell_lock_body, 16f, Typeface.SANS_SERIF, R.color.thumbwell_lock_body_text)
+    val bodyView = text(service.getString(R.string.thumbwell_lock_body), 16f, Typeface.SANS_SERIF, R.color.thumbwell_lock_body_text)
     bodyColumn.addView(bodyView, spaced(16))
     column.addView(bodyColumn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
@@ -190,7 +191,7 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     column.addView(button, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)).apply {
       topMargin = dp(16)
     })
-    val todayView = text(R.string.thumbwell_lock_today, 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
+    val todayView = text(service.getString(R.string.thumbwell_lock_today), 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
       R.color.thumbwell_lock_muted_text)
     column.addView(todayView, spaced(12))
     frame.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -202,8 +203,8 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     return frame
   }
 
-  private fun text(resId: Int, sp: Float, face: Typeface, colorId: Int) = TextView(service).apply {
-    text = service.getString(resId)
+  private fun text(label: String, sp: Float, face: Typeface, colorId: Int) = TextView(service).apply {
+    text = label
     setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
     typeface = face
     setTextColor(color(colorId))

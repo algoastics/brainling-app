@@ -218,13 +218,22 @@ class LockLogicTest {
     val file = listOf("src/main/res/values/thumbwell_lock_strings.xml",
       "modules/thumbwell-core/android/src/main/res/values/thumbwell_lock_strings.xml")
       .map(::File).first { it.exists() }
-    return Regex("""<string name="([a-z_]+)">(.*)</string>""").findAll(file.readText())
-      .associate { it.groupValues[1] to it.groupValues[2].replace("\\'", "'") }
+    val xml = file.readText()
+    val plain = Regex("""<string name="([a-z_]+)">(.*)</string>""").findAll(xml)
+      .associate { it.groupValues[1] to it.groupValues[2] }
+    val plurals = Regex("""<plurals name="([a-z_]+)">(.*?)</plurals>""", RegexOption.DOT_MATCHES_ALL)
+      .findAll(xml).flatMap { block ->
+        Regex("""<item quantity="([a-z]+)">(.*)</item>""").findAll(block.groupValues[2]).map {
+          "${block.groupValues[1]}:${it.groupValues[1]}" to it.groupValues[2]
+        }
+      }.toMap()
+    return (plain + plurals).mapValues { it.value.replace("\\'", "'") }
   }
 
   @Test fun overlayCopyIsTheSharedLockCopy() {
     val s = strings()
-    assertEquals("That's %1\$d reels. Time for a break.", s["thumbwell_lock_title"])
+    assertEquals("That's %1\$d reel. Time for a break.", s["thumbwell_lock_title:one"])
+    assertEquals("That's %1\$d reels. Time for a break.", s["thumbwell_lock_title:other"])
     assertEquals("Leave reels", s["thumbwell_lock_leave"])
     assertEquals("Daily limit reached", s["thumbwell_lock_chip"])
     assertEquals("Today: %1\$d reels", s["thumbwell_lock_today"])

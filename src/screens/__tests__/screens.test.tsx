@@ -246,4 +246,14 @@ describe('about and lock preview', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Leave reels' }));
     expect(onLeave).toHaveBeenCalled();
   });
+
+  it('uses the singular for a one-reel limit and the plural for zero', async () => {
+    const { unmount } = await render(
+      <LockView limit={1} until="04:00" today={1} onLeave={jest.fn()} />,
+    );
+    expect(screen.getByText("That's 1 reel. Time for a break.")).toBeTruthy();
+    await unmount();
+    await render(<LockView limit={0} until="04:00" today={0} onLeave={jest.fn()} />);
+    expect(screen.getByText("That's 0 reels. Time for a break.")).toBeTruthy();
+  });
 });
