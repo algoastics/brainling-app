@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Floating badge (Figma Floating badge 49:296): bg/surface, border/strong, text/primary. -->
+    <color name="thumbwell_badge_bg">#FFFFFF</color>
+    <color name="thumbwell_badge_border">#CFC8E6</color>
+    <color name="thumbwell_badge_text">#2A1C7A</color>
+    <color name="thumbwell_badge_ring">#6B4EFF</color>
+</resources>

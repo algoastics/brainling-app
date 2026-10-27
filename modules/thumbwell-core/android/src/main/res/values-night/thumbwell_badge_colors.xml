@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="thumbwell_badge_bg">#1A1533</color>
+    <color name="thumbwell_badge_border">#4A4378</color>
+    <color name="thumbwell_badge_text">#F4F1FF</color>
+    <color name="thumbwell_badge_ring">#6B4EFF</color>
+</resources>
