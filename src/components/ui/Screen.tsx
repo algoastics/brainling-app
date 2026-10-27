@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { space, useTheme } from '@/theme';
+import { space, spacing, useTheme } from '@/theme';
 
 export type ScreenProps = {
   children: ReactNode;
@@ -18,7 +18,7 @@ export type ScreenProps = {
 };
 
 /**
- * Themed, safe-area aware scrolling screen: 24dp gutters, 12dp top, 16dp between blocks (Figma
+ * Themed, safe-area aware scrolling screen: 16dp margins, 12dp top, 16dp between blocks (Figma
  * 360x800 frames). `spread` lets the last child group sit at the bottom on tall phones.
  */
 export function Screen({
@@ -58,9 +58,9 @@ export function ScreenGroup({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: {
-    paddingHorizontal: space[24],
+    paddingHorizontal: spacing.screenMargin,
     paddingTop: space[12],
-    paddingBottom: space[24],
+    paddingBottom: spacing.sectionGap,
     gap: space[16],
   },
   spread: { flexGrow: 1, justifyContent: 'space-between' },

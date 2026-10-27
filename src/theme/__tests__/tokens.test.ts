@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { darkColors, lightColors, type } from '../tokens';
+import { darkColors, lightColors, sizes, spacing, tracking, type } from '../tokens';
 
 function luminance(hex: string): number {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -61,5 +61,33 @@ describe('Thumbwell semantic tokens (Figma 02 Foundations)', () => {
     expect(type.h2.fontFamily).toBe('Nunito_800ExtraBold');
     expect(type.h3.fontFamily).toBe('Nunito_700Bold');
     expect(type.body.fontFamily).toBe('Inter_400Regular');
+  });
+});
+
+describe('Figma foundations added in the design pass', () => {
+  it('carries the raised, overlay, scrim and glow colours in both modes', () => {
+    expect(lightColors.bgSurfaceRaised).toBe('#FFFFFF');
+    expect(darkColors.bgSurfaceRaised).toBe('#2B2459');
+    expect(lightColors.bgOverlay).toBe('#FFFFFF');
+    expect(darkColors.bgOverlay).toBe('#241E42');
+    expect(lightColors.overlayScrim).toBe('#2A1C7A80');
+    expect(darkColors.overlayScrim).toBe('#000000A0');
+    expect(lightColors.glowHeroStart).toBe('#6B4EFF33');
+    expect(darkColors.glowHeroEnd).toBe('#8C75FF00');
+  });
+
+  it('converts Figma tracking percent to dp', () => {
+    expect(tracking(-3, 96)).toBe(-2.88);
+    expect(type.counterL.letterSpacing).toBe(-1.6);
+    expect(type.overline.letterSpacing).toBe(1.2);
+    expect(type.h2).not.toHaveProperty('letterSpacing');
+  });
+
+  it('uses a 16 dp screen margin and a 64 dp floating tab bar', () => {
+    expect(spacing.screenMargin).toBe(16);
+    expect(sizes.tabBarHeight).toBe(64);
+    expect(sizes.rowHeight).toBe(56);
+    expect(sizes.grabberWidth).toBe(36);
+    expect(type.counterM.fontSize).toBe(40);
   });
 });

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useT } from '@/i18n';
-import { sizes, space, useTheme } from '@/theme';
+import { sizes, space, spacing, useTheme } from '@/theme';
 
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -59,7 +59,7 @@ export function TopBar({ title, onBack, backLabel, action }: TopBarProps) {
 
 const styles = StyleSheet.create({
   bar: { height: sizes.topBarHeight, flexDirection: 'row', alignItems: 'center' },
-  root: { gap: space[8], paddingLeft: space[20], paddingRight: space[4] },
+  root: { gap: space[8], paddingLeft: spacing.screenMargin, paddingRight: space[4] },
   back: { gap: space[4], paddingLeft: space[4], paddingRight: space[16] },
   title: { flex: 1 },
   touch: {

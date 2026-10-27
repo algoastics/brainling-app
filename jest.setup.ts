@@ -10,3 +10,4 @@ jest.mock(
   () =>
     (jest.requireActual('react-native-safe-area-context/jest/mock') as { default: object }).default,
 );
+jest.mock('@/storage', () => jest.requireActual('./test/memoryStorage'));
