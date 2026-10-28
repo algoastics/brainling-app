@@ -53,6 +53,8 @@ data class AppRule(
    * carrying one is not counted. Compared case-insensitively against whole label nodes only.
    */
   val adLabels: List<String> = emptyList(),
+  /** Optional watch threshold for this app; the ruleset [RuleSet.dwellMs] applies when null. */
+  val dwellMs: Long? = null,
 ) {
   val hasSignal: Boolean
     get() = surfaceIds.isNotEmpty() || contentDescriptions.isNotEmpty() || structure != null
@@ -79,11 +81,15 @@ data class RuleSet(
 
   fun ruleFor(packageName: CharSequence?): AppRule? = packageName?.let { byPackage[it.toString()] }
 
+  /** How long a reel of [rule]'s app must settle on screen before it counts. */
+  fun dwellFor(rule: AppRule?): Long = rule?.dwellMs ?: dwellMs
+
   val enabledPackages: Set<String> get() = byPackage.keys
 
   /** True when [other] needs fresh counters (different dwell or dedupe window). */
   fun countingDiffers(other: RuleSet): Boolean =
-    dwellMs != other.dwellMs || dedupeSize != other.dedupeSize
+    dwellMs != other.dwellMs || dedupeSize != other.dedupeSize ||
+      apps.associate { it.key to it.dwellMs } != other.apps.associate { it.key to it.dwellMs }
 
   companion object {
     /** Schema written by sign-rules.mjs. 3 adds the optional pagerIds / pagerClassNames
@@ -137,7 +143,9 @@ data class RuleSet(
         pagerIds = optStrings(app, "pagerIds"),
         pagerClassNames = optStrings(app, "pagerClassNames"),
         adLabels = optStrings(app, "adLabels"),
+        dwellMs = if (app.has("dwellMs")) app.getLong("dwellMs") else null,
       )
+      require(rule.dwellMs == null || rule.dwellMs in 100..10_000) { "app dwellMs out of range" }
       require(KEY.matches(rule.key)) { "bad key" }
       require(rule.packageNames.isNotEmpty() && rule.packageNames.all { PACKAGE.matches(it) }) {
         "bad packageNames"

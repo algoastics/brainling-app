@@ -459,7 +459,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
 
   private fun session(packageName: String, active: RuleSet): Session =
     sessions.getOrPut(packageName) {
-      Session(maxOf(ReelSession.SETTLE_MS, active.dwellMs)).also { s ->
+      Session(active.dwellFor(active.ruleFor(packageName))).also { s ->
         PENDING_STATES.remove(packageName)?.let(s.reels::restore)
       }
     }

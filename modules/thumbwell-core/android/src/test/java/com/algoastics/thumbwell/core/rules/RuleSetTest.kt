@@ -36,6 +36,23 @@ class RuleSetTest {
   }
 
   @Test
+  fun tiktokCountsAfter750msAndTheOtherAppsAfter1000ms() {
+    assertEquals(750L, source.dwellFor(source.ruleFor("com.zhiliaoapp.musically")))
+    assertEquals(750L, source.dwellFor(source.ruleFor("com.ss.android.ugc.trill")))
+    assertEquals(1000L, source.dwellFor(source.ruleFor("com.instagram.android")))
+    assertEquals(1000L, source.dwellFor(source.ruleFor("com.google.android.youtube")))
+    assertEquals(1000L, source.dwellFor(source.anyRuleFor("com.facebook.katana")))
+    assertEquals(1000L, source.dwellFor(null))
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun rejectsAnAppDwellOutOfRange() {
+    RuleSet.parse(
+      withApps("""{"key":"a","packageNames":["com.a.b"],"enabled":true,"surfaceIds":["x"],"dwellMs":50}"""),
+    )
+  }
+
+  @Test
   fun variantsMapToTheirFamily() {
     assertEquals("tiktok", source.ruleFor("com.ss.android.ugc.trill")?.key)
     // Off in Phase 0: no rule is returned, but the data is kept for Phase 1.
@@ -170,6 +187,9 @@ class RuleSetTest {
     val slower = RuleSet.parse(JSONObject(sourceText).put("dwellMs", 1200).toString())
     assertEquals(false, source.countingDiffers(same))
     assertEquals(true, source.countingDiffers(slower))
+    val tiktokSlower = JSONObject(sourceText)
+    tiktokSlower.getJSONArray("apps").getJSONObject(2).put("dwellMs", 1000)
+    assertEquals(true, source.countingDiffers(RuleSet.parse(tiktokSlower.toString())))
   }
 
   @Test

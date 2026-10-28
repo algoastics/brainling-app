@@ -1,6 +1,6 @@
 {
   "schema": 3,
-  "version": 5,
+  "version": 6,
   "issuedAt": "2026-10-22T00:00:00Z",
   "expiresAt": "2027-10-22T00:00:00Z",
   "dwellMs": 1000,
@@ -26,6 +26,7 @@
     },
     {
       "key": "tiktok",
+      "dwellMs": 750,
       "adLabels": ["Sponsored", "Ad"],
       "packageNames": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
       "enabled": true,

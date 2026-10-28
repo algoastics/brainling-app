@@ -403,8 +403,8 @@ class ReelSession(private val settleMs: Long = SETTLE_MS) {
 
   companion object {
     /**
-     * A reel counts once it has been settled on screen this long (D36: 1,000 ms in Phase 0). The one
-     * default; the signed ruleset `dwellMs` may only raise it.
+     * A reel counts once it has been settled on screen this long (D36: 1,000 ms). The default; the
+     * signed ruleset `dwellMs`, or an app's own `dwellMs` (TikTok: 750 ms), replaces it.
      */
     const val SETTLE_MS = 1_000L
     /** Remembered ephemeral players besides the current one. */
