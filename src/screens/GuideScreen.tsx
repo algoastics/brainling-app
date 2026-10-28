@@ -14,7 +14,7 @@ import { useAppStore } from '@/state/appStore';
 import { openAppInfo } from '@/system/settings';
 
 import { OverlayPermissionStep } from './OverlayPermissionStep';
-import { motion, radius, space, useTheme } from '@/theme';
+import { motion, radius, sizes, space, useTheme } from '@/theme';
 
 /** Android 13 (API 33) and newer block Accessibility for apps installed outside the store. */
 const RESTRICTED_SETTINGS_API = 33;
@@ -38,29 +38,37 @@ function PanelIllustration() {
         { backgroundColor: colors.bgSurface, borderColor: colors.borderDefault },
       ]}
     >
-      <View style={[styles.panelHead, { borderBottomColor: colors.borderDefault }]}>
-        <Icon name="back" size={18} color="textMuted" />
+      <View style={styles.panelHead}>
+        <Icon name="back" size={20} color="textMuted" />
         <Text variant="label">{t('guide.panelTitle')}</Text>
       </View>
-      {rows.map((row) => {
+      {rows.map((row, i) => {
         const hot = row === t('guide.rowThumbwell');
         return (
           <View
             key={row}
-            style={[styles.panelRow, hot && { backgroundColor: colors.bgPrimarySoft }]}
+            style={[
+              styles.panelRow,
+              { borderBottomColor: colors.borderDefault },
+              i < rows.length - 1 && styles.panelRowDivider,
+              hot && { backgroundColor: colors.bgPrimarySoft },
+            ]}
           >
-            <Text
-              variant="label"
-              color={hot ? 'brandAccentText' : 'textSecondary'}
-              style={styles.flex}
-            >
+            {hot ? (
+              <View style={[styles.rowTile, { backgroundColor: colors.bgPrimarySoft }]}>
+                <Icon name="accessibility" size={24} color="brandAccentText" />
+              </View>
+            ) : null}
+            <Text variant="body" style={styles.flex}>
               {row}
             </Text>
             {hot ? (
               <View style={[styles.switch, { backgroundColor: colors.brandPrimary }]}>
                 <View style={[styles.knob, { backgroundColor: colors.brandOnPrimary }]} />
               </View>
-            ) : null}
+            ) : (
+              <Icon name="chevron" size={24} color="textMuted" />
+            )}
           </View>
         );
       })}
@@ -172,7 +180,7 @@ export function GuideScreen() {
         <PanelIllustration />
         {stillOff ? (
           <Card tone="notice">
-            <Text variant="label" accessibilityLiveRegion="polite">
+            <Text variant="h3" accessibilityLiveRegion="polite">
               {t('guide.stillOff')}
             </Text>
             <Text variant="body" color="textSecondary">
@@ -181,7 +189,7 @@ export function GuideScreen() {
           </Card>
         ) : (
           <Card tone="notice">
-            <Text variant="label">{t('guide.headsUpTitle')}</Text>
+            <Text variant="h3">{t('guide.headsUpTitle')}</Text>
             <Text variant="body" color="textSecondary">
               {t('guide.headsUp')}
             </Text>
@@ -189,7 +197,7 @@ export function GuideScreen() {
         )}
         {(help || stillOff) && restricted ? (
           <Card tone="tint">
-            <Text variant="label">{t('guide.restrictedTitle')}</Text>
+            <Text variant="h3">{t('guide.restrictedTitle')}</Text>
             <Text variant="body" color="textSecondary">
               {t('guide.restrictedBody')}
             </Text>
@@ -205,23 +213,16 @@ export function GuideScreen() {
         ) : null}
         {help ? (
           <Card>
-            <Text variant="label">{t('guide.helpTitle')}</Text>
+            <Text variant="h3">{t('guide.helpTitle')}</Text>
             <Text variant="body" color="textSecondary">
               {t('guide.helpBody')}
             </Text>
           </Card>
         ) : null}
       </ScreenGroup>
-      <ScreenGroup>
+      <ScreenGroup gap={space[8]}>
         <Button label={t('guide.open')} onPress={openSettings} />
-        <View style={styles.center}>
-          <Button
-            kind="ghost"
-            size="sm"
-            label={t('guide.help')}
-            onPress={() => setHelp((v) => !v)}
-          />
-        </View>
+        <Button kind="ghost" size="sm" label={t('guide.help')} onPress={() => setHelp((v) => !v)} />
       </ScreenGroup>
     </Screen>
   );
@@ -229,7 +230,6 @@ export function GuideScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  center: { alignItems: 'center' },
   cardAction: { marginTop: space[8], alignItems: 'flex-start' },
   panel: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
   panelHead: {
@@ -237,15 +237,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space[8],
     paddingHorizontal: space[16],
-    paddingVertical: space[12],
-    borderBottomWidth: 1,
+    paddingTop: space[12],
+    paddingBottom: space[8],
   },
   panelRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: space[16],
     paddingHorizontal: space[16],
-    height: 44,
+    paddingVertical: space[8],
   },
-  switch: { width: 40, height: 24, borderRadius: 12, padding: 2, alignItems: 'flex-end' },
-  knob: { width: 20, height: 20, borderRadius: 10 },
+  panelRowDivider: { borderBottomWidth: 1 },
+  rowTile: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switch: {
+    width: sizes.switchWidth,
+    height: sizes.switchHeight,
+    borderRadius: radius.pill,
+    padding: space[4],
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  knob: { width: sizes.switchThumb, height: sizes.switchThumb, borderRadius: radius.pill },
 });
