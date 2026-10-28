@@ -16,7 +16,7 @@ This is a local Gradle build. No EAS, no AAB, no Play. The release APK is signed
 debug keystore Expo generates, which is fine for side-loading.
 
 ```bash
-cd ~/Documents/"Algoastics Github"/brainling-integrate
+cd ~/Documents/"Algoastics Github"/brainling-app
 # 1. Regenerate android/ (git-ignored). Required once now: the existing android/ was generated
 #    before the rename and the Sentry plugin removal, and still applies the Sentry gradle script
 #    and lists Facebook/Snapchat packages in the accessibility service XML.

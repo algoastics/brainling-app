@@ -73,8 +73,8 @@ Play policy); never change it.
 ### Signing and rotation
 
 ```bash
-# from a worktree, point at the key in the main checkout (never copy .secrets/ around)
-BRAINLING_RULES_KEY_DIR=<main checkout>/.secrets/rules-signing \
+# point at the key folder if it is not in this checkout (never copy .secrets/ around)
+BRAINLING_RULES_KEY_DIR=~/Documents/"Algoastics Github"/brainling-app/.secrets/rules-signing \
   node scripts/rules/sign-rules.mjs sign brainling-dev-2026-10 \
   modules/thumbwell-core/rules/rules.json \
   modules/thumbwell-core/android/src/main/assets/thumbwell/rules.signed.json

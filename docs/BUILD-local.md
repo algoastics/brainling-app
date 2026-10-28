@@ -3,6 +3,17 @@
 Not run by the author of this file: these are the exact steps, taken from the project config
 (`app.json`, the generated `android/app/build.gradle`) and `docs/TESTING-phase0.md` section 0.
 
+## Working rules for this folder
+
+- There is ONE local folder: `~/Documents/"Algoastics Github"/brainling-app`. Do not make extra
+  copies or worktrees.
+- `main` is never committed to directly. Work on a branch (`docs/<name>`, `fix/<name>`) and merge
+  it yourself.
+- Run `npm install` first (a fresh checkout or after `package-lock.json` changes), so
+  `node_modules` matches the lockfile.
+- `android/` is git-ignored and currently removed, so `expo prebuild --clean` starts from a clean
+  slate and regenerates it.
+
 ## Build the APK and install it on your phone
 
 1. Prerequisites (once):
@@ -13,10 +24,10 @@ Not run by the author of this file: these are the exact steps, taken from the pr
    - On the phone: Developer options -> **USB debugging** on, plug in, accept the RSA prompt.
    - Check it is seen: `~/Library/Android/sdk/platform-tools/adb devices` must list the serial
      as `device` (not `unauthorized`).
-2. Regenerate the git-ignored `android/` folder (needed after any native, config-plugin or
+2. Run `npm install` if you have not yet, then regenerate the git-ignored `android/` folder (needed after any native, config-plugin or
    `app.json` change, and for the new service description text):
    ```bash
-   cd ~/Documents/"Algoastics Github"/brainling-integrate
+   cd ~/Documents/"Algoastics Github"/brainling-app
    npx expo prebuild --platform android --clean --no-install
    ```
 3. Build the arm64 release APK:
@@ -38,7 +49,7 @@ Not run by the author of this file: these are the exact steps, taken from the pr
    install again. For a clean first-run test, uninstall first as well.
 6. If an icon still shows twice, run the read-only check (never installs or removes anything):
    ```bash
-   cd ~/Documents/"Algoastics Github"/brainling-integrate && scripts/check-android-identity.sh RF8X605YFVM
+   cd ~/Documents/"Algoastics Github"/brainling-app && scripts/check-android-identity.sh RF8X605YFVM
    ```
    It checks the manifest (one LAUNCHER filter, no alias), the APK (one launchable activity, one
    package id) and lists the phone's users, the Thumbwell/Brainling packages and launcher entries
