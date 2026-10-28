@@ -150,6 +150,21 @@ object BadgeGate {
     enabled && countingAllowed && onReelsSurface && !lockShowing && !textInputOrKeyboard && !safetyWindow
 }
 
+/**
+ * What the badge does when the lock overlay appears or goes away (A42b). The lock is a full-screen
+ * window, so the badge never stays over or under it; it returns, where it was, with the count, once
+ * the lock is gone and the reels surface is still up. Pure; one decision per lock change, no timers.
+ */
+object BadgeLockSync {
+  enum class Step { HIDE_BADGE, RE_EVALUATE, NONE }
+
+  fun onLockChange(lockShown: Boolean, badgeShown: Boolean, surfaceUp: Boolean): Step = when {
+    lockShown -> if (badgeShown) Step.HIDE_BADGE else Step.NONE
+    !badgeShown && surfaceUp -> Step.RE_EVALUATE
+    else -> Step.NONE
+  }
+}
+
 /** One digit slot of the odometer: [fromRight] is the slot index (0 = ones) in the new text. */
 data class DigitRoll(val fromRight: Int, val old: Char?, val new: Char, val delayMs: Long)
 

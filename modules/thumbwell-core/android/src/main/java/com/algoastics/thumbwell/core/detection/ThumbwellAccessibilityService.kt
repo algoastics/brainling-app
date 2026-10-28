@@ -143,7 +143,7 @@ class ThumbwellAccessibilityService : AccessibilityService() {
     health.onServiceConnected()
     limitEngine = LimitEngine.get(this)
     homes = HomePackages(this)
-    lock = LockController(this, limitEngine, prefs, ::isOnReels) { homes.get() }
+    lock = LockController(this, limitEngine, prefs, ::isOnReels, ::onLockShownChanged) { homes.get() }
     lock.start()
     // Screen off: remove the badge and every timer it runs (blink, bob). It returns on the next event.
     val screenOffFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
@@ -408,6 +408,23 @@ class ThumbwellAccessibilityService : AccessibilityService() {
       event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
     val overlaysUp = badgePackage != null || (::lock.isInitialized && lock.isShowing)
     if (windowChange && overlaysUp) guardSafetyWindow(rootInActiveWindow?.packageName?.toString())
+  }
+
+  /** The lock overlay appeared or went away: the badge hides under it and returns after it (A42b). */
+  private fun onLockShownChanged(shown: Boolean, packageName: String?) {
+    if (shown) {
+      if (BadgeLockSync.onLockChange(true, badgePackage != null, false) == BadgeLockSync.Step.HIDE_BADGE) {
+        hideBadge()
+      }
+      return
+    }
+    // Posted, so a lock hidden by "surface gone" is judged after that evaluation has finished.
+    handler.post {
+      val up = packageName != null && sessions[packageName]?.onSurface == true
+      if (BadgeLockSync.onLockChange(false, badgePackage != null, up) == BadgeLockSync.Step.RE_EVALUATE) {
+        schedule(packageName.orEmpty(), 0L)
+      }
+    }
   }
 
   private fun hideBadge() {

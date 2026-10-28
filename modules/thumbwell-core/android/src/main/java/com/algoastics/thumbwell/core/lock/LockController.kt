@@ -38,6 +38,8 @@ class LockController(
   private val prefs: CorePrefs,
   /** True while [packageName] is foreground with a reels surface on screen. */
   private val isOnReels: (packageName: String) -> Boolean,
+  /** The overlay appeared (true) or went away (false) in [packageName]; once per change. */
+  private val onShownChanged: (shown: Boolean, packageName: String?) -> Unit = { _, _ -> },
   /** Launcher (home) packages of this device; Home and Recents hide the lock at once. */
   private val homePackages: () -> Set<String> = { emptySet() },
 ) {
@@ -61,6 +63,7 @@ class LockController(
   /** The reels container box (before the window type shapes it) the cover was last fitted to. */
   private var pickedBox: Box? = null
   private var provisional = false
+  private var reportedShown = false
   private var provisionalSince = 0L
   private val pauseAgain = Runnable { audio.pauseAgain() }
   private val verifyAudio = Runnable { audio.verify() }
@@ -135,6 +138,7 @@ class LockController(
     handler.removeCallbacks(watch)
     handler.removeCallbacks(pauseAgain)
     handler.removeCallbacks(verifyAudio)
+    val shownIn = overlayPackage ?: surfacePackage
     overlay.hide()
     overlayPackage = null
     provisional = false
@@ -142,6 +146,15 @@ class LockController(
     fittedSurface = null
     pickedBox = null
     audio.release()
+    reportShown(shownIn)
+  }
+
+  /** Tells the owner when the overlay changed between shown and hidden, never twice for one state. */
+  private fun reportShown(packageName: String?) {
+    val shown = overlay.isShown
+    if (shown == reportedShown) return
+    reportedShown = shown
+    onShownChanged(shown, packageName)
   }
 
   /**
@@ -400,6 +413,7 @@ class LockController(
       frame = LockWindowChoice.frame(kind, picked, statusBar, band)
       overlay.show(frame, kind, content)
     }
+    reportShown(overlayPackage ?: surfacePackage)
     return if (overlay.isShown) frame else null
   }
 

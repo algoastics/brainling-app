@@ -491,4 +491,18 @@ class BadgeLogicTest {
     assertTrue(out.none { it == BadgeAction.FadeOutRemove })
     assertTrue(m.setVisible(false, 5).isEmpty())
   }
+
+  @Test fun theBadgeHidesWhenTheLockAppears() {
+    assertEquals(BadgeLockSync.Step.HIDE_BADGE, BadgeLockSync.onLockChange(true, true, true))
+    assertEquals(BadgeLockSync.Step.NONE, BadgeLockSync.onLockChange(true, false, true))
+  }
+
+  @Test fun theBadgeComesBackWhenTheLockGoesAndTheSurfaceIsStillUp() {
+    assertEquals(BadgeLockSync.Step.RE_EVALUATE, BadgeLockSync.onLockChange(false, false, true))
+  }
+
+  @Test fun theBadgeStaysAwayWhenTheLockGoesAndTheSurfaceIsGone() {
+    assertEquals(BadgeLockSync.Step.NONE, BadgeLockSync.onLockChange(false, false, false))
+    assertEquals(BadgeLockSync.Step.NONE, BadgeLockSync.onLockChange(false, true, true))
+  }
 }
