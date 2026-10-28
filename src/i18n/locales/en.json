@@ -110,10 +110,7 @@
         "unit": "Videos today"
       }
     },
-    "progress": "{{count}} of {{limit}} reels today",
-    "overlayNoticeTitle": "Notifications may be hidden while locked",
-    "overlayNotice": "Allow “Display over other apps” and the lock sits below your notifications, so you can still see and tap them.",
-    "overlayNoticeAction": "Allow"
+    "progress": "{{count}} of {{limit}} reels today"
   },
   "lock": {
     "chip": "Daily limit reached",
@@ -188,15 +185,13 @@
       "badge": "Floating badge",
       "appearance": "Appearance",
       "about": "About",
-      "data": "Data",
-      "lock": "Lock"
+      "data": "Data"
     },
     "footers": {
       "counting": "Thumbwell counts reels on this phone. Nothing leaves your device.",
       "badge": "Drag the badge anywhere. It snaps to the nearest screen edge.",
       "appearance": "System follows your phone’s light or dark setting.",
-      "data": "Removes your counts, limit and settings from this phone. This can’t be undone.",
-      "lock": "Without it the lock still works, but notifications may be hidden, or cannot be tapped, while it is up."
+      "data": "Removes your counts, limit and settings from this phone. This can’t be undone."
     },
     "theme": {
       "title": "Theme",
@@ -207,9 +202,8 @@
     },
     "overlay": {
       "title": "Display over other apps",
-      "on": "Allowed",
-      "off": "Not allowed",
-      "help": "Lets the lock sit below your notifications. Tap to turn it on or off in Android settings."
+      "on": "On",
+      "offHelp": "Not enabled · lock uses the fallback"
     }
   },
   "about": {
@@ -217,19 +211,45 @@
     "version": "Version {{version}} ({{build}})"
   },
   "overlay": {
-    "title": "Show the lock under your notifications",
-    "body": "When you reach your limit, Thumbwell covers the reels with a lock screen. If you allow “Display over other apps”, the lock sits below your notifications, so you can still see and tap them.",
-    "path": "Settings → Apps → Special access → Display over other apps → Thumbwell → ON",
-    "whyTitle": "What it is used for",
-    "why": "Only to draw the lock screen over Reels, Shorts and TikTok when you reach your limit. It does not let Thumbwell read other apps. You can turn it off any time in Settings.",
-    "skipTitle": "If you skip it",
-    "skipBody": "The lock still works, but notifications may be hidden, or cannot be tapped, while it is up.",
-    "allow": "Open settings",
-    "skip": "Skip for now",
-    "stillOff": "Still off",
-    "stillOffBody": "“Display over other apps” is not switched on yet. Open settings and turn it on for Thumbwell, or skip it.",
-    "doneTitle": "Notifications stay available",
-    "doneBody": "The lock will sit below your notifications. You can turn this off any time in Settings.",
-    "continue": "Continue"
+    "ask": {
+      "title": "Let Thumbwell show over other apps",
+      "intro": "Android calls this “Display over other apps”. It is one switch, and you can turn it off any time.",
+      "does1": "Covers the video when you reach your limit",
+      "does2": "Shows your count badge on top of reels",
+      "never1": "Never reads what is on your screen",
+      "never2": "Collects nothing and sends nothing",
+      "previewTitle": "What you will see in Android",
+      "previewApp": "Thumbwell",
+      "previewHint": "Turn it on, then press Back to return here.",
+      "skipNote": "You can skip this step. Thumbwell then uses the fallback overlay: it still covers reels at your limit, but leaves a strip at the top of the screen free. Turn it on any time in Settings.",
+      "open": "Open Settings",
+      "skip": "Skip — use fallback overlay"
+    },
+    "granted": {
+      "chip": "Display over other apps: On",
+      "title": "You’re all set",
+      "body": "At your limit, Thumbwell covers the video and offers one button: Leave reels. It never reads what is on your screen.",
+      "cardTitle": "Turn it off any time",
+      "cardBody": "Open Thumbwell Settings, tap Display over other apps, then switch Thumbwell off in Android. The lock then uses the fallback overlay.",
+      "continue": "Continue",
+      "howOff": "How to turn it off"
+    },
+    "off": {
+      "chip": "Display over other apps: Not enabled",
+      "title": "No problem. The lock still works",
+      "body": "The lock will use the fallback overlay. It still covers reels at your limit, but leaves a strip at the top of the screen free.",
+      "cardTitle": "Where to find it later",
+      "cardBody": "Thumbwell Settings → Display over other apps. It shows “Not enabled” until you turn it on.",
+      "tryAgain": "Try again",
+      "continue": "Continue with fallback"
+    },
+    "settings": {
+      "screenTitle": "Display over other apps",
+      "onTitle": "It’s on",
+      "offTitle": "It’s not enabled",
+      "openAndroid": "Open Android settings",
+      "offHint": "To switch it off, find Thumbwell in the list and turn the switch off.",
+      "keep": "Keep the fallback"
+    }
   }
 }

@@ -1,20 +1,19 @@
 import ThumbwellCore from 'thumbwell-core';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState } from 'react-native';
 
-import { Button, Card, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
 import { useInterval, useOverlayPermission } from '@/detection';
-import { useT } from '@/i18n';
-import { radius, useTheme } from '@/theme';
+import { haptics } from '@/motion';
+
+import { OverlayPermissionView, type OverlayViewState } from './overlay/OverlayPermissionView';
 
 /**
- * Onboarding step after Accessibility: "Display over other apps". Explains it, opens the system
- * page for Thumbwell, re-checks when the user comes back, and can be skipped (the lock then uses
- * a fallback window and notifications may be hidden while it is up). `onDone` leaves the step.
+ * Onboarding step 4 of 4, "Display over other apps" (Figma S11-P0). Asks, opens the system page
+ * for Thumbwell, re-checks when the user comes back and shows granted (Thumb happy) or not granted
+ * (Thumb meh). Skippable at every state: the lock then uses the fallback overlay. `onDone` leaves
+ * the step.
  */
 export function OverlayPermissionStep({ onDone }: { onDone: () => void }) {
-  const t = useT();
-  const { colors } = useTheme();
   const { granted, refresh } = useOverlayPermission();
   const [opened, setOpened] = useState(false);
   const [returned, setReturned] = useState(false);
@@ -28,6 +27,9 @@ export function OverlayPermissionStep({ onDone }: { onDone: () => void }) {
   }, [refresh]);
   // While the user is on the system page, keep looking so success shows the moment they return.
   useInterval(refresh, opened ? 1500 : null);
+  useEffect(() => {
+    if (granted === true && openedRef.current) haptics.success();
+  }, [granted]);
 
   const openSettings = () => {
     openedRef.current = true;
@@ -35,80 +37,28 @@ export function OverlayPermissionStep({ onDone }: { onDone: () => void }) {
     setReturned(false);
     void ThumbwellCore.openOverlaySettings();
   };
+  // "Try again" re-runs the check first: if it was switched on meanwhile, show that; otherwise ask again.
+  const tryAgain = async () => {
+    let ok = false;
+    try {
+      ok = await ThumbwellCore.canDrawOverlays();
+    } catch {
+      ok = false;
+    }
+    if (ok) await refresh();
+    else openSettings();
+  };
 
-  if (granted === true) {
-    return (
-      <Screen spread testID="overlay-granted">
-        <ScreenGroup>
-          <Text variant="h1" accessibilityRole="header" accessibilityLiveRegion="polite">
-            {t('overlay.doneTitle')}
-          </Text>
-          <Text variant="body" color="textSecondary">
-            {t('overlay.doneBody')}
-          </Text>
-        </ScreenGroup>
-        <ScreenGroup>
-          <Button label={t('overlay.continue')} onPress={onDone} />
-        </ScreenGroup>
-      </Screen>
-    );
-  }
-
-  const stillOff = returned && granted === false;
+  const state: OverlayViewState =
+    granted === true ? 'granted' : returned && granted === false ? 'notGranted' : 'ask';
   return (
-    <Screen spread testID="overlay-permission">
-      <ScreenGroup>
-        <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
-          <Icon name="bell" size={24} color="brandAccentText" />
-        </View>
-        <Text variant="h1" accessibilityRole="header">
-          {t('overlay.title')}
-        </Text>
-        <Text variant="body" color="textSecondary">
-          {t('overlay.body')}
-        </Text>
-        <Text variant="caption" color="textMuted">
-          {t('overlay.path')}
-        </Text>
-        {stillOff ? (
-          <View testID="overlay-still-off">
-            <Card tone="notice">
-              <Text variant="label" accessibilityLiveRegion="polite">
-                {t('overlay.stillOff')}
-              </Text>
-              <Text variant="body" color="textSecondary">
-                {t('overlay.stillOffBody')}
-              </Text>
-            </Card>
-          </View>
-        ) : null}
-        <Card tone="tint">
-          <Text variant="label">{t('overlay.whyTitle')}</Text>
-          <Text variant="body" color="textSecondary">
-            {t('overlay.why')}
-          </Text>
-        </Card>
-        <Card>
-          <Text variant="label">{t('overlay.skipTitle')}</Text>
-          <Text variant="body" color="textSecondary">
-            {t('overlay.skipBody')}
-          </Text>
-        </Card>
-      </ScreenGroup>
-      <ScreenGroup>
-        <Button label={t('overlay.allow')} onPress={openSettings} />
-        <Button kind="ghost" label={t('overlay.skip')} onPress={onDone} />
-      </ScreenGroup>
-    </Screen>
+    <OverlayPermissionView
+      variant="onboarding"
+      state={state}
+      onPrimary={
+        state === 'ask' ? openSettings : state === 'granted' ? onDone : () => void tryAgain()
+      }
+      onSecondary={state === 'granted' ? openSettings : onDone}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  tile: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

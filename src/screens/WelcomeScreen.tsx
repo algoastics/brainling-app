@@ -2,19 +2,20 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Thumb } from '@/components/mascot';
-import { Button, Card, Screen, ScreenGroup, Text } from '@/components/ui';
+import { Button, Card, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
+import { ONBOARDING_STEPS, STEP_WELCOME } from '@/onboarding/steps';
 import { useT } from '@/i18n';
 import { space } from '@/theme';
 
-/** S02-P0 Welcome (step 1 of 3). */
+/** S02-P0 Welcome (step 1 of 4). */
 export function WelcomeScreen() {
   const t = useT();
   return (
     <Screen spread testID="welcome">
       <ScreenGroup>
-        <Text variant="caption" color="textMuted">
-          {t('common.step', { current: 1, total: 3 })}
-        </Text>
+        <View style={styles.steps}>
+          <StepIndicator current={STEP_WELCOME} total={ONBOARDING_STEPS} />
+        </View>
         <View style={styles.hero}>
           <Thumb pose="wave" width={192} />
         </View>
@@ -46,6 +47,7 @@ export function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  steps: { flexDirection: 'row' },
   hero: { alignItems: 'center', paddingVertical: space[8] },
   center: { textAlign: 'center' },
 });

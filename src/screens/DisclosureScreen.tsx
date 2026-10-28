@@ -3,10 +3,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Button, Checkbox, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
+import { Button, Checkbox, Icon, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
 import { DISCLOSURE_VERSION } from '@/consent/version';
 import { useT } from '@/i18n';
+import { ONBOARDING_STEPS, STEP_ACCESSIBILITY } from '@/onboarding/steps';
 import { useAppStore } from '@/state/appStore';
 import { radius, space, useTheme } from '@/theme';
 
@@ -14,7 +15,7 @@ const POINTS = ['pointCount', 'pointLock', 'pointPrivacy'] as const;
 const PARAGRAPHS = ['p1', 'p2', 'p3', 'p4'] as const;
 
 /**
- * S06 Accessibility disclosure (step 3 of 3 during onboarding). Shown before EVERY deep link to
+ * S06 Accessibility disclosure (step 3 of 4 during onboarding). Shown before EVERY deep link to
  * the system Accessibility settings, including the Home banner and the watchdog re-enable link.
  * "Agree & continue" stays disabled until the box is ticked, then logs consent natively.
  */
@@ -58,9 +59,9 @@ export function DisclosureScreen() {
     <Screen spread testID="disclosure">
       <ScreenGroup>
         {onboarding ? (
-          <Text variant="caption" color="textMuted">
-            {t('common.step', { current: 3, total: 3 })}
-          </Text>
+          <View style={styles.steps}>
+            <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
+          </View>
         ) : null}
         <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
           <Icon name="shield" size={24} color="brandAccentText" />
@@ -117,6 +118,7 @@ export function DisclosureScreen() {
 }
 
 const styles = StyleSheet.create({
+  steps: { flexDirection: 'row' },
   tile: {
     width: 40,
     height: 40,

@@ -18,7 +18,6 @@ import {
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT } from '@/limit/limitRule';
 import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
-import { overlayValueKey } from '@/lock/overlayPermission';
 import { useAppStore } from '@/state/appStore';
 import { getStorage } from '@/storage';
 import { buildFeedbackMailto } from '@/support/feedback';
@@ -139,20 +138,14 @@ export function SettingsScreen() {
           trailing="chevron"
           onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
         />
-      </ListSection>
-      <ListSection title={t('settings.sections.lock')} footer={t('settings.footers.lock')}>
         <ListRow
           testID="row-overlay"
-          icon="bell"
+          icon="lock"
           title={t('settings.overlay.title')}
-          subtitle={t('settings.overlay.help')}
-          value={
-            overlayValueKey(overlayGranted) === null
-              ? undefined
-              : t(`settings.overlay.${overlayValueKey(overlayGranted) ?? 'off'}`)
-          }
-          trailing="external"
-          onPress={() => void ThumbwellCore.openOverlaySettings()}
+          subtitle={overlayGranted === false ? t('settings.overlay.offHelp') : undefined}
+          value={overlayGranted === true ? t('settings.overlay.on') : undefined}
+          trailing="chevron"
+          onPress={() => router.push('/overlay')}
         />
       </ListSection>
       {badge ? (

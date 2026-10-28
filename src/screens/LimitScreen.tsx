@@ -5,13 +5,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { LimitPicker } from '@/components/LimitPicker';
 import { LimitThumb } from '@/components/mascot';
-import { Button, Card, Screen, ScreenGroup, Text } from '@/components/ui';
+import { Button, Card, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT, estimateMinutes } from '@/limit/limitRule';
+import { ONBOARDING_STEPS, STEP_LIMIT } from '@/onboarding/steps';
 import { space } from '@/theme';
 
 /**
- * S04-P0 Daily limit (step 2 of 3). The first choice applies at once (native rule); changing it
+ * S04-P0 Daily limit (step 2 of 4). The first choice applies at once (native rule); changing it
  * later goes through Settings, where raising waits until tomorrow.
  */
 export function LimitScreen() {
@@ -47,9 +48,9 @@ export function LimitScreen() {
   return (
     <Screen spread testID="limit">
       <ScreenGroup>
-        <Text variant="caption" color="textMuted">
-          {t('common.step', { current: 2, total: 3 })}
-        </Text>
+        <View style={styles.steps}>
+          <StepIndicator current={STEP_LIMIT} total={ONBOARDING_STEPS} />
+        </View>
         <Text variant="h1" accessibilityRole="header">
           {t('limit.title')}
         </Text>
@@ -85,6 +86,7 @@ export function LimitScreen() {
 }
 
 const styles = StyleSheet.create({
+  steps: { flexDirection: 'row' },
   thumb: { alignItems: 'center' },
   picker: { paddingVertical: space[8] },
   center: { textAlign: 'center' },

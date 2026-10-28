@@ -5,11 +5,6 @@
  */
 export type OverlayGranted = boolean | null;
 
-/** The Home note about the fallback shows only once we know the permission is missing. */
-export function overlayNoticeVisible(granted: OverlayGranted): boolean {
-  return granted === false;
-}
-
 /** Which Settings value to show; `null` while unknown (no value is shown, nothing flickers). */
 export function overlayValueKey(granted: OverlayGranted): 'on' | 'off' | null {
   if (granted === null) return null;

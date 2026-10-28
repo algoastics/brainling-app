@@ -130,10 +130,15 @@ describe('disclosure gating', () => {
     expect(core.setConsent).not.toHaveBeenCalled();
   });
 
+  it('shows step 3 of 4 during onboarding', async () => {
+    await render(<DisclosureScreen />);
+    expect(screen.getByText('3 of 4')).toBeTruthy();
+  });
+
   it('"Not now" from the Home banner just goes back', async () => {
     params.current = { from: 'home' };
     await render(<DisclosureScreen />);
-    expect(screen.queryByText('3 of 3')).toBeNull();
+    expect(screen.queryByText('3 of 4')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Not now' }));
     expect(router.back).toHaveBeenCalled();
   });

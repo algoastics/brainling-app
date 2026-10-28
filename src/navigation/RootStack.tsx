@@ -26,6 +26,7 @@ export function RootStack() {
         <Stack.Protected guard={onboardingCompleted}>
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           <Stack.Screen name="about" />
+          <Stack.Screen name="overlay" />
         </Stack.Protected>
         <Stack.Protected guard={__DEV__}>
           <Stack.Screen name="lock-preview" />

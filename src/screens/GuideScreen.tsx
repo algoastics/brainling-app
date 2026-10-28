@@ -3,10 +3,11 @@ import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
+import { Button, Card, Icon, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
 import { useCountingStatus, useInterval } from '@/detection';
 import { afterAccessibility } from '@/lock/overlayPermission';
 import { useT } from '@/i18n';
+import { ONBOARDING_STEPS, STEP_ACCESSIBILITY } from '@/onboarding/steps';
 import { useAppStore } from '@/state/appStore';
 import { openAppInfo } from '@/system/settings';
 
@@ -126,6 +127,9 @@ export function GuideScreen() {
     return (
       <Screen spread testID="guide-success">
         <ScreenGroup>
+          <View style={styles.steps}>
+            <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
+          </View>
           <Text variant="h1" accessibilityRole="header" accessibilityLiveRegion="polite">
             {t('guide.successTitle')}
           </Text>
@@ -143,6 +147,9 @@ export function GuideScreen() {
   return (
     <Screen spread testID="guide">
       <ScreenGroup>
+        <View style={styles.steps}>
+          <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
+        </View>
         <Text variant="h1" accessibilityRole="header">
           {t('guide.title')}
         </Text>
@@ -208,6 +215,7 @@ export function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
+  steps: { flexDirection: 'row' },
   flex: { flex: 1 },
   center: { alignItems: 'center' },
   cardAction: { marginTop: space[8], alignItems: 'flex-start' },
