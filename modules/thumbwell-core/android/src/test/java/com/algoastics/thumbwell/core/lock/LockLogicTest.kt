@@ -201,6 +201,23 @@ class LockLogicTest {
     assertNull(f.tabChecked(stillOnReels = true)) // not in the tab phase
   }
 
+  @Test fun anAppWithNoHomeTabLeavesToThePhoneHomeAtOnce() {
+    val f = LeaveFlow()
+    assertEquals(LeaveFlow.Action.PHONE_HOME, f.press(tabAvailable = false, homeOnly = true))
+    assertTrue(f.busy)
+    assertNull(f.press(homeOnly = true)) // a second tap during the check is ignored
+    assertNull(f.tabChecked(stillOnReels = true)) // no BACK step follows
+    assertNull(f.backChecked(0, stillOnReels = true))
+    f.phoneHomeChecked()
+    assertFalse(f.busy)
+    assertEquals(LeaveFlow.Action.PHONE_HOME, f.press(homeOnly = true))
+  }
+
+  @Test fun anAppWithAHomeTabNeverGoesStraightToThePhoneHome() {
+    val f = LeaveFlow()
+    assertEquals(LeaveFlow.Action.TAB, f.press(tabAvailable = true, homeOnly = false))
+  }
+
 
   @Test fun backThatWorksEndsTheFlow() {
     val f = LeaveFlow()

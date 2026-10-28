@@ -33,9 +33,11 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 - **Leave reels** (`LeaveFlow`, `HomeTab`, `LockTree`): taps the app's Home tab and stays in the app.
   Instagram: `feed_tab`; YouTube: the first item of `pivot_bar` (rightmost in RTL); the ids are code
   constants, so the signed rules are unchanged (moving them into the rules needs a schema bump and a
-  re-sign). TikTok has no Home tab: BACK. If the tab is not found, or after 700 ms a reels surface is
-  still in front, BACK; if BACK loops, a 1.5 s cooldown, then HOME with a toast. That chain is the last
-  resort, never the default for Instagram or YouTube. Presses meanwhile are ignored.
+  re-sign). TikTok has no Home tab (its Home is the reels feed): Leave reels goes straight to the
+  phone Home screen (`Action.PHONE_HOME`, no toast, no BACK first). For Instagram and YouTube, if the
+  tab is not found, or after 700 ms a reels surface is still in front, BACK; if BACK loops, a 1.5 s
+  cooldown, then HOME with a toast. That chain is the last resort, never the default for Instagram or
+  YouTube. Presses meanwhile are ignored.
 - **Bounds** (`LockBounds`, pure, tested). The overlay covers the reels container bounds from the
   accessibility tree, minus the bottom tab bar (known bar id, else a wide low row of 3+ clickables
   near the bottom) and, in the whole-screen fallback only, the navigation bar. Fallbacks: the app
@@ -91,9 +93,9 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 ## Audio on Samsung, notifications, TikTok cover (second device round)
 
 - **Why the audio fix did not work (root cause).** Audio focus is only a request: the other app must
-  choose to stop, and on Android 15 and up an app that targets API 35 or higher (Thumbwell targets 36) may
-  request focus only as the top app or with a foreground service. An accessibility service is neither, so the
-  call returns `AUDIOFOCUS_REQUEST_FAILED` (now logged: `audio focus request result=0`) and Instagram
+  choose to stop, and on Android 15 and up an app that targets API 35 or higher (Thumbwell targets
+  36) may request focus only as the top app or with a foreground service. An accessibility service is
+  neither, so the call returns `AUDIOFOCUS_REQUEST_FAILED` (now logged: `audio focus request result=0`) and Instagram
   and TikTok are never told. The media PAUSE key only reaches an app with an active `MediaSession`;
   reels players mostly have none. `MediaSessionManager.getActiveSessions` would need a notification
   listener (or the system-only `MEDIA_CONTENT_CONTROL`): not used, no new permission is added.
@@ -216,6 +218,6 @@ is now 250 ms and checks the list on each tick: a safety package hides at once, 
 
 The device checks for the lock window and the permission are in `docs/TESTING-phase0.md` section J. Overlay appears under 500 ms after the swipe past the limit reel on Instagram, YouTube and TikTok;
 covers the surface bounds correctly on each (and not the tab bar); never over a focused comment field
-or keyboard; "Leave reels" goes to the Home tab in Instagram and YouTube (no auto-exit, no HOME), BACK in TikTok; the strip at the top is even and a banner shows in it; split
+or keyboard; "Leave reels" goes to the Home tab in Instagram and YouTube (no auto-exit, no HOME), the phone Home screen in TikTok; the strip at the top is even and a banner shows in it; split
 screen behaviour; light and dark twins; rotate; screen off and on; day roll; TalkBack reads the
 title and button; no counts while covered.

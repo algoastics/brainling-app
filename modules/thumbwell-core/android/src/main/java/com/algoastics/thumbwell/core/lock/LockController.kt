@@ -419,8 +419,9 @@ class LockController(
 
   /**
    * "Leave reels" (LOCK-B): taps the app's Home tab (Instagram, YouTube), staying inside the app.
-   * An app with no such tab (TikTok), or a tab that is not found or does not respond, falls back to
-   * BACK, and when BACK loops to HOME with a toast: the last resort, never the default.
+   * TikTok has no such tab (its Home is the reels feed), so it exits to the phone Home screen.
+   * A tab that is not found or does not respond falls back to BACK, and when BACK loops to HOME
+   * with a toast: the last resort.
    */
   private fun leave() {
     val pkg = surfacePackage ?: overlayPackage
@@ -428,8 +429,17 @@ class LockController(
     val root = pkg?.let { p -> service.rootInActiveWindow?.takeIf { it.packageName?.toString() == p } }
     val rtl = service.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
     val tab = if (root != null && rule != null && pkg != null) LockTree.findHomeTab(root, rule, pkg, rtl) else null
-    val action = flow.press(tabAvailable = tab != null) ?: return
+    val homeOnly = rule != null && HomeTab.specFor(rule.key) == null
+    val action = flow.press(tabAvailable = tab != null, homeOnly = homeOnly) ?: return
     overlay.setBusy(true)
+    if (action == LeaveFlow.Action.PHONE_HOME) {
+      perform(action)
+      handler.postDelayed({
+        flow.phoneHomeChecked()
+        overlay.setBusy(false)
+      }, LeaveFlow.TAB_CHECK_MS)
+      return
+    }
     if (action == LeaveFlow.Action.TAB) {
       if (tab != null) LockTree.click(tab)
       handler.postDelayed({ afterTab(pkg) }, LeaveFlow.TAB_CHECK_MS)
@@ -472,6 +482,10 @@ class LockController(
     when (action) {
       LeaveFlow.Action.TAB -> Unit // the tab is tapped in leave(), not by a global action
       LeaveFlow.Action.BACK -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+      LeaveFlow.Action.PHONE_HOME -> {
+        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+        Log.i(TAG, "lock exit: phone home (app has no home tab)")
+      }
       LeaveFlow.Action.HOME -> {
         service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
         Toast.makeText(service, R.string.thumbwell_lock_home_toast, Toast.LENGTH_SHORT).show()

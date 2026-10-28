@@ -119,8 +119,9 @@ Replace the limit for each step as noted. Test on Instagram, YouTube and TikTok.
 2. [ ] The limit reel plays on. Swipe once: the lock covers the next item within half a second. The
    title says "That's 5 reels. Time for a break.", the body says "locked until 04:00" (or the
    day-start setting), light and dark both look right. A limit of 1 reads "1 reel".
-3. [ ] Tap Leave reels: you leave Reels and the count does not grow while the lock is up. If the app
-   lands back on Reels, wait about 2 s for HOME and the "Taking you to your home screen" toast.
+3. [ ] Tap Leave reels: you leave Reels and the count does not grow while the lock is up. In TikTok
+   it goes straight to the phone Home screen (no toast). If Instagram or YouTube lands back on
+   Reels, wait about 2 s for HOME and the "Taking you to your home screen" toast.
 4. [ ] While locked, open DMs or the feed (they work). Re-enter Reels: the lock is back at once. Try
    the bottom tab bar while the lock is up.
 5. [ ] Open comments and focus the text field: the lock must not cover it or the keyboard.

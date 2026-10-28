@@ -245,25 +245,33 @@ class OverlayPermissionProbe(private val ttlMs: Long = 1500L) {
 
 /**
  * The "Leave reels" button as a small state machine (LOCK-B). First press: tap the app's Home tab
- * when it has one ([Action.TAB]), else BACK. If after [TAB_CHECK_MS] the user is still on a reels
- * surface (tab not found or not clickable), BACK is tried. If after [BACK_CHECK_MS] the user is
- * still on reels (BACK loops), wait [COOLDOWN_MS], then HOME (the service shows a toast). Presses
- * during a check or the cooldown are ignored. BACK and HOME are the last resort, never the default
- * for an app with a Home tab.
+ * when it has one ([Action.TAB]); an app whose Home is itself the reels feed (TikTok, `homeOnly`)
+ * goes straight to the phone Home screen ([Action.PHONE_HOME], no toast: it is the intended exit).
+ * Otherwise BACK. If after [TAB_CHECK_MS] the user is still on a reels surface (tab not found or
+ * not clickable), BACK is tried. If after [BACK_CHECK_MS] the user is still on reels (BACK loops),
+ * wait [COOLDOWN_MS], then HOME (the service shows a toast). Presses during a check or the
+ * cooldown are ignored. BACK and HOME are the last resort for an app with a Home tab.
  */
 class LeaveFlow {
-  enum class Action { TAB, BACK, HOME }
+  enum class Action { TAB, BACK, HOME, PHONE_HOME }
 
-  private enum class Phase { IDLE, TAB_SENT, BACK_SENT, COOLDOWN }
+  private enum class Phase { IDLE, TAB_SENT, PHONE_HOME_SENT, BACK_SENT, COOLDOWN }
 
   private var phase = Phase.IDLE
   private var cooldownEndMs = 0L
 
   val busy: Boolean get() = phase != Phase.IDLE
 
-  /** [tabAvailable]: the app has a Home tab node that can be tapped right now. */
-  fun press(tabAvailable: Boolean = false): Action? {
+  /**
+   * [tabAvailable]: the app has a Home tab node that can be tapped right now. [homeOnly]: the app
+   * has no Home tab to go to (TikTok), so the exit is the phone Home screen.
+   */
+  fun press(tabAvailable: Boolean = false, homeOnly: Boolean = false): Action? {
     if (phase != Phase.IDLE) return null
+    if (homeOnly) {
+      phase = Phase.PHONE_HOME_SENT
+      return Action.PHONE_HOME
+    }
     return if (tabAvailable) {
       phase = Phase.TAB_SENT
       Action.TAB
@@ -271,6 +279,11 @@ class LeaveFlow {
       phase = Phase.BACK_SENT
       Action.BACK
     }
+  }
+
+  /** After [TAB_CHECK_MS] of a [Action.PHONE_HOME]: the flow is over, nothing else is sent. */
+  fun phoneHomeChecked() {
+    if (phase == Phase.PHONE_HOME_SENT) phase = Phase.IDLE
   }
 
   /** After [TAB_CHECK_MS]: null when the tab worked, else BACK (the next step). */
