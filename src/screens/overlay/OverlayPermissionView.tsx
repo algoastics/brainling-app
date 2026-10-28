@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Thumb } from '@/components/mascot';
-import { Button, Card, Icon, Screen, StatusChip, Text, TopBar } from '@/components/ui';
+import { Button, Card, Icon, Screen, StatusChip, StepTile, Text, TopBar } from '@/components/ui';
 import { useT } from '@/i18n';
 import { radius, sizes, space, useTheme } from '@/theme';
 
@@ -85,7 +85,7 @@ function Ask({
           ))}
           {NEVER.map((key) => (
             <View key={key} style={styles.checkRow}>
-              <Icon name="close" size={20} color="statusDanger" />
+              <Icon name="close" size={20} color="statusDangerStrong" />
               <Text variant="label" style={styles.flex}>
                 {t(`overlay.ask.${key}`)}
               </Text>
@@ -93,6 +93,9 @@ function Ask({
           ))}
         </View>
         <AndroidPreview />
+        <Text variant="caption" color="textSecondary">
+          {t('disclosure.disclaimer')}
+        </Text>
       </View>
       <View style={styles.bottom}>
         <View style={styles.note}>
@@ -176,7 +179,7 @@ function Result({
         <Text variant="body" color="textSecondary" style={styles.centerText}>
           {copy.body}
         </Text>
-        <Card tone="tint" style={styles.card}>
+        <Card tone="tint">
           <Text variant="h3">{copy.cardTitle}</Text>
           <Text variant="body" color="textSecondary">
             {copy.cardBody}
@@ -216,7 +219,6 @@ const TEST_IDS: Record<OverlayViewState, string> = {
 export function OverlayPermissionView(props: OverlayPermissionViewProps) {
   const { variant, state, onBack } = props;
   const t = useT();
-  const { colors } = useTheme();
   const settings = variant === 'settings';
   const testID = settings ? 'overlay-settings' : TEST_IDS[state];
   return (
@@ -228,13 +230,7 @@ export function OverlayPermissionView(props: OverlayPermissionViewProps) {
         settings ? <TopBar title={t('overlay.settings.screenTitle')} onBack={onBack} /> : undefined
       }
     >
-      {!settings ? (
-        <View style={styles.header}>
-          <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
-            <Icon name="lock" size={24} color="brandAccentText" />
-          </View>
-        </View>
-      ) : null}
+      {!settings ? <StepTile icon="lock" /> : null}
       {state === 'ask' ? (
         <Ask onPrimary={props.onPrimary} onSecondary={props.onSecondary} />
       ) : (
@@ -246,19 +242,10 @@ export function OverlayPermissionView(props: OverlayPermissionViewProps) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: space[16] },
-  tile: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   top: { gap: space[12] },
   bottom: { gap: space[12] },
   center: { alignItems: 'center' },
   centerText: { textAlign: 'center' },
-  card: { gap: space[8] },
   checklist: { gap: space[8] },
   checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space[12] },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: space[8] },

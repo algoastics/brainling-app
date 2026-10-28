@@ -4,6 +4,7 @@ export * from './Checkbox';
 export * from './Chip';
 export * from './StatusChip';
 export * from './StepIndicator';
+export * from './StepTile';
 export * from './Card';
 export * from './ListRow';
 export * from './TopBar';

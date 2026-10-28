@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Button, Checkbox, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
+import { Button, Checkbox, Icon, Screen, ScreenGroup, StepTile, Text } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
 import { DISCLOSURE_VERSION } from '@/consent/version';
 import { useT } from '@/i18n';
@@ -61,9 +61,7 @@ export function DisclosureScreen() {
   return (
     <Screen spread edges={['bottom']} testID="disclosure">
       <ScreenGroup gap={space[12]}>
-        <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
-          <Icon name="shield" size={24} color="brandAccentText" />
-        </View>
+        <StepTile icon="shield" />
         <Text variant="h1" accessibilityRole="header">
           {t('disclosure.title')}
         </Text>
@@ -131,16 +129,6 @@ export function DisclosureScreen() {
 }
 
 const styles = StyleSheet.create({
-  /** Below the persistent step header; Figma has 8 dp between them, the layout already leaves 16. */
-  tile: {
-    alignSelf: 'flex-end',
-    marginTop: -space[8],
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   points: { gap: space[8] },
   point: { flexDirection: 'row', alignItems: 'flex-start', gap: space[12] },
   pointText: { flex: 1 },
