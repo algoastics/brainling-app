@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { thumbStateFor, thumbStateForHealth } from '../thumbState';
+import { thumbPoseForLimit, thumbStateFor, thumbStateForHealth } from '../thumbState';
 
 describe('Thumb state bands', () => {
   it('maps the health score to the Figma bands', () => {
@@ -24,6 +24,18 @@ describe('Thumb state bands', () => {
     expect(thumbStateFor(40, 60)).toBe('tired');
     expect(thumbStateFor(60, 60)).toBe('fried');
     expect(thumbStateFor(75, 60)).toBe('fried');
+  });
+
+  it('previews the daily-limit pose from the value being chosen', () => {
+    expect(thumbPoseForLimit(10)).toBe('glowing');
+    expect(thumbPoseForLimit(30)).toBe('glowing');
+    expect(thumbPoseForLimit(40)).toBe('glowing');
+    expect(thumbPoseForLimit(45)).toBe('happy');
+    expect(thumbPoseForLimit(60)).toBe('happy');
+    expect(thumbPoseForLimit(100)).toBe('happy');
+    expect(thumbPoseForLimit(105)).toBe('meh');
+    expect(thumbPoseForLimit(150)).toBe('meh');
+    expect(thumbPoseForLimit(200)).toBe('meh');
   });
 
   it('treats a zero budget as fried once anything is counted', () => {

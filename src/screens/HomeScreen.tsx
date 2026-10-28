@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppRow } from '@/components/AppRow';
-import { Thumb } from '@/components/mascot';
+import { AliveThumb } from '@/components/mascot';
 import { Banner, ProgressBar, Screen, Text, TopBar } from '@/components/ui';
 import { SUPPORTED_APPS, countFor, type SupportedApp } from '@/apps/supportedApps';
 import {
@@ -38,8 +38,8 @@ function HomeAppRow({ app, count }: { app: SupportedApp; count: number }) {
 }
 
 /**
- * Phase 0 shows ONE fixed Thumb, the "Thumb happy" instance drawn in the Figma S14-P0 frames
- * (light and dark). The count-based health bands are Phase 1 (see `thumbState.ts`).
+ * Phase 0 Home keeps the happy Thumb and lets it breathe and blink (A59). Count-based health
+ * bands stay Phase 1 (see `thumbState.ts`).
  */
 export const HOME_THUMB_POSE = 'happy' as const;
 
@@ -127,7 +127,7 @@ export function HomeScreen() {
         />
       ) : null}
       <View style={styles.hero}>
-        <Thumb pose={HOME_THUMB_POSE} width={156} />
+        <AliveThumb pose={HOME_THUMB_POSE} width={156} />
         <View style={styles.count}>
           <Text
             variant="counterXl"

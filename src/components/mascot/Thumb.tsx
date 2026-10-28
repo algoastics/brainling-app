@@ -26,17 +26,20 @@ export type ThumbProps = {
   pose: ThumbPose;
   /** Rendered width in dp; the height follows the 240:270 artwork. */
   width?: number;
+  /** Hide from assistive tech when a parent already names the Thumb. */
+  decorative?: boolean;
 };
 
 /** Static Thumb mascot (Figma 03 Mascot). A Rive version can replace the artwork later. */
-export const Thumb = memo(function Thumb({ pose, width = 192 }: ThumbProps) {
+export const Thumb = memo(function Thumb({ pose, width = 192, decorative = false }: ThumbProps) {
   const t = useT();
   const height = Math.round((width * THUMB_ART_SIZE.height) / THUMB_ART_SIZE.width);
   return (
     <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={t('mascot.label')}
+      accessible={!decorative}
+      accessibilityRole={decorative ? undefined : 'image'}
+      accessibilityLabel={decorative ? undefined : t('mascot.label')}
+      importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
       style={{ width, height }}
     >
       <SvgAst ast={thumbAst(pose)} override={{ width, height }} />

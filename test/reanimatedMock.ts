@@ -72,7 +72,7 @@ const reanimated = {
   interpolate,
   interpolateColor,
   Extrapolation: { CLAMP: 'clamp' },
-  Easing: { bezier: () => identity },
+  Easing: { bezier: () => identity, linear: identity, sin: identity, inOut: () => identity },
   FadeIn: animation,
   FadeOut: animation,
   SlideInDown: animation,

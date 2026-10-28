@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { LimitPicker } from '@/components/LimitPicker';
+import { LimitThumb } from '@/components/mascot';
 import { Button, Card, Screen, ScreenGroup, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT, estimateMinutes } from '@/limit/limitRule';
@@ -55,6 +56,9 @@ export function LimitScreen() {
         <Text variant="body" color="textSecondary">
           {t('limit.body')}
         </Text>
+        <View style={styles.thumb}>
+          <LimitThumb value={value} />
+        </View>
         <View style={styles.picker}>
           <LimitPicker value={value} onChange={setValue} />
         </View>
@@ -81,6 +85,7 @@ export function LimitScreen() {
 }
 
 const styles = StyleSheet.create({
+  thumb: { alignItems: 'center' },
   picker: { paddingVertical: space[8] },
   center: { textAlign: 'center' },
 });
