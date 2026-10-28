@@ -42,6 +42,8 @@ describe('odometerSlots', () => {
 
   it('keeps 44 dp cells at 64 dp type', () => {
     expect(odometerCellWidth(64)).toBe(44);
+    expect(odometerCellWidth(48)).toBe(32);
+    expect(odometerCellWidth(32)).toBe(24);
   });
 });
 

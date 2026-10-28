@@ -108,7 +108,7 @@ export function HomeScreen() {
         <AliveThumb pose={HOME_THUMB_POSE} width={156} />
         <View style={styles.count}>
           <Text
-            variant="counterXl"
+            variant="counterL"
             testID="total-count"
             numberOfLines={1}
             adjustsFontSizeToFit

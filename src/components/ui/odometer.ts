@@ -38,7 +38,9 @@ export function odometerSlots(prev: number | null, next: number): OdometerSlot[]
   });
 }
 
-/** Width of one tabular digit cell: 44 dp at 64 dp type (Figma), scaled for other sizes. */
+/** Width of one tabular digit cell (Figma): 44 dp at 64 dp type, 32 at 48, 24 at 32. */
 export function odometerCellWidth(fontSize: number): number {
+  if (fontSize === 48) return 32;
+  if (fontSize === 32) return 24;
   return Math.round(fontSize * 0.6875);
 }

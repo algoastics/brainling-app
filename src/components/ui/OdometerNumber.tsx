@@ -31,7 +31,7 @@ function DigitCell({
   reduced: boolean;
 }) {
   const { fontSize, lineHeight } = type[size];
-  const height = lineHeight + 8;
+  const height = lineHeight + 4;
   const progress = useSharedValue(1);
   const [settledKey, setSettledKey] = useState<string | null>(null);
   const rolling = slot.from !== null && !reduced && settledKey !== rollKey;

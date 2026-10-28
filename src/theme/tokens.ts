@@ -126,57 +126,66 @@ type TypeStyle = {
 export const tracking = (percent: number, fontSize: number): number =>
   Math.round((percent / 100) * fontSize * 100) / 100;
 
-/** Figma type scale (Foundations "Typography" variables, tracking converted from percent). */
+/**
+ * Figma type scale v1.4 (Foundations "Typography" text styles, 28 Oct). Tracking is dp: Figma
+ * gives H1, Counter L and Button in px and Overline as 8 %. Counter XL, Counter M and Display
+ * only have their sizes in the file, so their line height and tracking follow the old ratios.
+ */
 export const type = {
   counterXl: {
     fontFamily: fonts.nunito.black,
-    fontSize: 96,
-    lineHeight: 96,
-    letterSpacing: tracking(-3, 96),
-  },
-  counterL: {
-    fontFamily: fonts.nunito.black,
     fontSize: 64,
     lineHeight: 64,
-    letterSpacing: tracking(-2.5, 64),
+    letterSpacing: tracking(-3, 64),
   },
+  counterL: { fontFamily: fonts.nunito.black, fontSize: 48, lineHeight: 48, letterSpacing: -1.5 },
   counterM: {
     fontFamily: fonts.nunito.black,
-    fontSize: 40,
-    lineHeight: 44,
-    letterSpacing: tracking(-1.5, 40),
+    fontSize: 32,
+    lineHeight: 36,
+    letterSpacing: tracking(-1.5, 32),
   },
   display: {
     fontFamily: fonts.nunito.black,
-    fontSize: 48,
-    lineHeight: 52,
-    letterSpacing: tracking(-1.5, 48),
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: tracking(-1.5, 36),
   },
-  h1: {
-    fontFamily: fonts.nunito.extrabold,
-    fontSize: 32,
-    lineHeight: 38,
-    letterSpacing: tracking(-1, 32),
-  },
-  h2: { fontFamily: fonts.nunito.extrabold, fontSize: 24, lineHeight: 30 },
-  h3: { fontFamily: fonts.nunito.bold, fontSize: 20, lineHeight: 26 },
-  button: {
-    fontFamily: fonts.nunito.extrabold,
-    fontSize: 17,
-    lineHeight: 20,
-    letterSpacing: tracking(1, 17),
-  },
-  bodyL: { fontFamily: fonts.inter.regular, fontSize: 18, lineHeight: 26 },
-  body: { fontFamily: fonts.inter.regular, fontSize: 16, lineHeight: 24 },
-  label: { fontFamily: fonts.inter.semibold, fontSize: 14, lineHeight: 20 },
+  h1: { fontFamily: fonts.nunito.extrabold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 },
+  h2: { fontFamily: fonts.nunito.extrabold, fontSize: 20, lineHeight: 26 },
+  h3: { fontFamily: fonts.nunito.bold, fontSize: 17, lineHeight: 24 },
+  button: { fontFamily: fonts.nunito.extrabold, fontSize: 15, lineHeight: 20, letterSpacing: 0.5 },
+  bodyL: { fontFamily: fonts.inter.regular, fontSize: 16, lineHeight: 24 },
+  body: { fontFamily: fonts.inter.regular, fontSize: 14, lineHeight: 20 },
+  label: { fontFamily: fonts.inter.semibold, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: fonts.inter.medium, fontSize: 12, lineHeight: 16 },
   overline: {
     fontFamily: fonts.inter.semibold,
-    fontSize: 12,
+    fontSize: 11,
     lineHeight: 16,
-    letterSpacing: tracking(10, 12),
+    letterSpacing: tracking(8, 11),
   },
 } as const satisfies Record<string, TypeStyle>;
+
+/**
+ * How far Android font scaling may grow each style. Titles, counters and buttons sit in fixed
+ * layouts, so they stop at 1.2; reading text goes to 1.3.
+ */
+export const maxFontScale: Record<keyof typeof type, number> = {
+  counterXl: 1.2,
+  counterL: 1.2,
+  counterM: 1.2,
+  display: 1.2,
+  h1: 1.2,
+  h2: 1.2,
+  h3: 1.2,
+  button: 1.2,
+  bodyL: 1.3,
+  body: 1.3,
+  label: 1.3,
+  caption: 1.3,
+  overline: 1.3,
+};
 
 export type TypeVariant = keyof typeof type;
 

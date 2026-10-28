@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { darkColors, lightColors, sizes, spacing, tracking, type } from '../tokens';
+import { darkColors, lightColors, maxFontScale, sizes, spacing, tracking, type } from '../tokens';
 
 function luminance(hex: string): number {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -76,10 +76,19 @@ describe('Figma foundations added in the design pass', () => {
     expect(darkColors.glowHeroEnd).toBe('#8C75FF00');
   });
 
+  it('follows the v1.4 type scale and caps font scaling', () => {
+    expect(type.h1).toMatchObject({ fontSize: 24, lineHeight: 30 });
+    expect(type.h3).toMatchObject({ fontSize: 17, lineHeight: 24 });
+    expect(type.body).toMatchObject({ fontSize: 14, lineHeight: 20 });
+    expect(type.button).toMatchObject({ fontSize: 15, letterSpacing: 0.5 });
+    expect(maxFontScale.h1).toBe(1.2);
+    expect(maxFontScale.body).toBe(1.3);
+  });
+
   it('converts Figma tracking percent to dp', () => {
     expect(tracking(-3, 96)).toBe(-2.88);
-    expect(type.counterL.letterSpacing).toBe(-1.6);
-    expect(type.overline.letterSpacing).toBe(1.2);
+    expect(type.counterL.letterSpacing).toBe(-1.5);
+    expect(type.overline.letterSpacing).toBe(0.88);
     expect(type.h2).not.toHaveProperty('letterSpacing');
   });
 
@@ -88,6 +97,6 @@ describe('Figma foundations added in the design pass', () => {
     expect(sizes.tabBarHeight).toBe(64);
     expect(sizes.rowHeight).toBe(56);
     expect(sizes.grabberWidth).toBe(36);
-    expect(type.counterM.fontSize).toBe(40);
+    expect(type.counterM.fontSize).toBe(32);
   });
 });
