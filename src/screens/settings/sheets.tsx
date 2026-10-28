@@ -168,7 +168,7 @@ export function BadgeTimeSheet({ visible, onClose, value, onSave }: BadgeTimeShe
           <ListRow
             key={option}
             testID={`badge-time-${option}`}
-            title={t(`settings.badge.timeValue_${option}`)}
+            title={t(`settings.badgeDialog.option_${option}`)}
             selectable
             checked={chosen === option}
             onPress={() => {

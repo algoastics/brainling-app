@@ -389,16 +389,21 @@ describe('settings (S43-P0)', () => {
   it('picks the badge display time from the chips', async () => {
     await render(<SettingsScreen />);
     await fireEvent.press(await screen.findByTestId('row-badge-time'));
+    expect(screen.getByText('How long the Thumb stays awake after a count.')).toBeTruthy();
     expect(
-      screen.getByText(
-        'How long the Thumb stays awake after a counted reel. Always keeps it awake while you watch reels.',
-      ),
+      screen.getByText('Default: Always. 1–3 s lets the Thumb rest between reels.'),
     ).toBeTruthy();
-    expect(screen.getByText('Default: Always')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('badge-time-3s'));
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     await waitFor(() => expect(core.setBadgeSettings).toHaveBeenCalledWith({ displayTime: '3s' }));
     expect(await screen.findByRole('button', { name: 'Badge display time, 3 s' })).toBeTruthy();
+  });
+
+  it('opens Android Accessibility settings from the Counting row while counting is on', async () => {
+    await render(<SettingsScreen />);
+    await fireEvent.press(await screen.findByTestId('row-counting'));
+    expect(core.openAccessibilitySettings).toHaveBeenCalledTimes(1);
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it('sends the user to the disclosure to fix paused counting', async () => {

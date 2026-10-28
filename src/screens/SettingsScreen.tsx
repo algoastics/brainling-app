@@ -3,7 +3,7 @@ import * as Application from 'expo-application';
 import * as Device from 'expo-device';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking, StyleSheet } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
 import { Dialog, ListGroup, ListRow, ListSection, Screen, Text, TopBar } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
@@ -21,7 +21,7 @@ import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
 import { useAppStore } from '@/state/appStore';
 import { getStorage } from '@/storage';
 import { buildFeedbackMailto } from '@/support/feedback';
-import { space, useThemePreference } from '@/theme';
+import { space, spacing, useThemePreference } from '@/theme';
 
 import { BadgeTimeSheet, DayStartSheet, LimitSheet, ThemeSheet } from './settings/sheets';
 
@@ -96,151 +96,162 @@ export function SettingsScreen() {
 
   return (
     <Screen testID="settings" edges={['top']} header={<TopBar title={t('settings.title')} />}>
-      <ListSection title={t('settings.sections.counting')} footer={t('settings.footers.counting')}>
-        <ListRow
-          testID="row-limit"
-          icon="lock"
-          title={t('settings.limit')}
-          subtitle={
-            limit?.pending != null
-              ? t('settings.limitPending', { count: limit.pending })
-              : undefined
-          }
-          value={t('settings.limitValue', { count: limit?.effective ?? DEFAULT_LIMIT })}
-          onPress={() => limit && open('limit')}
-        />
-        <ListRow
-          testID="row-counting"
-          icon="accessibility"
-          title={t('settings.counting')}
-          subtitle={
-            paused ? t(`home.paused.${status?.pausedReason ?? 'service_disabled'}`) : undefined
-          }
-          value={countingValue}
-          onPress={
-            paused
-              ? () => router.push({ pathname: '/disclosure', params: { from: 'settings' } })
-              : undefined
-          }
-          trailing={paused ? 'chevron' : undefined}
-        />
-        <ListRow
-          testID="row-day-start"
-          icon="moon"
-          title={t('settings.dayStart')}
-          value={formatDayStart(dayStart)}
-          onPress={() => open('dayStart')}
-        />
-        <ListRow
-          testID="row-disclosure"
-          icon="shield"
-          title={t('settings.disclosure')}
-          trailing="chevron"
-          onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
-        />
-        <ListRow
-          testID="row-overlay"
-          icon="lock"
-          title={t('settings.overlay.title')}
-          subtitle={overlayGranted === false ? t('settings.overlay.offHelp') : undefined}
-          value={overlayGranted === true ? t('settings.overlay.on') : undefined}
-          trailing="chevron"
-          onPress={() => router.push('/overlay')}
-        />
-      </ListSection>
-      {badge ? (
-        <ListSection title={t('settings.sections.badge')} footer={t('settings.footers.badge')}>
+      <View style={styles.groups}>
+        <ListSection
+          title={t('settings.sections.counting')}
+          footer={t('settings.footers.counting')}
+        >
           <ListRow
-            testID="row-badge"
-            icon="badge"
-            title={t('settings.badge.floating')}
-            subtitle={t('settings.badge.floatingHelp')}
-            switchValue={badge.enabled}
-            onSwitchChange={(enabled) => void updateBadge({ enabled })}
+            testID="row-limit"
+            icon="sliders"
+            title={t('settings.limit')}
+            subtitle={
+              limit?.pending != null
+                ? t('settings.limitPending', { count: limit.pending })
+                : undefined
+            }
+            value={t('settings.limitValue', { count: limit?.effective ?? DEFAULT_LIMIT })}
+            trailing="chevron"
+            onPress={() => limit && open('limit')}
           />
           <ListRow
-            testID="row-badge-time"
-            icon="timer"
-            title={t('settings.badge.time')}
-            value={t(`settings.badge.timeValue_${badge.displayTime}`)}
-            onPress={() => open('badgeTime')}
+            testID="row-counting"
+            icon="accessibility"
+            title={t('settings.counting')}
+            subtitle={
+              paused ? t(`home.paused.${status?.pausedReason ?? 'service_disabled'}`) : undefined
+            }
+            value={countingValue}
+            onPress={
+              paused
+                ? () => router.push({ pathname: '/disclosure', params: { from: 'settings' } })
+                : () => void ThumbwellCore.openAccessibilitySettings()
+            }
+            trailing="chevron"
           />
           <ListRow
-            testID="row-badge-hide"
-            icon="eyeOff"
-            title={t('settings.badge.hide')}
-            subtitle={t('settings.badge.hideHelp')}
-            switchValue={badge.hideWhenResting}
-            switchDisabled={badge.displayTime === 'always'}
-            onSwitchChange={(hideWhenResting) => void updateBadge({ hideWhenResting })}
+            testID="row-day-start"
+            icon="moon"
+            title={t('settings.dayStart')}
+            value={formatDayStart(dayStart)}
+            onPress={() => open('dayStart')}
+          />
+          <ListRow
+            testID="row-disclosure"
+            icon="shield"
+            title={t('settings.disclosure')}
+            trailing="chevron"
+            onPress={() => router.push({ pathname: '/disclosure', params: { from: 'settings' } })}
+          />
+          <ListRow
+            testID="row-overlay"
+            icon="lock"
+            title={t('settings.overlay.title')}
+            subtitle={
+              overlayGranted === false
+                ? t('settings.overlay.offHelp')
+                : overlayGranted === true
+                  ? t('settings.overlay.on')
+                  : undefined
+            }
+            trailing="chevron"
+            onPress={() => router.push('/overlay')}
           />
         </ListSection>
-      ) : null}
-      <ListSection
-        title={t('settings.sections.appearance')}
-        footer={t('settings.footers.appearance')}
-      >
-        <ListRow
-          testID="row-theme"
-          icon="contrast"
-          title={t('settings.theme.title')}
-          value={t(`settings.theme.${themePreference}`)}
-          onPress={() => open('theme')}
-        />
-      </ListSection>
-      <ListSection title={t('settings.sections.about')}>
-        <ListRow
-          testID="row-privacy"
-          icon="info"
-          title={t('settings.privacy')}
-          trailing="external"
-          onPress={openPrivacy}
-        />
-        <ListRow
-          testID="row-feedback"
-          icon="sparkles"
-          title={t('settings.feedback')}
-          trailing="chevron"
-          onPress={sendFeedback}
-        />
-        <ListRow
-          testID="row-about"
-          icon="info"
-          title={t('settings.about')}
-          trailing="chevron"
-          onPress={() => router.push('/about')}
-        />
-        <ListRow
-          testID="row-version"
-          title={t('settings.version')}
-          value={`${version} (${build})`}
-        />
-      </ListSection>
-      <ListSection title={t('settings.sections.data')} footer={t('settings.footers.data')}>
-        <ListRow
-          testID="row-delete"
-          icon="trash"
-          title={t('settings.delete')}
-          danger
-          onPress={() => open('delete')}
-        />
-      </ListSection>
-      {__DEV__ ? (
-        <ListGroup>
+        {badge ? (
+          <ListSection title={t('settings.sections.badge')} footer={t('settings.footers.badge')}>
+            <ListRow
+              testID="row-badge"
+              icon="badge"
+              title={t('settings.badge.floating')}
+              subtitle={t('settings.badge.floatingHelp')}
+              switchValue={badge.enabled}
+              onSwitchChange={(enabled) => void updateBadge({ enabled })}
+            />
+            <ListRow
+              testID="row-badge-time"
+              icon="timer"
+              title={t('settings.badge.time')}
+              value={t(`settings.badge.timeValue_${badge.displayTime}`)}
+              onPress={() => open('badgeTime')}
+            />
+            <ListRow
+              testID="row-badge-hide"
+              icon="eyeOff"
+              title={t('settings.badge.hide')}
+              subtitle={t('settings.badge.hideHelp')}
+              switchValue={badge.hideWhenResting}
+              switchDisabled={badge.displayTime === 'always'}
+              onSwitchChange={(hideWhenResting) => void updateBadge({ hideWhenResting })}
+            />
+          </ListSection>
+        ) : null}
+        <ListSection
+          title={t('settings.sections.appearance')}
+          footer={t('settings.footers.appearance')}
+        >
           <ListRow
-            testID="row-lock-preview"
-            title={t('settings.dev.lockPreview')}
+            testID="row-theme"
+            icon="contrast"
+            title={t('settings.theme.title')}
+            value={t(`settings.theme.${themePreference}`)}
+            onPress={() => open('theme')}
+          />
+        </ListSection>
+        <ListSection title={t('settings.sections.about')}>
+          <ListRow
+            testID="row-privacy"
+            icon="external"
+            title={t('settings.privacy')}
             trailing="chevron"
-            onPress={() => router.push('/lock-preview')}
+            onPress={openPrivacy}
           />
           <ListRow
-            testID="row-debug"
-            title={t('settings.dev.debug')}
+            testID="row-feedback"
+            icon="sparkles"
+            title={t('settings.feedback')}
             trailing="chevron"
-            onPress={() => router.push('/detection-debug')}
+            onPress={sendFeedback}
           />
-        </ListGroup>
-      ) : null}
+          <ListRow
+            testID="row-about"
+            icon="info"
+            title={t('settings.about')}
+            trailing="chevron"
+            onPress={() => router.push('/about')}
+          />
+          <ListRow
+            testID="row-version"
+            title={t('settings.version')}
+            value={`${version} (${build})`}
+          />
+        </ListSection>
+        <ListSection title={t('settings.sections.data')} footer={t('settings.footers.data')}>
+          <ListRow
+            testID="row-delete"
+            icon="trash"
+            title={t('settings.delete')}
+            danger
+            onPress={() => open('delete')}
+          />
+        </ListSection>
+        {__DEV__ ? (
+          <ListGroup>
+            <ListRow
+              testID="row-lock-preview"
+              title={t('settings.dev.lockPreview')}
+              trailing="chevron"
+              onPress={() => router.push('/lock-preview')}
+            />
+            <ListRow
+              testID="row-debug"
+              title={t('settings.dev.debug')}
+              trailing="chevron"
+              onPress={() => router.push('/detection-debug')}
+            />
+          </ListGroup>
+        ) : null}
+      </View>
       <Text variant="caption" color="textMuted" style={styles.disclaimer} testID="disclaimer">
         {t('settings.disclaimer')}
       </Text>
@@ -293,5 +304,6 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  groups: { gap: spacing.sectionGap },
   disclaimer: { textAlign: 'center', paddingHorizontal: space[8] },
 });
