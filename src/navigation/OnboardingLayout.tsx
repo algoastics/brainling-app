@@ -1,16 +1,24 @@
 import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { StepIndicator } from '@/components/ui';
+import { bezier, useReducedMotion } from '@/motion';
 import { motion, space, spacing, useTheme } from '@/theme';
 import { ONBOARDING_STEPS, onboardingStepFor } from '@/onboarding/steps';
 import { useOverlayStage } from '@/onboarding/overlayStage';
 
+const ENTER_DISTANCE = 30;
+const ENTER_EASING = bezier(motion.easing.decelerate);
+
 /**
  * Layout of the onboarding routes (Welcome, Limit, Disclosure, Guide). It owns the step header, so
- * the dots and the counter stay mounted and fixed while only the screen below slides in (300 ms).
- * It also pads the top safe area, so the screens inside pad the bottom only.
+ * the dots and the counter stay mounted and fixed while only the content below changes. Content
+ * transition (A53): the new screen replaces the old at once and slides in 30 dp from the right
+ * while fading in over 300 ms; reduced motion swaps with no movement. It also pads the top safe
+ * area, so the screens inside pad the bottom only.
  */
 export function OnboardingLayout() {
   const { colors } = useTheme();
@@ -18,6 +26,20 @@ export function OnboardingLayout() {
   const { from } = useGlobalSearchParams<{ from?: string }>();
   const overlayStage = useOverlayStage((s) => s.active);
   const step = onboardingStepFor(pathname, from, overlayStage);
+  const reduced = useReducedMotion();
+  const enter = useSharedValue(1);
+  const previous = useRef(pathname);
+  useEffect(() => {
+    if (previous.current === pathname) return;
+    previous.current = pathname;
+    if (reduced) return;
+    enter.set(0);
+    enter.set(withTiming(1, { duration: motion.duration.base, easing: ENTER_EASING }));
+  }, [pathname, reduced, enter]);
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: enter.get(),
+    transform: [{ translateX: (1 - enter.get()) * ENTER_DISTANCE }],
+  }));
   return (
     <SafeAreaView
       edges={['top']}
@@ -29,16 +51,15 @@ export function OnboardingLayout() {
           <StepIndicator current={step} total={ONBOARDING_STEPS} />
         </View>
       ) : null}
-      <View style={styles.body}>
+      <Animated.View style={[styles.body, enterStyle]}>
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: 'slide_from_right',
-            animationDuration: motion.duration.base,
+            animation: 'none',
             contentStyle: { backgroundColor: colors.bgScreen },
           }}
         />
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
