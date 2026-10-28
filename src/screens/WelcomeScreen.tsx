@@ -22,13 +22,13 @@ export function WelcomeScreen() {
           {t('welcome.body')}
         </Text>
         <Card tone="notice">
-          <Text variant="label">{t('welcome.testTitle')}</Text>
+          <Text variant="h3">{t('welcome.testTitle')}</Text>
           <Text variant="body" color="textSecondary">
             {t('welcome.testBody')}
           </Text>
         </Card>
       </ScreenGroup>
-      <ScreenGroup>
+      <ScreenGroup gap={space[12]}>
         <Button
           label={t('welcome.cta')}
           onPress={() => router.push('/limit')}
@@ -43,6 +43,6 @@ export function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', paddingVertical: space[8] },
+  hero: { alignItems: 'center' },
   center: { textAlign: 'center' },
 });

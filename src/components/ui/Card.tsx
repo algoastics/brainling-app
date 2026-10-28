@@ -39,5 +39,5 @@ export function Card({ children, tone = 'default', style }: CardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.lg, padding: space[20], gap: space[4] },
+  card: { borderRadius: radius.lg, padding: space[20], gap: space[8] },
 });

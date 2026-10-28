@@ -19,7 +19,8 @@ export type ScreenProps = {
 
 /**
  * Themed, safe-area aware scrolling screen: 16dp margins, 12dp top, 16dp between blocks (Figma
- * 360x800 frames). `spread` lets the last child group sit at the bottom on tall phones.
+ * 360x800 frames). `spread` (onboarding) lets the last child group sit at the bottom on tall phones,
+ * 32 dp above the bottom edge.
  */
 export function Screen({
   children,
@@ -50,9 +51,9 @@ export function Screen({
   );
 }
 
-/** A group of stacked blocks inside a `spread` screen. */
-export function ScreenGroup({ children }: { children: ReactNode }) {
-  return <View style={styles.group}>{children}</View>;
+/** A group of stacked blocks inside a `spread` screen (16 dp apart unless `gap` says otherwise). */
+export function ScreenGroup({ children, gap = space[16] }: { children: ReactNode; gap?: number }) {
+  return <View style={{ gap }}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -63,6 +64,5 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sectionGap,
     gap: space[16],
   },
-  spread: { flexGrow: 1, justifyContent: 'space-between' },
-  group: { gap: space[16] },
+  spread: { flexGrow: 1, justifyContent: 'space-between', paddingBottom: space[32] },
 });
