@@ -91,8 +91,8 @@ Code: `modules/thumbwell-core/android/src/main/java/com/algoastics/thumbwell/cor
 ## Audio on Samsung, notifications, TikTok cover (second device round)
 
 - **Why the audio fix did not work (root cause).** Audio focus is only a request: the other app must
-  choose to stop, and on Android 15 and up an app that targets API 35 (Thumbwell does) may request
-  focus only as the top app or with a foreground service. An accessibility service is neither, so the
+  choose to stop, and on Android 15 and up an app that targets API 35 or higher (Thumbwell targets 36) may
+  request focus only as the top app or with a foreground service. An accessibility service is neither, so the
   call returns `AUDIOFOCUS_REQUEST_FAILED` (now logged: `audio focus request result=0`) and Instagram
   and TikTok are never told. The media PAUSE key only reaches an app with an active `MediaSession`;
   reels players mostly have none. `MediaSessionManager.getActiveSessions` would need a notification

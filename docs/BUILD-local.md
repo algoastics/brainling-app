@@ -7,7 +7,9 @@ Not run by the author of this file: these are the exact steps, taken from the pr
 
 1. Prerequisites (once):
    - JDK 17 (Zulu) at `/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home`.
-   - Android SDK at `~/Library/Android/sdk` (platform-tools for `adb`).
+   - Android SDK at `~/Library/Android/sdk` (platform-tools for `adb`, platform 36 or newer).
+     `app.json` sets `targetSdkVersion` 36 through expo-build-properties; `compileSdk` stays at the
+     React Native default (37), so no override is needed. Regenerate `android/` to pick it up.
    - On the phone: Developer options -> **USB debugging** on, plug in, accept the RSA prompt.
    - Check it is seen: `~/Library/Android/sdk/platform-tools/adb devices` must list the serial
      as `device` (not `unauthorized`).
