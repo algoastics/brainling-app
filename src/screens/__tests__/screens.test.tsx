@@ -254,7 +254,7 @@ describe('settings (S43-P0)', () => {
     expect(screen.getAllByText('On').length).toBeGreaterThan(0);
     expect(screen.getByText('04:00')).toBeTruthy();
     expect(screen.getByTestId('disclaimer')).toHaveTextContent(
-      'Not affiliated with or endorsed by Meta, Google/YouTube, TikTok or Snap Inc. All trademarks belong to their owners.',
+      'Not affiliated with or endorsed by Meta, Google/YouTube, TikTok or Snap Inc. All trademarks belong to their owners. Not a medical device.',
     );
   });
 

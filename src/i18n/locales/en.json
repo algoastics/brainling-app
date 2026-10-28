@@ -4,7 +4,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "step": "{{current}} of {{total}}",
-    "stepLabel": "Step {{current}} of {{total}}"
+    "stepLabel": "{{current}} of {{total}}"
   },
   "tabs": {
     "home": "Home",
@@ -147,7 +147,7 @@
     "about": "About",
     "delete": "Delete my data",
     "version": "Version",
-    "disclaimer": "Not affiliated with or endorsed by Meta, Google/YouTube, TikTok or Snap Inc. All trademarks belong to their owners.",
+    "disclaimer": "Not affiliated with or endorsed by Meta, Google/YouTube, TikTok or Snap Inc. All trademarks belong to their owners. Not a medical device.",
     "limitDialog": {
       "title": "Daily limit",
       "lower": "A lower limit applies right away.",

@@ -29,7 +29,7 @@ describe('onboarding header', () => {
   it('stays mounted and changes in place when the step changes', async () => {
     const view = await render(<OnboardingLayout />);
     const header = screen.getByTestId('onboarding-header');
-    expect(screen.getByLabelText('Step 1 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('1 of 4')).toBeTruthy();
 
     for (const [path, label] of [
       ['/limit', '2 of 4'],
@@ -39,12 +39,12 @@ describe('onboarding header', () => {
       route.pathname = path;
       await view.rerender(<OnboardingLayout />);
       expect(screen.getByTestId('onboarding-header')).toBe(header);
-      expect(screen.getByLabelText(`Step ${label}`)).toBeTruthy();
+      expect(screen.getByLabelText(label)).toBeTruthy();
     }
 
     await act(async () => useOverlayStage.setState({ active: true }));
     expect(screen.getByTestId('onboarding-header')).toBe(header);
-    expect(screen.getByLabelText('Step 4 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('4 of 4')).toBeTruthy();
   });
 
   it('is hidden when the disclosure is opened outside the first run', async () => {
@@ -63,7 +63,7 @@ describe('step animation', () => {
     timing.mockClear();
     await view.rerender(<StepIndicator current={2} total={4} />);
     expect(timing).toHaveBeenCalled();
-    expect(screen.getByLabelText('Step 2 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('2 of 4')).toBeTruthy();
   });
 
   it('swaps at once with reduced motion', async () => {
@@ -74,7 +74,7 @@ describe('step animation', () => {
     timing.mockClear();
     await view.rerender(<StepIndicator current={2} total={4} />);
     expect(timing).not.toHaveBeenCalled();
-    expect(screen.getByLabelText('Step 2 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('2 of 4')).toBeTruthy();
   });
 });
 
@@ -88,7 +88,7 @@ describe('step announcement', () => {
     expect(announce).not.toHaveBeenCalled();
     await view.rerender(<StepIndicator current={4} total={4} />);
     expect(announce).toHaveBeenCalledTimes(1);
-    expect(announce).toHaveBeenCalledWith('Step 4 of 4');
+    expect(announce).toHaveBeenCalledWith('4 of 4');
   });
 });
 

@@ -49,6 +49,7 @@ function kindStyle(kind: ButtonKind, c: ColorTokens, inactive: boolean): KindSty
       return {
         face: 'transparent',
         fg: inactive ? c.textMuted : c.brandAccentText,
+        border: c.borderStrong,
       };
     case 'text':
       return { face: 'transparent', fg: inactive ? c.textMuted : c.brandAccentText };

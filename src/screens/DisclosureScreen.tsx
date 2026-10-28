@@ -109,14 +109,14 @@ export function DisclosureScreen() {
         <Button label={t('disclosure.agree')} onPress={agree} disabled={!checked} loading={busy} />
         <View style={styles.links}>
           <Button
-            kind="ghost"
+            kind="text"
             size="sm"
             label={t('disclosure.notNow')}
             onPress={notNow}
             style={styles.link}
           />
           <Button
-            kind="ghost"
+            kind="text"
             size="sm"
             label={t('disclosure.privacy')}
             onPress={openPrivacy}

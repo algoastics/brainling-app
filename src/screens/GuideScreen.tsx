@@ -222,7 +222,7 @@ export function GuideScreen() {
       </ScreenGroup>
       <ScreenGroup gap={space[8]}>
         <Button label={t('guide.open')} onPress={openSettings} />
-        <Button kind="ghost" size="sm" label={t('guide.help')} onPress={() => setHelp((v) => !v)} />
+        <Button kind="text" size="sm" label={t('guide.help')} onPress={() => setHelp((v) => !v)} />
       </ScreenGroup>
     </Screen>
   );
