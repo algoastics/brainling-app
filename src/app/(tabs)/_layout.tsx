@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 
-import { Icon, TabBar } from '@/components/ui';
+import { HomeTabIcon, Icon, SettingsTabIcon, TabBar } from '@/components/ui';
 import { useT } from '@/i18n';
 
 const ICONS = { index: 'home', settings: 'settings' } as const;
@@ -16,14 +16,22 @@ export default function TabsLayout() {
           items={state.routes.map((route) => ({
             key: route.key,
             label: descriptors[route.key]?.options.title ?? route.name,
-            icon: ({ color, focused }) => (
-              <Icon
-                name={ICONS[route.name as keyof typeof ICONS] ?? 'home'}
-                size={24}
-                color={color}
-                filled={focused}
-              />
-            ),
+            icon: ({ color, focused, active }) => {
+              if (!focused) {
+                return (
+                  <Icon
+                    name={ICONS[route.name as keyof typeof ICONS] ?? 'home'}
+                    size={24}
+                    color={color}
+                  />
+                );
+              }
+              return route.name === 'settings' ? (
+                <SettingsTabIcon color={color} active={active} />
+              ) : (
+                <HomeTabIcon color={color} active={active} />
+              );
+            },
           }))}
           activeKey={state.routes[state.index]?.key ?? ''}
           onSelect={navigateToTab}

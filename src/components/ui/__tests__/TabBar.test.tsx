@@ -45,4 +45,32 @@ describe('TabBar', () => {
     await render(<TabBar items={items} activeKey="home" onSelect={jest.fn()} bottomInset={24} />);
     expect(screen.getAllByTestId('tab-bar').at(-1)).toHaveStyle({ paddingBottom: 24 });
   });
+
+  it('is a flush 88 dp bar with 20 dp top corners and a top border', async () => {
+    await render(<TabBar items={items} activeKey="home" onSelect={jest.fn()} />);
+    expect(screen.getByTestId('tab-bar')).toHaveStyle({
+      minHeight: 88,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      borderTopWidth: 1,
+    });
+  });
+
+  it('tells only the selected tab that its icon is active', async () => {
+    const icon = jest.fn(({ focused }: { focused: boolean; active: boolean }) => (
+      <Text>{String(focused)}</Text>
+    ));
+    await render(
+      <TabBar
+        items={[
+          { key: 'a', label: 'A', icon },
+          { key: 'b', label: 'B', icon },
+        ]}
+        activeKey="b"
+        onSelect={jest.fn()}
+      />,
+    );
+    const activeCalls = icon.mock.calls.filter(([p]) => p.active);
+    expect(activeCalls).toHaveLength(1);
+  });
 });

@@ -1,33 +1,25 @@
 import { useEffect, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
+  Easing,
   interpolate,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 import { bezier, haptics, useReducedMotion } from '@/motion';
-import {
-  elevationStyle,
-  elevations,
-  maxFontScale,
-  motion,
-  radius,
-  sizes,
-  space,
-  type,
-  useTheme,
-} from '@/theme';
+import { maxFontScale, motion, radius, sizes, space, type, useTheme } from '@/theme';
 
 export type TabBarItem = {
   key: string;
   label: string;
-  /** Renders the icon. `focused` selects the filled variant (A55 cross-fades outline to filled). */
-  icon?: (props: { focused: boolean; color: string }) => ReactNode;
+  /**
+   * Renders the icon. `focused` selects the active variant (A55 cross-fades inactive to active);
+   * `active` is true only while this tab is selected and starts the icon's part animation (A98).
+   */
+  icon?: (props: { focused: boolean; color: string; active: boolean }) => ReactNode;
 };
 
 export type TabBarProps = {
@@ -38,10 +30,10 @@ export type TabBarProps = {
   bottomInset?: number;
 };
 
-const PILL_IN = bezier(motion.easing.decelerate);
+/** A55: the pill grows from its centre outward, 180 ms, ease-out cubic, no overshoot. */
+const PILL_IN = Easing.out(Easing.cubic);
 const PILL_OUT = bezier(motion.easing.accelerate);
-/** Icon bounce spring: stiffness 400, damping ratio 0.55 (critical damping = 2 * sqrt(400)). */
-const BOUNCE = { stiffness: 400, damping: 2 * 0.55 * Math.sqrt(400) };
+const BAR_HEIGHT = 88;
 
 function TabItem({
   item,
@@ -55,13 +47,11 @@ function TabItem({
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const progress = useSharedValue(focused ? 1 : 0);
-  const bounce = useSharedValue(1);
   const press = useSharedValue(0);
 
   useEffect(() => {
     if (reduced) {
       progress.set(focused ? 1 : 0);
-      bounce.set(1);
       return;
     }
     progress.set(
@@ -69,28 +59,16 @@ function TabItem({
         ? withTiming(1, { duration: motion.duration.tabPillIn, easing: PILL_IN })
         : withTiming(0, { duration: motion.duration.tabPillOut, easing: PILL_OUT }),
     );
-    if (focused) {
-      bounce.set(withSequence(withTiming(1.12, { duration: 80 }), withSpring(1, BOUNCE)));
-    }
-  }, [focused, reduced, progress, bounce]);
+  }, [focused, reduced, progress]);
 
   const pillStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [
-      {
-        scale: focused
-          ? interpolate(progress.value, [0, 1], [0.6, 1])
-          : interpolate(progress.value, [0, 1], [0.9, 1]),
-      },
-    ],
+    opacity: focused ? 1 : progress.value,
+    transform: [{ scaleX: focused ? progress.value : 1 }],
   }));
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: interpolate(bounce.value, [1, 1.12], [0, -3]) },
-      { scale: bounce.value * (1 - 0.06 * press.value) },
-    ],
+    transform: [{ scale: 1 - 0.06 * press.value }],
   }));
-  /** Outline fades out and filled fades in over the first 40 % of the pill (80 ms). */
+  /** Inactive fades out and active fades in over the first 40 % of the pill (72 ms). */
   const outlineStyle = useAnimatedStyle(() => ({
     opacity: 1 - interpolate(progress.value, [0, 0.4], [0, 1]),
   }));
@@ -98,10 +76,10 @@ function TabItem({
     opacity: interpolate(progress.value, [0, 0.4], [0, 1]),
   }));
   const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [colors.textMuted, colors.brandAccentText]),
+    color: interpolateColor(progress.value, [0, 1], [colors.textSecondary, colors.brandAccentText]),
   }));
 
-  const color = focused ? colors.brandAccentText : colors.textMuted;
+  const color = focused ? colors.brandAccentText : colors.textSecondary;
   return (
     <Pressable
       accessibilityRole="tab"
@@ -130,10 +108,10 @@ function TabItem({
         />
         <Animated.View style={[styles.icons, iconStyle]}>
           <Animated.View style={[StyleSheet.absoluteFill, styles.center, outlineStyle]}>
-            {item.icon?.({ focused: false, color: colors.textMuted })}
+            {item.icon?.({ focused: false, color: colors.textSecondary, active: false })}
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, styles.center, filledStyle]}>
-            {item.icon?.({ focused: true, color: colors.brandAccentText })}
+            {item.icon?.({ focused: true, color: colors.brandAccentText, active: focused })}
           </Animated.View>
         </Animated.View>
       </View>
@@ -151,11 +129,12 @@ function TabItem({
 }
 
 /**
- * Floating tab bar (Figma "Tab bar": a 64 dp pill on the screen background, 16 dp from the sides,
- * Elevation 2). The active tab has a 64x32 soft violet indicator behind its icon; switching plays
- * A55 (pill grows in, icon swaps outline to filled with a bounce, previous pill fades out).
- * It sits flush above the system navigation area: only the real bottom inset is padded below it,
- * and as the bar takes its own height in the layout, screen content ends above it.
+ * Tab bar (Figma "Tab bar" 14:83): flush to the bottom edge, 88 dp high, 20 dp top corners, raised
+ * surface with a 1 dp top border. The active tab has a 64x32 soft violet indicator behind its
+ * icon; switching plays A55 (pill grows from its centre in 180 ms, previous pill fades out) and
+ * A98 (the active icon's named part animates in 220 ms). Reduced motion swaps instantly.
+ * Only the real bottom inset is padded below the items, and as the bar takes its own height in
+ * the layout, screen content ends above it.
  * Phase 0 has Home and Settings only; the Figma frame's extra tabs are not built.
  */
 export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarProps) {
@@ -163,37 +142,32 @@ export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarPr
   return (
     <View
       testID="tab-bar"
-      style={[styles.wrap, { backgroundColor: colors.bgScreen, paddingBottom: bottomInset }]}
+      accessibilityRole="tablist"
+      style={[
+        styles.bar,
+        {
+          backgroundColor: colors.bgSurfaceRaised,
+          borderColor: colors.borderDefault,
+          paddingBottom: bottomInset,
+        },
+      ]}
     >
-      <View
-        accessibilityRole="tablist"
-        style={[
-          styles.bar,
-          elevationStyle(elevations.toast),
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderDefault },
-        ]}
-      >
-        {items.map((item) => (
-          <TabItem
-            key={item.key}
-            item={item}
-            focused={item.key === activeKey}
-            onSelect={onSelect}
-          />
-        ))}
-      </View>
+      {items.map((item) => (
+        <TabItem key={item.key} item={item} focused={item.key === activeKey} onSelect={onSelect} />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: space[16], paddingTop: space[8] },
   bar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: sizes.tabBarHeight,
-    borderRadius: radius.pill,
-    borderWidth: 1,
+    alignItems: 'flex-start',
+    minHeight: BAR_HEIGHT,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    borderTopWidth: 1,
+    paddingTop: space[8],
     paddingHorizontal: space[8],
   },
   tab: {

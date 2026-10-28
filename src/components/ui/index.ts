@@ -12,6 +12,7 @@ export * from './ProgressBar';
 export * from './ProgressRing';
 export * from './Icon';
 export * from './TabBar';
+export * from './TabIcons';
 export * from './types';
 export * from './Dialog';
 export * from './Banner';
