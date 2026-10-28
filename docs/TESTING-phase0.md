@@ -5,7 +5,7 @@ check to perform; tick it only when you saw it happen. Package `com.algoastics.t
 branch `thumbwell/phase0`.
 
 Per-case detail for the counting engine (IG-1, YT-1, TT-1 and so on) is in
-`docs/phone-test-cases.md`. It predates the 1 s threshold (it says 0.75 s) and mentions the
+`docs/phone-test-cases.md`. It predates the 1 s threshold for Instagram and YouTube (TikTok is 0.75 s again) and mentions the
 badge, which is now the floating Thumb (see section H). Use this file for the pass/fail.
 
 ## 0. Build and install on your own phone (not EAS)
@@ -90,9 +90,11 @@ Android 13 or newer if you have one.
 Setup: Accessibility on, limit high enough not to lock (set 500), force-stop the app, note the
 count `N` on Home.
 
-1. [ ] Open the reels surface and stay on the first reel 1.5 s: Home shows `N+1`.
-2. [ ] Open it and leave within 0.5 s (swipe on at once): that reel does not count.
-3. [ ] Swipe forward 10 reels, pausing 1.5 s on each: count rises by exactly 10 (plus the first).
+1. [ ] Open the reels surface and stay on the first reel 1.5 s: Home shows `N+1`. In TikTok the
+   reel counts after 0.75 s (try 1 s there).
+2. [ ] Open it and leave within 0.5 s (swipe on at once): that reel does not count (TikTok: 0.5 s
+   too, it needs 0.75 s).
+3. [ ] Swipe forward 10 reels, pausing 1.5 s on each (1 s is enough in TikTok): count rises by exactly 10 (plus the first).
 4. [ ] Swipe back to an already counted reel and wait 3 s: no change. Swipe forward again over seen
    reels: no change. Swipe past the furthest seen reel onto a new one: +1.
 5. [ ] Leave the app (Home button) and return to the same reel without moving: no change.

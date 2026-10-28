@@ -30,7 +30,8 @@ Branch: `module/01-detection-native` (from `module/01-detection`). Native code l
 Source: `modules/thumbwell-core/rules/rules.json`. Shipped: `android/src/main/assets/thumbwell/rules.signed.json`
 (`{"alg":"Ed25519","keyId","payload":<base64 JSON>,"signature"}`). Top level: `schema`, `version`,
 `issuedAt`, `expiresAt` (UTC), `dwellMs`, `dedupeSize`, `sessionGapMs`, `surfaceRetryDelaysMs`,
-`apps[]`. Per app: `key`, `packageNames[]`, `enabled`, and at least one signal when enabled:
+`apps[]`. Per app: `key`, `packageNames[]`, `enabled`, optional `dwellMs` (100 to 10,000;
+overrides the top-level value for that app), and at least one signal when enabled:
 `surfaceIds[]` (view ids without `pkg:id/`), `contentDescriptions[]` (exact component labels),
 `structure` (class names, min width/height fraction of the window, scrollable/long-clickable,
 optional `descendant`, max depth 4). Optional `dmSignatureIds[]`: when all are visible the reel was
@@ -64,7 +65,7 @@ View ids are tried qualified with the observed package first, then every package
 | `facebook_lite` | `com.facebook.lite` | `video_view` |
 | `snapchat` | `com.snapchat.android` | `spotlight_container` |
 
-All are enabled in ruleset v4. The service XML `packageNames` is generated from the enabled apps of
+Instagram, YouTube and TikTok are enabled in ruleset v6. The service XML `packageNames` is generated from the enabled apps of
 the **signed** bundled payload at prebuild, so the service only ever receives events from these
 packages. `isAccessibilityTool` is always `false` (Thumbwell is not an accessibility tool under
 Play policy); never change it.
@@ -113,8 +114,11 @@ release.
 
 ## Phase 0 counting (F01, F02, F06, D13, D35, D36)
 
-- **Watch threshold** is 1,000 ms (`ReelSession.SETTLE_MS`, rules `dwellMs`; a test pins them equal).
-- **Apps on in Phase 0** (rules v5): Instagram, YouTube (`com.google.android.youtube` only) and
+- **Watch threshold** is 1,000 ms (`ReelSession.SETTLE_MS`, rules `dwellMs`; a test pins them
+  equal) for Instagram and YouTube. TikTok counts after 750 ms: its rule carries its own `dwellMs`
+  (rules v6), which `RuleSet.dwellFor` uses instead of the global value. The 200 ms pager settle
+  (`PagerTracker.SETTLE_MS`) is unchanged, so a TikTok reel counts about 1 s after the swipe.
+- **Apps on in Phase 0** (rules v6): Instagram, YouTube (`com.google.android.youtube` only) and
   TikTok (`musically`, `trill`). Facebook, Facebook Lite, Snapchat and TikTok Lite are
   `enabled: false` in the signed rules, and `FeatureFlags.facebookEnabled/snapchatEnabled` (both
   false) also filter them in `RuleSet.byPackage`. Phase 1 flips the flag and the rules entry. The
