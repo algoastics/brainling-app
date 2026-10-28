@@ -10,7 +10,7 @@ Native module `modules/thumbwell-core` (Kotlin, accessibility service, lock, bad
 ## JS/TS (src/)
 - app/ routes: index, welcome, limit, disclosure, guide, overlay (new, uncommitted), (tabs)/index+settings, about, reenable, dev-only lock-preview/detection-debug. Stack in navigation/RootStack.tsx.
 - screens/: Welcome, Limit, Disclosure, Guide (S07 + overlay stage), OverlayPermissionStep, overlay/ (View, Screen: uncommitted), Home, Settings (+ settings/sheets.tsx), About, lock/LockView.
-- components/ui/: Text, Button, Card, Chip, ListRow, Switch, Slider (+sliderMath), BottomSheet (+sheetMotion), TabBar, TopBar, Screen, Banner, Dialog, odometer, StepIndicator, StatusChip. Icons: components/icons/glyphs.tsx (custom pebble icons, NOT Phosphor). Mascot: components/mascot (Thumb, thumbArt, thumbState, AliveThumb, LimitThumb).
+- components/ui/: Text, Button, Card, Chip, ListRow, Switch, Slider (+sliderMath), BottomSheet (+sheetMotion), TabBar, TopBar, Screen, Banner, Dialog, odometer, StepIndicator, StatusChip. Icons: components/ui/Icon.tsx (Phosphor via phosphor-react-native; Regular, Fill when active). Mascot: components/mascot (Thumb, thumbArt, thumbState, AliveThumb, LimitThumb).
 - theme/ tokens, provider, preference (System/Light/Dark, persisted); motion/ (haptics, reduced motion, pressTo); i18n/locales/en.json; consent/version.ts (DISCLOSURE_VERSION); lock/ (lockTime, overlayPermission); detection/hooks.ts; apps/supportedApps.ts (IG/YT/TikTok only); onboarding/steps.ts (4 steps).
 - test/ mocks: reanimatedMock, thumbwellCoreMock, routerMock, memoryStorage; jest.setup.ts.
 

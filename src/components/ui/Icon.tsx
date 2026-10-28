@@ -1,110 +1,82 @@
-import type { ComponentType } from 'react';
-
+import type { Icon as PhosphorIcon, IconWeight } from 'phosphor-react-native';
 import {
-  AccessibilityGlyph,
-  BackGlyph,
-  BadgeGlyph,
-  BellGlyph,
-  ChartGlyph,
-  CheckGlyph,
-  ChevronRightGlyph,
-  CloseGlyph,
-  ContrastGlyph,
-  ExternalGlyph,
-  EyeOffGlyph,
-  HomeGlyph,
-  InfoGlyph,
-  LockGlyph,
-  MinusGlyph,
-  MoonGlyph,
-  PlusGlyph,
-  ShieldGlyph,
-  SlidersGlyph,
-  SparkleGlyph,
-  TimerGlyph,
-  TrashGlyph,
-  type GlyphProps,
-} from '@/components/icons/glyphs';
+  ArrowLeft,
+  ArrowSquareOut,
+  Bell,
+  CaretRight,
+  ChartBar,
+  Check,
+  CircleHalf,
+  EyeSlash,
+  House,
+  Info,
+  Lock,
+  Minus,
+  Moon,
+  PersonSimpleCircle,
+  Plus,
+  Seal,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkle,
+  Timer,
+  Trash,
+  X,
+} from 'phosphor-react-native';
+
 import { useTheme, type ColorTokens } from '@/theme';
 
-/** The 22 pebble glyphs of the Figma "Icon system" (names keep the earlier call sites working). */
+/** Phosphor glyphs for every icon name used in the app (Phosphor is the only icon set, D-icons). */
 export const iconSet = {
-  home: HomeGlyph,
-  lock: LockGlyph,
-  settings: SlidersGlyph,
-  sliders: SlidersGlyph,
-  minus: MinusGlyph,
-  plus: PlusGlyph,
-  external: ExternalGlyph,
-  trash: TrashGlyph,
-  accessibility: AccessibilityGlyph,
-  sparkles: SparkleGlyph,
-  back: BackGlyph,
-  check: CheckGlyph,
-  info: InfoGlyph,
-  chevron: ChevronRightGlyph,
-  close: CloseGlyph,
-  shield: ShieldGlyph,
-  badge: BadgeGlyph,
-  timer: TimerGlyph,
-  moon: MoonGlyph,
-  chart: ChartGlyph,
-  bell: BellGlyph,
-  eyeOff: EyeOffGlyph,
-  contrast: ContrastGlyph,
-} as const satisfies Record<string, ComponentType<GlyphProps>>;
+  home: House,
+  lock: Lock,
+  settings: SlidersHorizontal,
+  sliders: SlidersHorizontal,
+  minus: Minus,
+  plus: Plus,
+  external: ArrowSquareOut,
+  trash: Trash,
+  accessibility: PersonSimpleCircle,
+  sparkles: Sparkle,
+  back: ArrowLeft,
+  check: Check,
+  info: Info,
+  chevron: CaretRight,
+  close: X,
+  shield: ShieldCheck,
+  badge: Seal,
+  timer: Timer,
+  moon: Moon,
+  chart: ChartBar,
+  bell: Bell,
+  eyeOff: EyeSlash,
+  contrast: CircleHalf,
+} as const satisfies Record<string, PhosphorIcon>;
 
 export type IconName = keyof typeof iconSet;
-
-/** Glyphs that carry a tint shape; the other seven (action glyphs) only change colour. */
-export const TINTED_ICONS: readonly IconName[] = [
-  'home',
-  'lock',
-  'settings',
-  'sliders',
-  'trash',
-  'accessibility',
-  'sparkles',
-  'info',
-  'shield',
-  'badge',
-  'timer',
-  'moon',
-  'chart',
-  'bell',
-  'eyeOff',
-  'contrast',
-];
 
 export type IconProps = {
   name: IconName;
   size?: number;
   /** A semantic color name, or a raw color string. Defaults to `textPrimary`. */
   color?: keyof ColorTokens | (string & {});
-  /** Stroke width in 24 dp units; the Figma set uses 2 at every size. */
-  strokeWidth?: number;
-  /** Active state: tint colour on the enclosed shape (colour-only glyphs just change colour). */
+  /** Active state: the Fill weight. Inactive icons use the Regular weight. */
   filled?: boolean;
+  /** Heavier line for small marks on a colour (for example the check inside a checkbox). */
+  bold?: boolean;
 };
 
-/** Decorative by default (hidden from accessibility); the parent control carries the label. */
+/** Decorative: an SVG with no label, so the parent control carries the accessible name. */
 export function Icon({
   name,
   size = 24,
   color = 'textPrimary',
-  strokeWidth = 2,
   filled = false,
+  bold = false,
 }: IconProps) {
   const { colors } = useTheme();
   const Glyph = iconSet[name];
   const resolved = color in colors ? colors[color as keyof ColorTokens] : color;
-  return (
-    <Glyph
-      size={size}
-      color={resolved}
-      tint={colors.brandLilac}
-      filled={filled}
-      strokeWidth={strokeWidth}
-    />
-  );
+  const weight: IconWeight = filled ? 'fill' : bold ? 'bold' : 'regular';
+  return <Glyph size={size} color={resolved} weight={weight} />;
 }

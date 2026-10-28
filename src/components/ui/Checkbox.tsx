@@ -36,7 +36,7 @@ export function Checkbox({ value, onChange, label, disabled = false, testID }: C
           },
         ]}
       >
-        {value ? <Icon name="check" size={16} color="brandOnPrimary" strokeWidth={3} /> : null}
+        {value ? <Icon name="check" size={16} color="brandOnPrimary" bold /> : null}
       </View>
       <Text variant="label" color="textSecondary" style={styles.label}>
         {label}
