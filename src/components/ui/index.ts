@@ -2,6 +2,8 @@ export * from './Text';
 export * from './Button';
 export * from './Checkbox';
 export * from './Chip';
+export * from './StatusChip';
+export * from './StepIndicator';
 export * from './Card';
 export * from './ListRow';
 export * from './TopBar';
