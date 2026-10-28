@@ -11,7 +11,17 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { bezier, haptics, useReducedMotion } from '@/motion';
-import { elevationStyle, elevations, motion, radius, sizes, space, type, useTheme } from '@/theme';
+import {
+  elevationStyle,
+  elevations,
+  maxFontScale,
+  motion,
+  radius,
+  sizes,
+  space,
+  type,
+  useTheme,
+} from '@/theme';
 
 export type TabBarItem = {
   key: string;
@@ -24,6 +34,7 @@ export type TabBarProps = {
   items: readonly TabBarItem[];
   activeKey: string;
   onSelect: (key: string) => void;
+  /** Real bottom safe-area inset (system navigation area); the bar adds no margin of its own. */
   bottomInset?: number;
 };
 
@@ -128,6 +139,7 @@ function TabItem({
       </View>
       <Animated.Text
         style={[type.caption, { color }, labelStyle]}
+        maxFontSizeMultiplier={maxFontScale.caption}
         numberOfLines={1}
         accessibilityElementsHidden
         importantForAccessibility="no"
@@ -142,16 +154,16 @@ function TabItem({
  * Floating tab bar (Figma "Tab bar": a 64 dp pill on the screen background, 16 dp from the sides,
  * Elevation 2). The active tab has a 64x32 soft violet indicator behind its icon; switching plays
  * A55 (pill grows in, icon swaps outline to filled with a bounce, previous pill fades out).
+ * It sits flush above the system navigation area: only the real bottom inset is padded below it,
+ * and as the bar takes its own height in the layout, screen content ends above it.
  * Phase 0 has Home and Settings only; the Figma frame's extra tabs are not built.
  */
 export function TabBar({ items, activeKey, onSelect, bottomInset = 0 }: TabBarProps) {
   const { colors } = useTheme();
   return (
     <View
-      style={[
-        styles.wrap,
-        { backgroundColor: colors.bgScreen, paddingBottom: Math.max(space[8], bottomInset) },
-      ]}
+      testID="tab-bar"
+      style={[styles.wrap, { backgroundColor: colors.bgScreen, paddingBottom: bottomInset }]}
     >
       <View
         accessibilityRole="tablist"

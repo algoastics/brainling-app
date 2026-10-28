@@ -38,4 +38,11 @@ describe('TabBar', () => {
     await fireEvent.press(screen.getByRole('tab', { name: 'Settings' }));
     expect(onSelect).toHaveBeenCalledWith('settings');
   });
+
+  it('pads below only by the real bottom inset, with no extra margin', async () => {
+    await render(<TabBar items={items} activeKey="home" onSelect={jest.fn()} bottomInset={0} />);
+    expect(screen.getByTestId('tab-bar')).toHaveStyle({ paddingBottom: 0 });
+    await render(<TabBar items={items} activeKey="home" onSelect={jest.fn()} bottomInset={24} />);
+    expect(screen.getAllByTestId('tab-bar').at(-1)).toHaveStyle({ paddingBottom: 24 });
+  });
 });
