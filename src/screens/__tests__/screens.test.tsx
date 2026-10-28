@@ -4,6 +4,7 @@ import { AppState, Linking, type AppStateStatus } from 'react-native';
 
 import { core, dayCounts, resetCore, runningStatus } from '../../../test/thumbwellCoreMock';
 import { resetRouter, router } from '../../../test/routerMock';
+import { useOverlayStage } from '@/onboarding/overlayStage';
 import { useAppStore } from '@/state/appStore';
 import { useThemePreference } from '@/theme';
 import type { BadgeSettings } from 'thumbwell-core';
@@ -119,7 +120,7 @@ describe('display over other apps step', () => {
     expect(useAppStore.getState().onboardingCompleted).toBe(true);
     expect(router.replace).not.toHaveBeenCalled();
     expect(screen.getByText('Let Thumbwell show over other apps')).toBeTruthy();
-    expect(screen.getByText('4 of 4')).toBeTruthy();
+    expect(useOverlayStage.getState().active).toBe(true);
   });
 
   it('opens the system page from the button', async () => {

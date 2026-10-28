@@ -3,11 +3,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Button, Checkbox, Icon, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
+import { Button, Checkbox, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
 import { appConfig } from '@/config/appConfig';
 import { DISCLOSURE_VERSION } from '@/consent/version';
 import { useT } from '@/i18n';
-import { ONBOARDING_STEPS, STEP_ACCESSIBILITY } from '@/onboarding/steps';
 import { useAppStore } from '@/state/appStore';
 import { radius, space, useTheme } from '@/theme';
 
@@ -56,13 +55,8 @@ export function DisclosureScreen() {
   const openPrivacy = () => void Linking.openURL(appConfig.privacyPolicyUrl).catch(() => undefined);
 
   return (
-    <Screen spread testID="disclosure">
+    <Screen spread edges={['bottom']} testID="disclosure">
       <ScreenGroup>
-        {onboarding ? (
-          <View style={styles.steps}>
-            <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
-          </View>
-        ) : null}
         <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
           <Icon name="shield" size={24} color="brandAccentText" />
         </View>
@@ -118,7 +112,6 @@ export function DisclosureScreen() {
 }
 
 const styles = StyleSheet.create({
-  steps: { flexDirection: 'row' },
   tile: {
     width: 40,
     height: 40,

@@ -1,18 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Thumb } from '@/components/mascot';
-import {
-  Button,
-  Card,
-  Icon,
-  Screen,
-  StatusChip,
-  StepIndicator,
-  Text,
-  TopBar,
-} from '@/components/ui';
+import { Button, Card, Icon, Screen, StatusChip, Text, TopBar } from '@/components/ui';
 import { useT } from '@/i18n';
-import { ONBOARDING_STEPS, STEP_OVERLAY } from '@/onboarding/steps';
 import { radius, sizes, space, useTheme } from '@/theme';
 
 /** Where the screen is shown: the last onboarding step, or opened from the Settings row. */
@@ -220,7 +210,7 @@ const TEST_IDS: Record<OverlayViewState, string> = {
 
 /**
  * "Display over other apps" (Figma S11-P0): the ask, granted and not-granted states, for the last
- * onboarding step (4 of 4, step indicator + lock tile) and for the screen opened from Settings
+ * onboarding step (4 of 4, lock tile; the step header is in the onboarding layout) and for the screen opened from Settings
  * (back bar, no steps). Presentational only; the screens around it own the permission check.
  */
 export function OverlayPermissionView(props: OverlayPermissionViewProps) {
@@ -232,6 +222,7 @@ export function OverlayPermissionView(props: OverlayPermissionViewProps) {
   return (
     <Screen
       spread
+      edges={settings ? undefined : ['bottom']}
       testID={testID}
       header={
         settings ? <TopBar title={t('overlay.settings.screenTitle')} onBack={onBack} /> : undefined
@@ -239,7 +230,6 @@ export function OverlayPermissionView(props: OverlayPermissionViewProps) {
     >
       {!settings ? (
         <View style={styles.header}>
-          <StepIndicator current={STEP_OVERLAY} total={ONBOARDING_STEPS} />
           <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
             <Icon name="lock" size={24} color="brandAccentText" />
           </View>

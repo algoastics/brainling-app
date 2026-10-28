@@ -2,17 +2,19 @@ import ThumbwellCore from 'thumbwell-core';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
+import Animated, { SlideInRight } from 'react-native-reanimated';
 
-import { Button, Card, Icon, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
+import { Button, Card, Icon, Screen, ScreenGroup, Text } from '@/components/ui';
 import { useCountingStatus, useInterval } from '@/detection';
 import { afterAccessibility } from '@/lock/overlayPermission';
 import { useT } from '@/i18n';
-import { ONBOARDING_STEPS, STEP_ACCESSIBILITY } from '@/onboarding/steps';
+import { useReducedMotion } from '@/motion';
+import { useOverlayStage } from '@/onboarding/overlayStage';
 import { useAppStore } from '@/state/appStore';
 import { openAppInfo } from '@/system/settings';
 
 import { OverlayPermissionStep } from './OverlayPermissionStep';
-import { radius, space, useTheme } from '@/theme';
+import { motion, radius, space, useTheme } from '@/theme';
 
 /** Android 13 (API 33) and newer block Accessibility for apps installed outside the store. */
 const RESTRICTED_SETTINGS_API = 33;
@@ -81,6 +83,14 @@ export function GuideScreen() {
   const [help, setHelp] = useState(false);
   const [overlayStep, setOverlayStep] = useState(false);
   const openedRef = useRef(false);
+  const reduced = useReducedMotion();
+  const setOverlayStage = useOverlayStage((s) => s.set);
+
+  // The onboarding header (a layout above this screen) shows step 4 while the stage is up.
+  useEffect(() => {
+    setOverlayStage(overlayStep);
+    return () => setOverlayStage(false);
+  }, [overlayStep, setOverlayStage]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
@@ -121,15 +131,21 @@ export function GuideScreen() {
     else setOverlayStep(true);
   };
 
-  if (overlayStep) return <OverlayPermissionStep onDone={toHome} />;
+  if (overlayStep) {
+    return (
+      <Animated.View
+        style={styles.flex}
+        entering={reduced ? undefined : SlideInRight.duration(motion.duration.base)}
+      >
+        <OverlayPermissionStep onDone={toHome} />
+      </Animated.View>
+    );
+  }
 
   if (on) {
     return (
-      <Screen spread testID="guide-success">
+      <Screen spread edges={['bottom']} testID="guide-success">
         <ScreenGroup>
-          <View style={styles.steps}>
-            <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
-          </View>
           <Text variant="h1" accessibilityRole="header" accessibilityLiveRegion="polite">
             {t('guide.successTitle')}
           </Text>
@@ -145,11 +161,8 @@ export function GuideScreen() {
   }
 
   return (
-    <Screen spread testID="guide">
+    <Screen spread edges={['bottom']} testID="guide">
       <ScreenGroup>
-        <View style={styles.steps}>
-          <StepIndicator current={STEP_ACCESSIBILITY} total={ONBOARDING_STEPS} />
-        </View>
         <Text variant="h1" accessibilityRole="header">
           {t('guide.title')}
         </Text>
@@ -215,7 +228,6 @@ export function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  steps: { flexDirection: 'row' },
   flex: { flex: 1 },
   center: { alignItems: 'center' },
   cardAction: { marginTop: space[8], alignItems: 'flex-start' },

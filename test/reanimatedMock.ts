@@ -76,6 +76,7 @@ const reanimated = {
   FadeIn: animation,
   FadeOut: animation,
   SlideInDown: animation,
+  SlideInRight: animation,
   SlideOutDown: animation,
 };
 

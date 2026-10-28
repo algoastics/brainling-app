@@ -5,10 +5,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { LimitPicker } from '@/components/LimitPicker';
 import { LimitThumb } from '@/components/mascot';
-import { Button, Card, Screen, ScreenGroup, StepIndicator, Text } from '@/components/ui';
+import { Button, Card, Screen, ScreenGroup, Text } from '@/components/ui';
 import { useT } from '@/i18n';
 import { DEFAULT_LIMIT, estimateMinutes } from '@/limit/limitRule';
-import { ONBOARDING_STEPS, STEP_LIMIT } from '@/onboarding/steps';
 import { space } from '@/theme';
 
 /**
@@ -46,11 +45,8 @@ export function LimitScreen() {
   };
 
   return (
-    <Screen spread testID="limit">
+    <Screen spread edges={['bottom']} testID="limit">
       <ScreenGroup>
-        <View style={styles.steps}>
-          <StepIndicator current={STEP_LIMIT} total={ONBOARDING_STEPS} />
-        </View>
         <Text variant="h1" accessibilityRole="header">
           {t('limit.title')}
         </Text>
@@ -86,7 +82,6 @@ export function LimitScreen() {
 }
 
 const styles = StyleSheet.create({
-  steps: { flexDirection: 'row' },
   thumb: { alignItems: 'center' },
   picker: { paddingVertical: space[8] },
   center: { textAlign: 'center' },
