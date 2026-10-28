@@ -2,8 +2,9 @@ import { describe, expect, it } from '@jest/globals';
 
 import {
   clamp,
-  dragOffset,
+  grabAtTouch,
   markCenter,
+  offsetAtFinger,
   offsetForTap,
   offsetOfValue,
   positionOfValue,
@@ -16,7 +17,13 @@ import {
 const MIN = 10;
 const MAX = 200;
 const STEP = 10;
-const TRAVEL = thumbTravel(328, 28);
+const THUMB = 28;
+const TRAVEL = thumbTravel(328, THUMB);
+
+/** Finger `x` on the track whose centre would sit at `offset` if grab were 0. */
+function xAt(offset: number): number {
+  return offset + THUMB / 2;
+}
 
 describe('slider math', () => {
   it('clamps into the range', () => {
@@ -34,7 +41,7 @@ describe('slider math', () => {
 
   it('keeps the thumb inside the track', () => {
     expect(TRAVEL).toBe(300);
-    expect(thumbTravel(20, 28)).toBe(0);
+    expect(thumbTravel(20, THUMB)).toBe(0);
   });
 
   it('pins values outside the range to an end of the track', () => {
@@ -45,30 +52,40 @@ describe('slider math', () => {
 
   it('puts the Figma snap marks where the design has them', () => {
     // Snap 30, 60, 100, 150 at cx 45.58, 92.95, 156.1, 235.05 on the 328 dp frame.
-    expect(markCenter(30, MIN, MAX, 328, 28)).toBeCloseTo(45.58, 1);
-    expect(markCenter(60, MIN, MAX, 328, 28)).toBeCloseTo(92.95, 1);
-    expect(markCenter(100, MIN, MAX, 328, 28)).toBeCloseTo(156.1, 1);
-    expect(markCenter(150, MIN, MAX, 328, 28)).toBeCloseTo(235.05, 1);
+    expect(markCenter(30, MIN, MAX, 328, THUMB)).toBeCloseTo(45.58, 1);
+    expect(markCenter(60, MIN, MAX, 328, THUMB)).toBeCloseTo(92.95, 1);
+    expect(markCenter(100, MIN, MAX, 328, THUMB)).toBeCloseTo(156.1, 1);
+    expect(markCenter(150, MIN, MAX, 328, THUMB)).toBeCloseTo(235.05, 1);
   });
 
-  it('does not move at touch-down: zero travel keeps the start offset', () => {
+  it('does not move at touch-down, even when the finger is not on the thumb centre', () => {
     for (const start of [0, 31.6, 150, TRAVEL]) {
-      expect(dragOffset(start, 0, TRAVEL)).toBe(start);
+      const grabCentre = grabAtTouch(start, xAt(start), THUMB);
+      expect(offsetAtFinger(xAt(start), grabCentre, TRAVEL, THUMB)).toBe(start);
+      const grabEdge = grabAtTouch(start, start, THUMB);
+      expect(offsetAtFinger(start, grabEdge, TRAVEL, THUMB)).toBe(start);
     }
     const start = offsetOfValue(60, MIN, MAX, TRAVEL);
-    expect(valueAtOffset(dragOffset(start, 0, TRAVEL), TRAVEL, MIN, MAX, STEP)).toBe(60);
+    const grab = grabAtTouch(start, xAt(start), THUMB);
+    expect(
+      valueAtOffset(offsetAtFinger(xAt(start), grab, TRAVEL, THUMB), TRAVEL, MIN, MAX, STEP),
+    ).toBe(60);
   });
 
-  it('follows the finger one to one, whatever the start', () => {
-    expect(dragOffset(100, 25, TRAVEL)).toBe(125);
-    expect(dragOffset(100, -40, TRAVEL)).toBe(60);
+  it('follows the finger one to one, whatever the start and grab', () => {
+    const grab = grabAtTouch(100, xAt(100), THUMB);
+    expect(offsetAtFinger(xAt(100) + 25, grab, TRAVEL, THUMB)).toBe(125);
+    expect(offsetAtFinger(xAt(100) - 40, grab, TRAVEL, THUMB)).toBe(60);
+    const fromEdge = grabAtTouch(100, 100, THUMB);
+    expect(offsetAtFinger(100 + 25, fromEdge, TRAVEL, THUMB)).toBe(125);
   });
 
-  it('clamps at both ends and comes back from where the thumb stopped', () => {
-    expect(dragOffset(280, 100, TRAVEL)).toBe(TRAVEL);
-    expect(dragOffset(20, -100, TRAVEL)).toBe(0);
-    // Finger ran 100 past the end, then back 90: still 10 dp short of the end it was pinned at.
-    expect(dragOffset(280, 100 - 90, TRAVEL)).toBe(290);
+  it('clamps at both ends and follows again as soon as the finger is back on the track', () => {
+    const grab = grabAtTouch(280, xAt(280), THUMB);
+    expect(offsetAtFinger(xAt(280) + 100, grab, TRAVEL, THUMB)).toBe(TRAVEL);
+    expect(offsetAtFinger(xAt(20) - 100, grabAtTouch(20, xAt(20), THUMB), TRAVEL, THUMB)).toBe(0);
+    // Finger ran past the end, then back 10 dp short of the end: absolute x maps there at once.
+    expect(offsetAtFinger(xAt(TRAVEL - 10), grab, TRAVEL, THUMB)).toBe(290);
   });
 
   it('maps a thumb offset to a snapped value, ends included', () => {
@@ -89,19 +106,40 @@ describe('slider math', () => {
   it('changes the value by exactly one step per step width of finger travel', () => {
     const stepWidth = TRAVEL / ((MAX - MIN) / STEP);
     const start = offsetOfValue(100, MIN, MAX, TRAVEL);
-    expect(valueAtOffset(dragOffset(start, stepWidth, TRAVEL), TRAVEL, MIN, MAX, STEP)).toBe(110);
-    expect(valueAtOffset(dragOffset(start, -2 * stepWidth, TRAVEL), TRAVEL, MIN, MAX, STEP)).toBe(
-      80,
-    );
+    const grab = grabAtTouch(start, xAt(start), THUMB);
+    expect(
+      valueAtOffset(
+        offsetAtFinger(xAt(start) + stepWidth, grab, TRAVEL, THUMB),
+        TRAVEL,
+        MIN,
+        MAX,
+        STEP,
+      ),
+    ).toBe(110);
+    expect(
+      valueAtOffset(
+        offsetAtFinger(xAt(start) - 2 * stepWidth, grab, TRAVEL, THUMB),
+        TRAVEL,
+        MIN,
+        MAX,
+        STEP,
+      ),
+    ).toBe(80);
     // Less than half a step does not change it.
-    expect(valueAtOffset(dragOffset(start, stepWidth * 0.4, TRAVEL), TRAVEL, MIN, MAX, STEP)).toBe(
-      100,
-    );
+    expect(
+      valueAtOffset(
+        offsetAtFinger(xAt(start) + stepWidth * 0.4, grab, TRAVEL, THUMB),
+        TRAVEL,
+        MIN,
+        MAX,
+        STEP,
+      ),
+    ).toBe(100);
   });
 
   it('puts the thumb centre under a tap, clamped to the track', () => {
-    expect(offsetForTap(164, TRAVEL, 28)).toBe(150);
-    expect(offsetForTap(3, TRAVEL, 28)).toBe(0);
-    expect(offsetForTap(400, TRAVEL, 28)).toBe(TRAVEL);
+    expect(offsetForTap(164, TRAVEL, THUMB)).toBe(150);
+    expect(offsetForTap(3, TRAVEL, THUMB)).toBe(0);
+    expect(offsetForTap(400, TRAVEL, THUMB)).toBe(TRAVEL);
   });
 });

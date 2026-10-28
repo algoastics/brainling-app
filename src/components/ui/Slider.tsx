@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -13,8 +14,9 @@ import { bezier, haptics, useReducedMotion } from '@/motion';
 import { elevationStyle, elevations, motion, radius, sizes, useTheme } from '@/theme';
 
 import {
-  dragOffset,
+  grabAtTouch,
   markCenter,
+  offsetAtFinger,
   offsetForTap,
   offsetOfValue,
   snapToStep,
@@ -41,6 +43,7 @@ const HALO = 52;
 const MARK_SIZE = 4;
 const TICK_GAP_MS = 30;
 const SETTLE_EASING = bezier(motion.easing.decelerate);
+const THUMB = sizes.sliderThumb;
 
 function Mark({
   center,
@@ -54,7 +57,7 @@ function Mark({
   rest: string;
 }) {
   const style = useAnimatedStyle(() => ({
-    backgroundColor: center <= offset.get() + sizes.sliderThumb / 2 ? onFill : rest,
+    backgroundColor: center <= offset.get() + THUMB / 2 ? onFill : rest,
   }));
   return (
     <Animated.View
@@ -64,15 +67,36 @@ function Mark({
   );
 }
 
+function applyFinger(
+  x: number,
+  grab: number,
+  travel: number,
+  min: number,
+  max: number,
+  step: number,
+  offset: SharedValue<number>,
+  stepped: SharedValue<number>,
+  commit: (next: number) => void,
+): void {
+  'worklet';
+  const next = offsetAtFinger(x, grab, travel, THUMB);
+  offset.set(next);
+  const v = valueAtOffset(next, travel, min, max, step);
+  if (v !== stepped.get()) {
+    stepped.set(v);
+    scheduleOnRN(commit, v);
+  }
+}
+
 /**
  * Slider (Figma "Slider", 328 x 48: 8 dp track, 28 dp white thumb with a 4 dp brand ring, snap
- * marks, pressed state with a 52 dp halo; A57). The thumb follows the finger 1:1 on the UI thread
- * (Gesture Handler pan, Reanimated shared values): the offset is the offset at touch-down plus
- * the finger's travel, clamped to the track, so nothing jumps on touch-down and the thumb can
- * never run ahead of the finger. React state changes only when the stepped value changes, with
- * a selection tick per step (at most one per 30 ms) and a light impact at either end. A tap on
- * the track moves the thumb there. On release the thumb settles on the step. The vertical
- * scroll of a parent still wins when the first move is mostly vertical.
+ * marks, pressed state with a 52 dp halo; A57). The thumb is driven from the finger's absolute
+ * `x` on the track (Gesture Handler pan, Reanimated shared values): a grab captured at
+ * touch-down keeps the thumb from jumping, then every update is that `x` plus the grab, clamped
+ * to the track, so the thumb cannot run ahead of the finger. React state changes only when the
+ * stepped value changes, with a selection tick per step (at most one per 30 ms) and a light
+ * impact at either end. A tap on the track moves the thumb there. On release the thumb settles
+ * on the step. The vertical scroll of a parent still wins when the first move is mostly vertical.
  */
 export function Slider({
   value,
@@ -89,10 +113,10 @@ export function Slider({
   const [width, setWidth] = useState(0);
   const offset = useSharedValue(0);
   const travel = useSharedValue(0);
-  const startOffset = useSharedValue(0);
+  const touchGrab = useSharedValue(0);
   const stepped = useSharedValue(snapToStep(value, min, max, step));
   const dragging = useSharedValue(false);
-  const grab = useSharedValue(0);
+  const press = useSharedValue(0);
   const getProps = useGetter({ onChange, reduced });
   const settleMs = reduced ? 0 : motion.duration.fast;
 
@@ -112,7 +136,7 @@ export function Slider({
   // Measured width, then a value change from outside (steppers, presets): move the thumb unless
   // the finger is on it.
   useEffect(() => {
-    const t = thumbTravel(width, sizes.sliderThumb);
+    const t = thumbTravel(width, THUMB);
     const first = travel.get() === 0 && t > 0;
     travel.set(t);
     // While the finger is down the UI thread owns both the offset and the stepped value; React's
@@ -125,29 +149,29 @@ export function Slider({
 
   const gesture = useMemo(() => {
     const pan = Gesture.Pan()
+      .maxPointers(1)
       .activeOffsetX([-4, 4])
       .failOffsetY([-16, 16])
-      .onStart(() => {
+      .onBegin((e) => {
         'worklet';
-        startOffset.set(offset.get());
+        cancelAnimation(offset);
+        touchGrab.set(grabAtTouch(offset.get(), e.x, THUMB));
+      })
+      .onStart((e) => {
+        'worklet';
         dragging.set(true);
-        grab.set(withTiming(1, { duration: settleMs, easing: SETTLE_EASING }));
+        press.set(withTiming(1, { duration: settleMs, easing: SETTLE_EASING }));
+        applyFinger(e.x, touchGrab.get(), travel.get(), min, max, step, offset, stepped, commit);
       })
       .onUpdate((e) => {
         'worklet';
-        const next = dragOffset(startOffset.get(), e.translationX, travel.get());
-        offset.set(next);
-        const v = valueAtOffset(next, travel.get(), min, max, step);
-        if (v !== stepped.get()) {
-          stepped.set(v);
-          scheduleOnRN(commit, v);
-        }
+        applyFinger(e.x, touchGrab.get(), travel.get(), min, max, step, offset, stepped, commit);
       })
       .onFinalize(() => {
         'worklet';
         if (!dragging.get()) return;
         dragging.set(false);
-        grab.set(withTiming(0, { duration: settleMs }));
+        press.set(withTiming(0, { duration: settleMs }));
         offset.set(
           withTiming(offsetOfValue(stepped.get(), min, max, travel.get()), { duration: settleMs }),
         );
@@ -157,7 +181,7 @@ export function Slider({
       .onEnd((e, success) => {
         'worklet';
         if (!success) return;
-        const to = offsetForTap(e.x, travel.get(), sizes.sliderThumb);
+        const to = offsetForTap(e.x, travel.get(), THUMB);
         const v = valueAtOffset(to, travel.get(), min, max, step);
         offset.set(withTiming(offsetOfValue(v, min, max, travel.get()), { duration: settleMs }));
         if (v !== stepped.get()) {
@@ -166,20 +190,20 @@ export function Slider({
         }
       });
     return Gesture.Race(pan, tap);
-  }, [offset, travel, startOffset, stepped, dragging, grab, settleMs, commit, min, max, step]);
+  }, [offset, travel, touchGrab, stepped, dragging, press, settleMs, commit, min, max, step]);
 
-  const fillStyle = useAnimatedStyle(() => ({ width: offset.get() + sizes.sliderThumb / 2 }));
+  const fillStyle = useAnimatedStyle(() => ({ width: offset.get() + THUMB / 2 }));
   const thumbStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: offset.get() },
-      { scale: 1 + grab.get() * (PRESSED_THUMB / sizes.sliderThumb - 1) },
+      { scale: 1 + press.get() * (PRESSED_THUMB / THUMB - 1) },
     ],
   }));
   const haloStyle = useAnimatedStyle(() => ({
-    opacity: grab.get(),
+    opacity: press.get(),
     transform: [
-      { translateX: offset.get() - (HALO - sizes.sliderThumb) / 2 },
-      { scale: 0.5 + grab.get() * 0.5 },
+      { translateX: offset.get() - (HALO - THUMB) / 2 },
+      { scale: 0.5 + press.get() * 0.5 },
     ],
   }));
 
@@ -214,7 +238,7 @@ export function Slider({
           ? (marks ?? []).map((m) => (
               <Mark
                 key={m}
-                center={markCenter(m, min, max, width, sizes.sliderThumb)}
+                center={markCenter(m, min, max, width, THUMB)}
                 offset={offset}
                 onFill={colors.brandOnPrimary}
                 rest={colors.textMuted}

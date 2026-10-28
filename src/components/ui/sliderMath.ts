@@ -1,8 +1,8 @@
 /**
  * Pure slider geometry, shared by the gesture (UI thread, hence the `worklet` directives) and the
  * tests. The thumb is a `thumb` dp circle that travels from 0 to `travel` dp (track width minus
- * thumb); its centre sits at `thumb / 2 + position`. Values map linearly onto that travel, so the
- * thumb is always exactly under the finger while dragging.
+ * thumb); its centre sits at `thumb / 2 + position`. The finger's `x` on the track maps 1:1 onto
+ * that travel (plus a grab from touch-down), so the thumb never runs ahead of the finger.
  */
 
 /** Clamps `value` into [lo, hi]. */
@@ -38,13 +38,22 @@ export function offsetOfValue(value: number, min: number, max: number, travel: n
 }
 
 /**
- * Thumb offset while dragging: the offset at touch-down plus how far the finger has moved since,
- * clamped to the track. Nothing moves at touch-down, and a finger that runs past an end pins the
- * thumb there (it picks up again as soon as the finger comes back past where it left).
+ * Finger-to-thumb grab at touch-down: the thumb's left edge minus where that edge would sit if
+ * the thumb centre jumped under the finger. Applied on every move so the thumb does not jump.
  */
-export function dragOffset(startOffset: number, translation: number, travel: number): number {
+export function grabAtTouch(offset: number, x: number, thumb: number): number {
   'worklet';
-  return clamp(startOffset + translation, 0, travel);
+  return offset - (x - thumb / 2);
+}
+
+/**
+ * Thumb offset for a finger at `x` dp on the track (view coordinates), plus the grab from
+ * touch-down, clamped to the track. Past either end the thumb pins; as soon as the finger is
+ * back over the track it follows again (absolute position, not accumulated translation).
+ */
+export function offsetAtFinger(x: number, grab: number, travel: number, thumb: number): number {
+  'worklet';
+  return clamp(x - thumb / 2 + grab, 0, travel);
 }
 
 /** Slider value (snapped to a step) for a thumb at `offset` dp. */
@@ -64,7 +73,7 @@ export function valueAtOffset(
 /** Thumb offset for a tap at `x` dp on the track: the thumb centre goes to the finger, clamped. */
 export function offsetForTap(x: number, travel: number, thumb: number): number {
   'worklet';
-  return clamp(x - thumb / 2, 0, travel);
+  return offsetAtFinger(x, 0, travel, thumb);
 }
 
 /** Centre of a snap mark (dp from the track's left edge). */
