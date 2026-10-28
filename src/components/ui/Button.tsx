@@ -28,7 +28,7 @@ type KindStyle = { face: string; fg: string; edge?: string; border?: string };
 
 function kindStyle(kind: ButtonKind, c: ColorTokens, inactive: boolean): KindStyle {
   if (inactive && kind !== 'ghost' && kind !== 'text') {
-    return { face: c.bgSurface2, fg: c.textMuted, edge: c.borderDefault };
+    return { face: c.bgSurface2, fg: c.textMuted, edge: c.borderStrong };
   }
   switch (kind) {
     case 'primary':
@@ -49,7 +49,6 @@ function kindStyle(kind: ButtonKind, c: ColorTokens, inactive: boolean): KindSty
       return {
         face: 'transparent',
         fg: inactive ? c.textMuted : c.brandAccentText,
-        border: c.borderStrong,
       };
     case 'text':
       return { face: 'transparent', fg: inactive ? c.textMuted : c.brandAccentText };

@@ -10,7 +10,11 @@ import { useT } from '@/i18n';
 import { useAppStore } from '@/state/appStore';
 import { radius, space, useTheme } from '@/theme';
 
-const POINTS = ['pointCount', 'pointLock', 'pointPrivacy'] as const;
+const POINTS = [
+  { key: 'pointCount', icon: 'check', color: 'statusGoodText' },
+  { key: 'pointLock', icon: 'check', color: 'statusGoodText' },
+  { key: 'pointPrivacy', icon: 'close', color: 'statusDangerStrong' },
+] as const;
 const PARAGRAPHS = ['p1', 'p2', 'p3', 'p4'] as const;
 
 /**
@@ -56,7 +60,7 @@ export function DisclosureScreen() {
 
   return (
     <Screen spread edges={['bottom']} testID="disclosure">
-      <ScreenGroup>
+      <ScreenGroup gap={space[12]}>
         <View style={[styles.tile, { backgroundColor: colors.bgPrimarySoft }]}>
           <Icon name="shield" size={24} color="brandAccentText" />
         </View>
@@ -64,9 +68,9 @@ export function DisclosureScreen() {
           {t('disclosure.title')}
         </Text>
         <View style={styles.points}>
-          {POINTS.map((key) => (
+          {POINTS.map(({ key, icon, color }) => (
             <View key={key} style={styles.point}>
-              <Icon name="check" size={20} color="statusGoodText" />
+              <Icon name={icon} size={20} color={color} />
               <Text variant="label" style={styles.pointText}>
                 {t(`disclosure.${key}`)}
               </Text>
@@ -79,7 +83,7 @@ export function DisclosureScreen() {
         >
           <ScrollView nestedScrollEnabled testID="disclosure-text" persistentScrollbar>
             {PARAGRAPHS.map((key) => (
-              <Text key={key} variant="caption" color="textSecondary" style={styles.paragraph}>
+              <Text key={key} variant="caption" style={styles.paragraph}>
                 {t(`disclosure.${key}`)}
               </Text>
             ))}
@@ -88,8 +92,11 @@ export function DisclosureScreen() {
         <Text variant="caption" color="textMuted">
           {t('disclosure.scrollHint')}
         </Text>
+        <Text variant="caption" color="textSecondary">
+          {t('disclosure.disclaimer')}
+        </Text>
       </ScreenGroup>
-      <ScreenGroup>
+      <ScreenGroup gap={space[12]}>
         <Checkbox
           testID="disclosure-check"
           value={checked}
@@ -103,8 +110,20 @@ export function DisclosureScreen() {
         ) : null}
         <Button label={t('disclosure.agree')} onPress={agree} disabled={!checked} loading={busy} />
         <View style={styles.links}>
-          <Button kind="ghost" size="sm" label={t('disclosure.notNow')} onPress={notNow} />
-          <Button kind="ghost" size="sm" label={t('disclosure.privacy')} onPress={openPrivacy} />
+          <Button
+            kind="ghost"
+            size="sm"
+            label={t('disclosure.notNow')}
+            onPress={notNow}
+            style={styles.link}
+          />
+          <Button
+            kind="ghost"
+            size="sm"
+            label={t('disclosure.privacy')}
+            onPress={openPrivacy}
+            style={styles.link}
+          />
         </View>
       </ScreenGroup>
     </Screen>
@@ -112,15 +131,18 @@ export function DisclosureScreen() {
 }
 
 const styles = StyleSheet.create({
+  /** Below the persistent step header; Figma has 8 dp between them, the layout already leaves 16. */
   tile: {
+    alignSelf: 'flex-end',
+    marginTop: -space[8],
     width: 40,
     height: 40,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   points: { gap: space[8] },
-  point: { flexDirection: 'row', alignItems: 'center', gap: space[8] },
+  point: { flexDirection: 'row', alignItems: 'flex-start', gap: space[12] },
   pointText: { flex: 1 },
   box: {
     height: 128,
@@ -128,6 +150,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[16],
     paddingVertical: space[12],
   },
-  paragraph: { marginBottom: space[8] },
-  links: { flexDirection: 'row', gap: space[12], justifyContent: 'center' },
+  paragraph: { marginBottom: space[16] },
+  links: { flexDirection: 'row', gap: space[8] },
+  link: { flex: 1 },
 });

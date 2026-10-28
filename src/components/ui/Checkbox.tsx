@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { layout, radius, space, useTheme } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 
 import { Icon } from './Icon';
 
@@ -25,6 +25,7 @@ export function Checkbox({ value, onChange, label, disabled = false, testID }: C
       accessibilityLabel={label}
       disabled={disabled}
       onPress={() => onChange(!value)}
+      hitSlop={{ top: space[12], bottom: space[12] }}
       style={[styles.row, { opacity: disabled ? 0.45 : 1 }]}
     >
       <View
@@ -38,7 +39,7 @@ export function Checkbox({ value, onChange, label, disabled = false, testID }: C
       >
         {value ? <Icon name="check" size={16} color="brandOnPrimary" bold /> : null}
       </View>
-      <Text variant="label" color="textSecondary" style={styles.label}>
+      <Text variant="body" style={styles.label}>
         {label}
       </Text>
     </Pressable>
@@ -50,10 +51,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: space[12],
-    minHeight: layout.minTouch,
   },
   box: {
-    marginTop: space[4],
     width: 24,
     height: 24,
     borderRadius: radius.xs - 2,
