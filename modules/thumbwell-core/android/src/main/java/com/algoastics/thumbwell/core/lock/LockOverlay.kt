@@ -260,64 +260,63 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
       }
     }
     val cover = FrameLayout(service).apply { tag = COVER_TAG }
+    // Figma S22 Content: 16 dp side margin, 12 dp above the first block (the application overlay
+    // also starts behind the status bar, so that inset is added), 32 dp below the last one.
+    val topInset = if (kind == LockWindowKind.APPLICATION_OVERLAY) statusBarPx else 0
     val column = LinearLayout(service).apply {
       orientation = LinearLayout.VERTICAL
-      setPadding(dp(24), dp(32), dp(24), dp(32))
+      setPadding(dp(16), topInset + dp(12), dp(16), dp(32))
     }
-    val bodyColumn = LinearLayout(service).apply {
+    val top = LinearLayout(service).apply {
       orientation = LinearLayout.VERTICAL
-      gravity = Gravity.CENTER
+      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+      setPadding(0, dp(16), 0, 0)
     }
-    // The mascot shrinks on short surfaces (split windows, landscape) so the button stays visible.
-    val mascotHeight = minOf(dp(243), box.height * 28 / 100)
-    bodyColumn.addView(
+    // Thumb fried is 183.6 x 206.55 dp (Figma); it shrinks on short surfaces (split windows,
+    // landscape) so the button stays visible.
+    val mascotHeight = minOf(dp(MASCOT_HEIGHT_DP), box.height * 30 / 100)
+    top.addView(
       ImageView(service).apply {
         setImageResource(R.drawable.thumbwell_lock_fried)
         scaleType = ImageView.ScaleType.FIT_CENTER
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
       },
-      LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mascotHeight),
+      LinearLayout.LayoutParams(mascotHeight * 8 / 9, mascotHeight),
     )
-    bodyColumn.addView(
-      text(service.getString(R.string.thumbwell_lock_chip), 14f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
-        R.color.thumbwell_lock_chip_text).apply {
-        background = GradientDrawable().apply {
-          cornerRadius = dp(999).toFloat()
-          setColor(color(R.color.thumbwell_lock_chip_bg))
-        }
-        setPadding(dp(16), dp(4), dp(16), dp(4))
-      },
-      LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-        topMargin = dp(8)
-      },
-    )
-    val titleView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_title, 0, 0), 30f, Typeface.create("sans-serif", Typeface.BOLD),
-      R.color.thumbwell_lock_title_text).apply {
+    top.addView(chip(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+      topMargin = dp(16)
+    })
+    val titleView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_title, 0, 0), 24f, nunitoExtraBold,
+      R.color.thumbwell_lock_title_text, 30, HEADING_FONT_CAP, -0.5f).apply {
       if (Build.VERSION.SDK_INT >= 28) isAccessibilityHeading = true
       accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
     }
-    bodyColumn.addView(titleView, spaced(16))
-    val bodyView = text(service.getString(R.string.thumbwell_lock_body), 16f, Typeface.SANS_SERIF, R.color.thumbwell_lock_body_text)
-    bodyColumn.addView(bodyView, spaced(16))
-    column.addView(bodyColumn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+    top.addView(titleView, spaced(16))
+    val bodyView = text(service.getString(R.string.thumbwell_lock_body), 14f, interRegular,
+      R.color.thumbwell_lock_body_text, 20, BODY_FONT_CAP)
+    top.addView(bodyView, spaced(16))
+    column.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
+    column.addView(pausedNote(), spaced(0))
     val button = Button(service).apply {
       text = service.getString(R.string.thumbwell_lock_leave)
       contentDescription = service.getString(R.string.thumbwell_lock_leave)
       isAllCaps = false
       stateListAnimator = null
-      setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
-      typeface = Typeface.create("sans-serif", Typeface.BOLD)
+      includeFontPadding = false
+      setTextSize(TypedValue.COMPLEX_UNIT_PX, scaledPx(15f, HEADING_FONT_CAP))
+      letterSpacing = 0.5f / 15f
+      typeface = nunitoExtraBold
       setTextColor(color(R.color.thumbwell_lock_button_text))
       background = buttonBackground()
       setPadding(0, 0, 0, dp(4))
       setOnClickListener { onLeave() }
     }
     column.addView(button, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)).apply {
-      topMargin = dp(16)
+      topMargin = dp(12)
     })
-    val todayView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_today, 0, 0), 12f, Typeface.create("sans-serif-medium", Typeface.NORMAL),
-      R.color.thumbwell_lock_muted_text)
+    val todayView = text(service.resources.getQuantityString(R.plurals.thumbwell_lock_today, 0, 0), 12f, interMedium,
+      R.color.thumbwell_lock_muted_text, 16, BODY_FONT_CAP)
     column.addView(todayView, spaced(12))
     cover.addView(column, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
     frame.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -330,12 +329,110 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     return frame
   }
 
-  private fun text(label: String, sp: Float, face: Typeface, colorId: Int) = TextView(service).apply {
+  /** Bundled fonts (module assets); the system sans stands in when one fails to load. */
+  private fun font(asset: String, fallback: Typeface): Typeface = try {
+    Typeface.createFromAsset(service.assets, "fonts/$asset.ttf")
+  } catch (e: RuntimeException) {
+    fallback
+  }
+
+  private val nunitoExtraBold: Typeface by lazy { font("nunito_extrabold", Typeface.create("sans-serif", Typeface.BOLD)) }
+  private val interRegular: Typeface by lazy { font("inter_regular", Typeface.SANS_SERIF) }
+  private val interMedium: Typeface by lazy { font("inter_medium", Typeface.create("sans-serif-medium", Typeface.NORMAL)) }
+  private val interSemiBold: Typeface by lazy { font("inter_semibold", Typeface.create("sans-serif-medium", Typeface.NORMAL)) }
+
+  /** sp to px with the user's font scale capped (headings 1.2, body 1.3 as in the app tokens). */
+  private fun scaledPx(sp: Float, cap: Float): Float {
+    val scale = minOf(service.resources.configuration.fontScale, cap)
+    return sp * scale * density
+  }
+
+  private fun text(
+    label: String,
+    sp: Float,
+    face: Typeface,
+    colorId: Int,
+    lineDp: Int,
+    cap: Float,
+    trackingPx: Float = 0f,
+  ) = TextView(service).apply {
     text = label
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+    includeFontPadding = false
+    setTextSize(TypedValue.COMPLEX_UNIT_PX, scaledPx(sp, cap))
+    val line = (lineDp * density * minOf(service.resources.configuration.fontScale, cap) + 0.5f).toInt()
+    if (Build.VERSION.SDK_INT >= 28) {
+      lineHeight = line
+    } else {
+      setLineSpacing((line - paint.getFontMetricsInt(null)).toFloat(), 1f)
+    }
+    letterSpacing = trackingPx / sp
     typeface = face
     setTextColor(color(colorId))
     gravity = Gravity.CENTER
+  }
+
+  /** Status chip: surface-2 pill, 1.5 dp border, 8 dp warn dot, 13/18 semibold label. */
+  private fun chip(): View {
+    val row = LinearLayout(service).apply {
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_VERTICAL
+      setPadding(dp(16), dp(8), dp(16), dp(8))
+      background = GradientDrawable().apply {
+        cornerRadius = dp(999).toFloat()
+        setColor(color(R.color.thumbwell_lock_chip_bg))
+        setStroke((CHIP_BORDER_DP * density + 0.5f).toInt(), color(R.color.thumbwell_lock_chip_border))
+      }
+    }
+    row.addView(
+      View(service).apply {
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        background = GradientDrawable().apply {
+          shape = GradientDrawable.OVAL
+          setColor(color(R.color.thumbwell_lock_chip_dot))
+        }
+      },
+      LinearLayout.LayoutParams(dp(8), dp(8)).apply { marginEnd = dp(8) },
+    )
+    row.addView(
+      text(service.getString(R.string.thumbwell_lock_chip), 13f, interSemiBold, R.color.thumbwell_lock_chip_text, 18, BODY_FONT_CAP),
+    )
+    return row
+  }
+
+  /** Paused note (Figma component): primary-soft card, 16 dp radius, pause icon, title and body. */
+  private fun pausedNote(): View {
+    val row = LinearLayout(service).apply {
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_VERTICAL
+      setPadding(dp(16), dp(12), dp(16), dp(12))
+      background = GradientDrawable().apply {
+        cornerRadius = dp(16).toFloat()
+        setColor(color(R.color.thumbwell_lock_note_bg))
+        setStroke(dp(1), color(R.color.thumbwell_lock_note_border))
+      }
+    }
+    row.addView(
+      ImageView(service).apply {
+        setImageResource(R.drawable.ic_lock_pause)
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+      },
+      LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(12) },
+    )
+    val words = LinearLayout(service).apply { orientation = LinearLayout.VERTICAL }
+    words.addView(
+      text(service.getString(R.string.thumbwell_lock_note_title), 13f, interSemiBold, R.color.thumbwell_lock_title_text, 18, BODY_FONT_CAP).apply {
+        gravity = Gravity.START
+      },
+      LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT),
+    )
+    words.addView(
+      text(service.getString(R.string.thumbwell_lock_note_body), 14f, interRegular, R.color.thumbwell_lock_body_text, 20, BODY_FONT_CAP).apply {
+        gravity = Gravity.START
+      },
+      spaced(2),
+    )
+    row.addView(words, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+    return row
   }
 
   private fun spaced(topDp: Int) =
@@ -362,6 +459,10 @@ class LockOverlay(private val service: AccessibilityService, private val onLeave
     const val TAG = "ThumbwellLock"
     const val TOP_RADIUS_DP = 20
     const val COVER_TAG = "thumbwell-lock-cover"
+    const val MASCOT_HEIGHT_DP = 207
+    const val CHIP_BORDER_DP = 1.5f
+    const val HEADING_FONT_CAP = 1.2f
+    const val BODY_FONT_CAP = 1.3f
     const val STATUS_BAR_FALLBACK_DP = OverlayGuard.STATUS_BAR_FALLBACK_DP
   }
 }

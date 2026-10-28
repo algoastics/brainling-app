@@ -7,6 +7,8 @@
         <item quantity="other">That\'s %1$d reels. Time for a break.</item>
     </plurals>
     <string name="thumbwell_lock_body">Reels, Shorts and TikTok are locked until %1$s. DMs and the rest of each app still work.</string>
+    <string name="thumbwell_lock_note_title">Video paused</string>
+    <string name="thumbwell_lock_note_body">Resume tomorrow or leave reels.</string>
     <string name="thumbwell_lock_leave">Leave reels</string>
     <plurals name="thumbwell_lock_today">
         <item quantity="one">Today: %1$d reel</item>

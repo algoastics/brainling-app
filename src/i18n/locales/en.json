@@ -117,6 +117,8 @@
     "title_one": "That's {{count}} reel. Time for a break.",
     "title_other": "That's {{count}} reels. Time for a break.",
     "body": "Reels, Shorts and TikTok are locked until {{time}}. DMs and the rest of each app still work.",
+    "noteTitle": "Video paused",
+    "noteBody": "Resume tomorrow or leave reels.",
     "leave": "Leave reels",
     "today_one": "Today: {{count}} reel",
     "today_other": "Today: {{count}} reels"

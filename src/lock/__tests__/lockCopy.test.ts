@@ -32,6 +32,8 @@ describe('lock copy shared with the native overlay (S22-P0)', () => {
     ['thumbwell_lock_chip', 'chip'],
     ['thumbwell_lock_body', 'body'],
     ['thumbwell_lock_leave', 'leave'],
+    ['thumbwell_lock_note_title', 'noteTitle'],
+    ['thumbwell_lock_note_body', 'noteBody'],
   ])('%s matches lock.%s', (nativeName, key) => {
     expect(native(nativeName)).toBe(en.lock[key]);
   });
