@@ -4,8 +4,8 @@ Target baseline: **OWASP MASVS v2 Level 1 (MASVS-L1)** for every release. MVP is
 
 ## 1. Secrets
 - No keys, tokens, keystores or `.env` files in git. `.gitignore` covers `*.jks`, `*.keystore`, `.env*`, `google-services.json` (if used), `credentials.json`.
-- Build-time values via **EAS environment variables/secrets** (`eas env`), per profile (dev/preview/prod). Only public-safe values get the `EXPO_PUBLIC_` prefix (RevenueCat public SDK key, PostHog project key, Supabase **anon** key, Sentry DSN).
-- Upload keystore managed by EAS; Play App Signing enabled.
+- Build-time values come from the build shell environment (see `docs/BUILD-local.md`), never from the repo. Only public-safe values get the `EXPO_PUBLIC_` prefix (RevenueCat public SDK key, PostHog project key, Supabase **anon** key, Sentry DSN).
+- Upload keystore is kept outside the repo; Play App Signing enabled.
 - Ruleset **Ed25519 private key stays offline** (hardware token/password manager), never in CI.
 - **gitleaks** pre-commit hook (lefthook/husky) + gitleaks job in CI on every PR and full-history scan weekly. Any leak = rotate first, then purge.
 

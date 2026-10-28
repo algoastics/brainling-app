@@ -82,11 +82,11 @@ node scripts/rules/sign-rules.mjs verify <publicKeyB64> brainling-dev-2026-10 <f
 
 - Bump `version` on every change; the app never applies a version lower than the highest it has
   accepted (rollback) or one that is expired.
-- `.secrets/` is git-ignored; private keys never enter the repo, EAS or CI.
+- `.secrets/` is git-ignored; private keys never enter the repo or CI.
 - Rotation: `keygen <newKeyId>`, add the public key to `TrustedRuleKeys.kt`, ship an app update,
   then sign with the new key. The dev key `brainling-dev-2026-10` must be replaced by an offline
   production key before release.
-- Remote rules: host the signed envelope at `THUMBWELL_RULES_URL` (https only, see `docs/EAS.md`).
+- Remote rules: host the signed envelope at `THUMBWELL_RULES_URL` (https only, see `docs/BUILD-local.md`).
 
 ## Watchdog and re-enable reminder
 

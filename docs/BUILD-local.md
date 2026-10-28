@@ -83,3 +83,25 @@ with an **upload key** that you own:
 5. Before the first upload also: the Play declaration, disclosure text and listing wording for the
    on-screen counter (F18, D42) still need Ahsan's and legal review, and the debug-signed rules key
    (`brainling-dev-2026-10`) must be replaced with a production key.
+
+## Build-time variables (names only, never values in the repo)
+
+Set them in the shell before step 2 (`expo prebuild`) and step 3. Only `EXPO_PUBLIC_*` values reach
+the JS bundle, and the bundle is public: never put a secret there. `.env*` files are git-ignored and
+gitleaks blocks committing secrets.
+
+| Name | Visibility | Used by |
+|---|---|---|
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | public SDK key | M8 billing |
+| `EXPO_PUBLIC_SENTRY_DSN` | public DSN | M11 crash reporting |
+| `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | auth token is a secret | source-map upload |
+| `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST` | public project key | M11 analytics |
+| `THUMBWELL_RULES_URL` | public URL, optional | M1 remote detection ruleset |
+
+`THUMBWELL_RULES_URL` is read at prebuild by the `thumbwell-core` config plugin
+(`modules/thumbwell-core/app.plugin.js`) and written to the manifest as
+`com.algoastics.thumbwell.RULES_URL`. It must be an `https://` URL serving a signed envelope made by
+`scripts/rules/sign-rules.mjs`; prebuild fails on any other scheme. Unset: the app uses only the
+bundled signed ruleset. The trust comes from the Ed25519 signature, not the URL, and the signing keys
+are never stored in the build environment (see `docs/modules/M01-detection.md`). Changing it needs
+a new build. Set `SENTRY_DISABLE_AUTO_UPLOAD=true` to build without the Sentry token.

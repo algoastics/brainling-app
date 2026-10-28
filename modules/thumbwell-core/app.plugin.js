@@ -37,7 +37,7 @@ function enabledPackages() {
   return rules.apps.filter((app) => app.enabled).flatMap((app) => app.packageNames);
 }
 
-/** Remote ruleset URL from the build environment (EAS env THUMBWELL_RULES_URL); https only. */
+/** Remote ruleset URL from the build environment (shell env THUMBWELL_RULES_URL); https only. */
 function rulesUrl(props) {
   const url = (
     props.rulesUrl ??

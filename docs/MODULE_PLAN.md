@@ -53,12 +53,12 @@ Days = dev-days for one dev. A = Android/Kotlin dev, B = RN dev.
 
 ### M0 — Foundation (5 d, MVP)
 - **Purpose:** working app shell everyone builds on.
-- **Scope:** ESLint/Prettier/TS strict, Jest + RNTL, EAS Build profiles (dev/preview/prod), dev-client, `expo-router` file routes (`(onboarding)`, `(tabs)`: Home/Stats/Me, modal stack), `theme.ts` + `tokens.json` from design kit (light/dark, contrast fixes: darken `muted`, ink-on-primary <16dp lint rule), fonts, MMKV, Zustand store, i18n scaffold (EN only), design-system components C01–C10 (Button with A01 press scale 0.97, Card, Ring/Counter, Chip, Sheet, Toast, ListRow, Stepper, ProTag, EmptyState), `<Mascot>` interface with static SVG fallback (Rive swap later), app icons via `PackageManager.getApplicationIcon` (no trademark logos). Empty `modules/thumbwell-core` Expo Module + config plugin (A, 1 d).
+- **Scope:** ESLint/Prettier/TS strict, Jest + RNTL, local Gradle builds, dev-client, `expo-router` file routes (`(onboarding)`, `(tabs)`: Home/Stats/Me, modal stack), `theme.ts` + `tokens.json` from design kit (light/dark, contrast fixes: darken `muted`, ink-on-primary <16dp lint rule), fonts, MMKV, Zustand store, i18n scaffold (EN only), design-system components C01–C10 (Button with A01 press scale 0.97, Card, Ring/Counter, Chip, Sheet, Toast, ListRow, Stepper, ProTag, EmptyState), `<Mascot>` interface with static SVG fallback (Rive swap later), app icons via `PackageManager.getApplicationIcon` (no trademark logos). Empty `modules/thumbwell-core` Expo Module + config plugin (A, 1 d).
 - **IDs:** A01, S01 + S01-error.
 - **Native vs JS:** JS; config plugin + module skeleton native.
 - **Deps:** none.
-- **DoD:** `eas build --profile preview` APK installs; router navigates all tab stubs; Storybook/preview screen renders all C01–C10 in light/dark at 1.3× font; CI lint+tests green.
-- **Security DoD:** gitleaks pre-commit + CI; `.gitignore` for keys/env; EAS env/secrets per profile; pinned deps + lockfile + `npm ci`; `npm audit` gate; Dependabot on; MMKV encrypted with Keystore key; release build R8 on, not debuggable, cleartext off, network security config.
+- **DoD:** a local release APK installs; router navigates all tab stubs; Storybook/preview screen renders all C01–C10 in light/dark at 1.3× font; CI lint+tests green.
+- **Security DoD:** gitleaks pre-commit + CI; `.gitignore` for keys/env; build-time values from the shell, never committed; pinned deps + lockfile + `npm ci`; `npm audit` gate; Dependabot on; MMKV encrypted with Keystore key; release build R8 on, not debuggable, cleartext off, network security config.
 
 ### M1 — Native detection engine (10 d, MVP, critical path)
 - **Purpose:** count reels in IG Reels + YT Shorts with the RN app dead.

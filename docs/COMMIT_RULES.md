@@ -66,7 +66,7 @@ Examples:
 | **commitlint** | commit-msg + CI on PR range | Conventional Commits, allowed types/scopes, header ≤72 |
 | ESLint rules | pre-commit + CI | `no-console`, `no-warning-comments` (TODO/FIXME/WIP), `no-debugger`, `eslint-comments/no-unused-disable` |
 | custom grep | pre-commit + CI | rejects commented-out code blocks, `WIP`/`fixup!` in messages on pushed branches, build artefacts |
-| CI | every PR | `npm ci`, typecheck, lint, tests, `npm audit --audit-level=high`, EAS preview build, Gradle build + lint, commitlint, gitleaks |
+| CI | every PR | `npm ci`, typecheck, lint, tests, `npm audit --audit-level=high`, Gradle build + lint, commitlint, gitleaks |
 
 ### Setup
 ```bash

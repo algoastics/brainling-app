@@ -11,7 +11,7 @@ Branch: `module/00-foundation`. Tracks the M0 Definition of Done from `docs/MODU
 | `.gitignore` for env files, keystores, Firebase configs, build output, `android/`, `ios/`, module builds | `.gitignore` |
 | Expo Router with typed routes: root stack, `(tabs)` Home/Stats/Me, modal stack | `src/app/` |
 | expo-dev-client | `package.json` |
-| EAS profiles: development (dev client APK), preview (APK), production (AAB, remote version, autoIncrement); env via EAS environments, names listed, no values in repo | `eas.json`, `docs/EAS.md` |
+| Local Gradle builds only (no EAS); build-time variable names listed, no values in repo | `docs/BUILD-local.md` |
 | Jest (jest-expo) + React Native Testing Library; tests for health/state, token contrast, storage key, Button, Checkbox, StreakPill, Mascot | `src/**/__tests__/`, `jest.setup.ts`, `test/` |
 | CI (GitHub Actions): npm ci, typed routes (`npm run typegen`), typecheck, lint, format, tests, commitlint, branch name, gitleaks (full history), audit-ci at high, expo-doctor | `.github/workflows/ci.yml` |
 | npm audit gate with documented upstream exceptions (review 2026-12-21) | `audit-ci.jsonc`, `docs/security/audit-exceptions.md` |
@@ -45,7 +45,7 @@ Supabase (JS only, v1.1).
 
 | Item | Notes |
 |---|---|
-| `eas build --profile preview` APK installed on a device | Profiles exist; first EAS cloud build not run yet. |
+| A local release APK installed on a device | See `docs/BUILD-local.md` and `docs/TESTING-phase0.md`. |
 | CI green on GitHub | Workflow committed; first run happens on push/PR. |
 | CODEOWNERS + branch protection on `main` | Waiting for the reviewer's GitHub handle. |
 | ESLint rule: ink-on-primary below 16dp | Handoff §5 contrast rule; custom rule not written. |

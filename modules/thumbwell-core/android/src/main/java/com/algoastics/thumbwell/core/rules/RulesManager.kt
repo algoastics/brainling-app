@@ -56,7 +56,7 @@ class RulesManager private constructor(context: Context) {
 
   private fun highestVersion(): Int = prefs.getInt(KEY_HIGHEST, 0)
 
-  /** Remote ruleset URL baked in at build time (EAS env THUMBWELL_RULES_URL), or null. */
+  /** Remote ruleset URL baked in at build time (build env THUMBWELL_RULES_URL), or null. */
   fun remoteUrl(): String? = try {
     val info = appContext.packageManager.getApplicationInfo(
       appContext.packageName,
