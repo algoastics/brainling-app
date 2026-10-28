@@ -53,16 +53,17 @@ Notes:
 Start from a fresh install (`adb uninstall com.algoastics.thumbwell`, then install). Phone on
 Android 13 or newer if you have one.
 
-1. [ ] Launch. Splash (S01) shows about 1.2 s, then Welcome (S02, "Step 1 of 3"). Kill the app
+1. [ ] Launch. Splash (S01) shows about 1.2 s, then Welcome (S02, "Step 1 of 4"). Kill the app
    mid-onboarding and relaunch: you get Welcome again, not Home.
 2. [ ] Welcome says it counts Instagram, YouTube and TikTok. Tap "Let's set it up".
-3. [ ] Daily limit (S04, step 2 of 3): default 60. Presets 30, 60, 100 select. Stepper moves by 5.
+3. [ ] Daily limit (S04, step 2 of 4): default 60. Presets 30, 60, 100 select. Stepper moves by 5.
    Set 30 for now. "Continue".
-4. [ ] Disclosure (S06, step 3 of 3), **version 2** (F03, D42): the second paragraph reads "We use this
+4. [ ] Disclosure (S06, step 3 of 4), **version 3** (F03, D42): the second paragraph reads "We use this
    only to count the short videos you watch and show you your count. While one of these apps is
    open, Thumbwell also shows a small movable counter on top of it, so you can see your count as you
    scroll; you can turn it off in Thumbwell settings. We also use it, when you reach your limit, to
-   cover the reels screen or go back." It matches what the app really does. "Agree & continue" is
+   cover the reels screen or go back." (Version 3 names the separate "Display over other apps" use;
+   it is pending legal review.) It matches what the app really does. "Agree & continue" is
    disabled until the box is ticked. Scroll hint works.
 5. [ ] "Not now": you land on Home with the "Counting is paused" banner (consent missing). Tapping
    "Turn it back on" shows the disclosure again, never goes straight to Android settings.
@@ -72,7 +73,7 @@ Android 13 or newer if you have one.
    Accessibility -> Thumbwell ON. Note whether this was needed after an `adb install`.
 8. [ ] Return to Thumbwell: success screen "Thumbwell is on". Before switching it on, a check
    without it shows "Still off, try again".
-9. [ ] "Continue": the "Show the lock under your notifications" step shows (when "Display over other apps"
+9. [ ] "Continue": step 4 of 4, "Let Thumbwell show over other apps", shows (when "Display over other apps"
    is off; section J.1 covers it). Skip it: counts show 0 for each app, total vs limit 30, banner gone.
 10. [ ] Stopwatch: first launch after install to the first reel counted on Home must be under 3
     minutes (also recorded in F).
@@ -80,7 +81,7 @@ Android 13 or newer if you have one.
 12. [ ] **Version 1 consent is asked again.** On a phone that still has a build with disclosure
     version 1 accepted (install the new APK over it, `adb install -r`): Home shows "Counting is
     paused" (consent missing) and nothing is counted or covered. "Turn it back on" opens the
-    disclosure (S06) with the version 2 text, never Android settings. Agree: counting resumes. The
+    disclosure (S06) with the version 3 text, never Android settings. Agree: counting resumes. The
     same happens from the "service turned off" notification (`thumbwell://reenable`). Consent is not
     carried over silently.
 
@@ -421,3 +422,26 @@ Reach the limit (limit 1 or 0 is quickest) in Instagram Reels, YouTube Shorts an
 3. [ ] Turn the permission on again: the next lock uses the full window.
 4. [ ] Opening Android Settings or the uninstall dialog hides the lock (both window types).
 5. [ ] Turning Accessibility off removes the lock and the badge.
+
+## K. Changes since the Task 1 checklist (quick ticks)
+
+1. [ ] **Icons.** Tabs, Settings rows, buttons and the About screen show Phosphor icons: outline when
+   inactive, filled when active, in light and dark. No old hand-drawn glyphs left.
+2. [ ] **About.** "Open-source licences" lists Phosphor Icons with the MIT licence text.
+3. [ ] **Onboarding is 4 steps.** Welcome, Daily limit, Accessibility (disclosure then the guide) and
+   "Let Thumbwell show over other apps" (skippable). The step indicator reads 1 to 4 of 4 on all.
+4. [ ] **Overlay step.** Open Android's "Display over other apps" from it, switch it on, come back:
+   the step moves on. "Skip" leaves it off and the lock uses the fallback.
+5. [ ] **Disclosure v3.** The text names the "Display over other apps" break screen; an older consent
+   is asked again after installing over it.
+6. [ ] **Slider.** On the limit slider the thumb follows the finger exactly, from first touch to
+   release, with no jump or offset, also near both ends.
+7. [ ] **Leave reels in TikTok** goes to the phone Home screen (no toast). In Instagram it taps the
+   Home tab, in YouTube the first tab; you stay in the app.
+8. [ ] **Badge under the lock.** At the limit the badge disappears when the lock appears, and is not
+   visible over or under it. Leave the lock (limit raised, or a new day): the badge is back in the
+   same place with its count.
+9. [ ] **Target API 36.** After a clean prebuild and install, the app installs, counts, locks and
+   shows the badge as before on Android 15 or newer (no new permission or crash).
+10. [ ] **Light and dark.** Switch the phone theme with the app open: every screen follows, the status
+    bar icons stay readable, and switch and slider knobs stay white.
