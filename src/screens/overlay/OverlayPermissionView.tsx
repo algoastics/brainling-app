@@ -60,7 +60,7 @@ function AndroidPreview() {
           {t('overlay.ask.previewApp')}
         </Text>
         <View style={[styles.switchTrack, { backgroundColor: colors.brandPrimary }]}>
-          <View style={styles.switchThumb} />
+          <View style={[styles.switchThumb, { backgroundColor: colors.brandOnPrimary }]} />
         </View>
       </View>
       <Text variant="caption" color="textSecondary">
@@ -306,6 +306,5 @@ const styles = StyleSheet.create({
     width: sizes.switchThumb,
     height: sizes.switchThumb,
     borderRadius: sizes.switchThumb / 2,
-    backgroundColor: '#FFFFFF',
   },
 });

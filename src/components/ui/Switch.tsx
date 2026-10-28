@@ -62,7 +62,9 @@ export function Switch({
         disabled && styles.disabled,
       ]}
     >
-      <Animated.View style={[styles.thumb, thumbStyle]} />
+      <Animated.View
+        style={[styles.thumb, { backgroundColor: colors.brandOnPrimary }, thumbStyle]}
+      />
     </Pressable>
   );
 }
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
     width: sizes.switchThumb,
     height: sizes.switchThumb,
     borderRadius: sizes.switchThumb / 2,
-    backgroundColor: '#FFFFFF',
   },
   disabled: { opacity: 0.45 },
 });

@@ -254,7 +254,7 @@ export function Slider({
           style={[
             styles.thumb,
             elevationStyle(elevations.card),
-            { backgroundColor: '#FFFFFF', borderColor: colors.brandPrimary },
+            { backgroundColor: colors.brandOnPrimary, borderColor: colors.brandPrimary },
             thumbStyle,
           ]}
         />
