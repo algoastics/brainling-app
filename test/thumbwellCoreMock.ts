@@ -9,7 +9,7 @@ export const runningStatus: CountingStatus = {
   serviceRunning: true,
   consentLogged: true,
   consent: { atMs: 1, version: '1' },
-  disclosureVersion: '2',
+  disclosureVersion: '3',
   apps: { instagram: { enabled: true }, youtube: { enabled: true }, tiktok: { enabled: true } },
   dayStartMinutes: 240,
   flags: { facebook: false, snapchat: false, countBadge: true },

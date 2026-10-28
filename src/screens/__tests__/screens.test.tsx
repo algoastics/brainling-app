@@ -66,7 +66,7 @@ describe('guide (S07)', () => {
       ...runningStatus,
       consent: { atMs: 1, version: '1' },
       consentLogged: false,
-      disclosureVersion: '2',
+      disclosureVersion: '3',
       serviceEnabled: false,
       paused: true,
       pausedReason: 'consent_missing',

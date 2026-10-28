@@ -131,7 +131,7 @@ describe('useCountingStatus', () => {
     serviceRunning: true,
     consentLogged: !paused,
     consent: null,
-    disclosureVersion: '2',
+    disclosureVersion: '3',
     apps: { instagram: { enabled: true }, facebook: { enabled: false } },
     dayStartMinutes: 240,
     flags: { facebook: false, snapchat: false, countBadge: false },
