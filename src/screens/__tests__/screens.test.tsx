@@ -449,6 +449,16 @@ describe('about and lock preview', () => {
     expect(screen.getByTestId('about-disclaimer')).toHaveTextContent(/^Not affiliated with/);
   });
 
+  it('shows the Phosphor attribution and the MIT licence text on About', async () => {
+    await render(<AboutScreen />);
+    expect(screen.getByText('Open-source licences')).toBeTruthy();
+    expect(screen.getByText(/Phosphor Icons \(phosphoricons\.com\)/)).toBeTruthy();
+    expect(screen.getByTestId('about-licences')).toHaveTextContent(/MIT License\s+Copyright/);
+    expect(screen.getByTestId('about-licences')).toHaveTextContent(
+      /THE SOFTWARE IS PROVIDED "AS IS"/,
+    );
+  });
+
   it('shows the lock copy with the real budget and the unlock time', async () => {
     const onLeave = jest.fn();
     await render(<LockView limit={60} until="04:00" today={60} onLeave={onLeave} />);
