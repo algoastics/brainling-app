@@ -93,7 +93,7 @@ export function ListRow({
         ) : null}
       </View>
       {value ? (
-        <Text variant="label" color="brandAccentText">
+        <Text variant="label" color={onPress ? 'brandAccentText' : 'textSecondary'}>
           {value}
         </Text>
       ) : null}

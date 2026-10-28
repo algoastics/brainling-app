@@ -452,12 +452,13 @@ describe('settings (S43-P0)', () => {
 describe('about and lock preview', () => {
   it('shows the disclaimer on About', async () => {
     await render(<AboutScreen />);
-    expect(screen.getByTestId('about-disclaimer')).toHaveTextContent(/^Not affiliated with/);
+    expect(screen.getByText(/^Not affiliated with/)).toBeTruthy();
   });
 
   it('shows the Phosphor attribution and the MIT licence text on About', async () => {
     await render(<AboutScreen />);
-    expect(screen.getByText('Open-source licences')).toBeTruthy();
+    expect(screen.getByText('OPEN-SOURCE LICENCES')).toBeTruthy();
+    expect(screen.getByText('Phosphor Icons 2.1.1 · MIT License')).toBeTruthy();
     expect(screen.getByText(/Phosphor Icons \(phosphoricons\.com\)/)).toBeTruthy();
     expect(screen.getByTestId('about-licences')).toHaveTextContent(/MIT License\s+Copyright/);
     expect(screen.getByTestId('about-licences')).toHaveTextContent(

@@ -1,6 +1,5 @@
 import ThumbwellCore from 'thumbwell-core';
 import * as Application from 'expo-application';
-import * as Device from 'expo-device';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -20,7 +19,7 @@ import { DEFAULT_LIMIT } from '@/limit/limitRule';
 import { DEFAULT_DAY_START_MINUTES, formatDayStart } from '@/lock/lockTime';
 import { useAppStore } from '@/state/appStore';
 import { getStorage } from '@/storage';
-import { buildFeedbackMailto } from '@/support/feedback';
+import { useSendFeedback } from '@/support/useSendFeedback';
 import { space, spacing, useThemePreference } from '@/theme';
 
 import { BadgeTimeSheet, DayStartSheet, LimitSheet, ThemeSheet } from './settings/sheets';
@@ -55,18 +54,7 @@ export function SettingsScreen() {
   const build = Application.nativeBuildVersion ?? '1';
 
   const openPrivacy = () => void Linking.openURL(appConfig.privacyPolicyUrl).catch(() => undefined);
-  const sendFeedback = () =>
-    void Linking.openURL(
-      buildFeedbackMailto({
-        email: appConfig.supportEmail,
-        subject: t('settings.feedbackSubject'),
-        intro: t('settings.feedbackIntro'),
-        appVersion: version,
-        build,
-        device: [Device.manufacturer, Device.modelName].filter(Boolean).join(' ') || 'unknown',
-        os: Device.osVersion ?? 'unknown',
-      }),
-    ).catch(() => undefined);
+  const sendFeedback = useSendFeedback();
 
   const deleteData = async () => {
     setDeleteFailed(false);
