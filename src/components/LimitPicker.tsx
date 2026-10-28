@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -11,6 +11,8 @@ import { radius, sizes, space, useTheme } from '@/theme';
 export type LimitPickerProps = {
   value: number;
   onChange: (value: number) => void;
+  /** Shown above the steppers, 4 dp apart (the Thumb on S04). */
+  hero?: ReactNode;
 };
 
 /** Slider range (Figma A57): steps of 10 from 10 to 200. The stepper still moves by 5. */
@@ -80,26 +82,29 @@ function StepButton({
  * Limit picker (Figma S04 and the Daily limit sheet): 48 dp round steppers around an odometer
  * number, a 10 to 200 slider and the 30 / 60 / 100 presets.
  */
-export function LimitPicker({ value, onChange }: LimitPickerProps) {
+export function LimitPicker({ value, onChange, hero }: LimitPickerProps) {
   const t = useT();
   return (
     <View style={styles.root}>
-      <View style={styles.stepper}>
-        <StepButton
-          testID="limit-less"
-          icon="minus"
-          label={t('limit.less')}
-          disabled={value <= LIMIT_MIN}
-          onPress={() => onChange(stepLimit(value, -1))}
-        />
-        <OdometerNumber testID="limit-value" value={value} label={t('limit.unit')} />
-        <StepButton
-          testID="limit-more"
-          icon="plus"
-          label={t('limit.more')}
-          disabled={value >= LIMIT_MAX}
-          onPress={() => onChange(stepLimit(value, 1))}
-        />
+      <View style={styles.hero}>
+        {hero}
+        <View style={styles.stepper}>
+          <StepButton
+            testID="limit-less"
+            icon="minus"
+            label={t('limit.less')}
+            disabled={value <= LIMIT_MIN}
+            onPress={() => onChange(stepLimit(value, -1))}
+          />
+          <OdometerNumber testID="limit-value" value={value} label={t('limit.unit')} />
+          <StepButton
+            testID="limit-more"
+            icon="plus"
+            label={t('limit.more')}
+            disabled={value >= LIMIT_MAX}
+            onPress={() => onChange(stepLimit(value, 1))}
+          />
+        </View>
       </View>
       <Slider
         testID="limit-slider"
@@ -116,7 +121,8 @@ export function LimitPicker({ value, onChange }: LimitPickerProps) {
           <Chip
             key={preset}
             testID={`limit-preset-${preset}`}
-            label={t('limit.preset', { count: preset })}
+            label={String(preset)}
+            accessibilityLabel={t('limit.preset', { count: preset })}
             selected={value === preset}
             onPress={() => onChange(preset)}
           />
@@ -128,6 +134,7 @@ export function LimitPicker({ value, onChange }: LimitPickerProps) {
 
 const styles = StyleSheet.create({
   root: { gap: space[16], alignItems: 'center', width: '100%' },
+  hero: { alignItems: 'center', gap: space[4] },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[16] },
   step: {
     width: sizes.touchMin,

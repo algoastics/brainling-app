@@ -33,9 +33,7 @@
     "less": "Fewer reels",
     "more": "More reels",
     "preset": "{{count}} reels",
-    "estimate": "About 1 reel = 20–30 seconds. {{count}} reels ≈ {{minutes}} minutes (estimate).",
-    "cardTitle": "At your limit",
-    "cardBody": "A calm lock screen covers Reels, Shorts and TikTok. DMs and the rest of each app still work.",
+    "estimate": "About 1 reel = 20–30 seconds, so {{count}} reels ≈ {{minutes}} minutes. At your limit a calm lock screen covers Reels, Shorts and TikTok. DMs and the rest of each app still work.",
     "cta": "Continue",
     "saveError": "Could not save your limit. Try again."
   },
