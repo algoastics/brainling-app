@@ -24,11 +24,14 @@ class OdometerView(
   private val face: Typeface,
   private val sizeSp: Float,
   private val colorInt: Int,
+  /** Letter spacing in em (Figma Type/Button: 0.5 dp at 15 sp). */
+  private val trackingEm: Float = 0f,
 ) : LinearLayout(context) {
   private val density = resources.displayMetrics.density
   private val paint = Paint().apply {
     typeface = face
     textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, resources.displayMetrics)
+    letterSpacing = trackingEm
   }
   private val slotH = Math.ceil((paint.descent() - paint.ascent()).toDouble()).toInt()
   private val digitW = Math.ceil("0123456789".maxOf { paint.measureText(it.toString()) }.toDouble()).toInt()
@@ -48,6 +51,7 @@ class OdometerView(
     text = c.toString()
     typeface = face
     setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
+    letterSpacing = trackingEm
     setTextColor(colorInt)
     gravity = Gravity.CENTER
     includeFontPadding = false

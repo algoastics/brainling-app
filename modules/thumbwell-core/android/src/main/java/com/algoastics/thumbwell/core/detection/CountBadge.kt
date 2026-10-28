@@ -200,7 +200,12 @@ class CountBadge(
     count = initial
     position = prefs.badgePosition()
     val face = service.getColor(R.color.thumbwell_badge_text)
-    val counter = OdometerView(service, typeface, 17f, face).also { it.setCount(initial) }
+    // Figma Type/Button: 15 sp Nunito ExtraBold, 0.5 tracking; the font scale is capped at 1.2 so the
+    // count stays inside the fixed 38 dp pill.
+    val fontScale = service.resources.configuration.fontScale
+    val counter = OdometerView(
+      service, typeface, COUNT_SP * minOf(1f, COUNT_FONT_CAP / fontScale), face, COUNT_TRACKING_PX / COUNT_SP,
+    ).also { it.setCount(initial) }
     val capsule = LinearLayout(service).apply {
       orientation = LinearLayout.HORIZONTAL
       gravity = Gravity.CENTER_VERTICAL
@@ -909,6 +914,9 @@ class CountBadge(
     const val STALE_AFTER_MS = 1500L
     const val PAD = 12f
     const val INNER_PAD = 28f // PAD on the edge side; on the centre side room for the resting Thumb's outer half
+    const val COUNT_SP = 15f
+    const val COUNT_FONT_CAP = 1.2f
+    const val COUNT_TRACKING_PX = 0.5f
     const val PILL_H = 38f
     const val PILL_SOCKET = 46f
     const val PILL_GAP = 16f
