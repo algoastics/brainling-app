@@ -58,3 +58,11 @@ modules/*/android/.gradle/
 
 # detection ruleset signing keys (scripts/rules/sign-rules.mjs); never commit
 .secrets/
+
+# build outputs (explicit, in addition to /android and /ios above)
+/android/build/
+/android/.gradle/
+/android/app/build/
+/build/
+/dist/
+.gradle/
