@@ -1,10 +1,11 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { AppRow } from '@/components/AppRow';
 import { AliveThumb } from '@/components/mascot';
-import { Banner, ProgressBar, Screen, Text, TopBar } from '@/components/ui';
+import { Banner, OdometerNumber, ProgressRing, Screen, Text, TopBar } from '@/components/ui';
 import { SUPPORTED_APPS, countFor, type SupportedApp } from '@/apps/supportedApps';
 import {
   useAppIcon,
@@ -39,6 +40,23 @@ function HomeAppRow({ app, count }: { app: SupportedApp; count: number }) {
  * bands stay Phase 1 (see `thumbState.ts`).
  */
 export const HOME_THUMB_POSE = 'happy' as const;
+
+/** Soft violet glow behind the ring (Figma "Hero glow": 190 dp circle, 20% violet, blur 48). */
+function HeroGlow({ color }: { color: string }) {
+  return (
+    <View style={styles.glow} pointerEvents="none" importantForAccessibility="no-hide-descendants">
+      <Svg width={236} height={236} viewBox="0 0 236 236">
+        <Defs>
+          <RadialGradient id="heroGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0.55" stopColor={color} stopOpacity={0.2} />
+            <Stop offset="1" stopColor={color} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={118} cy={118} r={118} fill="url(#heroGlow)" />
+      </Svg>
+    </View>
+  );
+}
 
 /** S14-P0 Home: total vs limit, Thumb, per-app counts and the counting-paused banner. */
 export function HomeScreen() {
@@ -105,27 +123,19 @@ export function HomeScreen() {
         />
       ) : null}
       <View style={styles.hero}>
-        <AliveThumb pose={HOME_THUMB_POSE} width={156} />
-        <View style={styles.count}>
-          <Text
-            variant="counterL"
-            testID="total-count"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            accessibilityLabel={t('home.progress', { count: total, limit: budget })}
-          >
-            {String(total)}
-          </Text>
-          <Text variant="body" color="textSecondary">
-            {t('home.ofLimit', { count: budget })}
-          </Text>
+        <View>
+          <HeroGlow color={colors.brandPrimary} />
+          <ProgressRing value={ratio} tone={tone}>
+            <OdometerNumber
+              testID="total-count"
+              value={total}
+              size="counterL"
+              label={t('home.ofLimit', { count: budget })}
+            />
+          </ProgressRing>
         </View>
+        <AliveThumb pose={HOME_THUMB_POSE} width={144} />
       </View>
-      <ProgressBar
-        value={ratio}
-        tone={tone}
-        accessibilityLabel={t('home.progress', { count: total, limit: budget })}
-      />
       <View style={styles.summaryRow}>
         <Text variant="caption" color="textMuted" testID="summary">
           {summary}
@@ -152,11 +162,17 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { flexDirection: 'row', alignItems: 'center', gap: space[8] },
-  count: { flex: 1, alignItems: 'flex-start' },
+  hero: {
+    height: 176,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[16],
+  },
+  glow: { position: 'absolute', left: -34, top: -34 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   status: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  apps: { gap: space[12] },
+  apps: { gap: space[8] },
   note: { textAlign: 'center' },
 });

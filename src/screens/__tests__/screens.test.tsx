@@ -165,8 +165,8 @@ describe('home (S14)', () => {
   it('shows total vs limit, the mascot count and per-app rows', async () => {
     core.getTodayCounts.mockResolvedValue(dayCounts(12, { instagram: 7, youtube: 3, tiktok: 2 }));
     await render(<HomeScreen />);
-    await waitFor(() => expect(screen.getByTestId('total-count')).toHaveTextContent('12'));
-    expect(screen.getByText('of 60 reels today')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('total-count')).toHaveTextContent(/^12/));
+    expect(screen.getByText('of 60 today')).toBeTruthy();
     expect(screen.getByTestId('summary')).toHaveTextContent('48 reels left today');
     expect(screen.getByLabelText('Instagram, Reels today, 7')).toBeTruthy();
     expect(screen.getByLabelText('YouTube, Shorts today, 3')).toBeTruthy();
@@ -191,7 +191,7 @@ describe('home (S14)', () => {
       core.getTodayCounts.mockResolvedValue(dayCounts(total, { instagram: total }));
       await render(<HomeScreen />);
       await waitFor(() =>
-        expect(screen.getByTestId('total-count')).toHaveTextContent(String(total)),
+        expect(screen.getByTestId('total-count')).toHaveTextContent(new RegExp(`^${total}`)),
       );
       expect(thumbArt()).toBe(happy);
       await cleanup();

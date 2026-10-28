@@ -80,7 +80,7 @@
   },
   "home": {
     "title": "Today",
-    "ofLimit": "of {{count}} reels today",
+    "ofLimit": "of {{count}} today",
     "left_one": "{{count}} reel left today",
     "left_other": "{{count}} reels left today",
     "over": "{{count}} over your limit today",
