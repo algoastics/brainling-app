@@ -3,7 +3,8 @@
     "back": "Back",
     "cancel": "Cancel",
     "save": "Save",
-    "step": "{{current}} of {{total}}"
+    "step": "{{current}} of {{total}}",
+    "stepLabel": "Step {{current}} of {{total}}"
   },
   "tabs": {
     "home": "Home",
