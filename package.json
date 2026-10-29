@@ -6,7 +6,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/nunito": "^0.4.2",
     "@react-native-community/netinfo": "12.0.1",
-    "@sentry/react-native": "~8.28.0",
+    "@sentry/react-native": "~8.32.0",
     "@shopify/react-native-skia": "2.14.0",
     "@types/jest": "30.0.0",
     "expo": "~58.0.16",
